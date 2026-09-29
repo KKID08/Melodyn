@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Melodyn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></symbol>
+  <symbol id="i-skip" viewBox="0 0 24 24"><path d="M5 5.5l9.5 6.5L5 18.5z"/><path d="M16.5 5.5H19v13h-2.5z"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M7 11v9H4v-9zM7 11l4-8a3 3 0 0 1 3 3v3.5h5a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.8 20H7"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M17 13V4h3v9zM17 13l-4 8a3 3 0 0 1-3-3v-3.5H5a2 2 0 0 1-2-2.3l1.2-7A2 2 0 0 1 6.2 4H17"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M6 3.5h12v17l-6-4-6 4z"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12L20 4l-6 16-3-7z"/></symbol>
+  <symbol id="i-radio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M8.5 15.5a5 5 0 0 1 0-7M15.5 8.5a5 5 0 0 1 0 7M5.6 18.4a9 9 0 0 1 0-12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></symbol>
+  <symbol id="i-lib" viewBox="0 0 24 24"><path d="M4 4h4v16H4zM10 4h4v16h-4zM16.5 5.2l3.8-1 3 15.5-3.8.8z"/></symbol>
+  <symbol id="i-taste" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-loop" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-logo" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 17c1.6 0 1.6-5 3.2-5s1.6 9 3.2 9 1.6-12 3.2-12 1.6 12 3.2 12 1.6-7 3.2-7 1.2 3 1.8 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<header class="topbar">
+  <div class="wrap">
+    <button class="brand" data-nav="start" aria-label="Melodyn Startseite"><svg><use href="#i-logo"/></svg><span>Melodyn</span></button>
+    <nav class="mainnav" aria-label="Bereiche">
+      <button data-nav="start"><span class="long">Produkt</span><span class="short">Produkt</span></button>
+      <button data-nav="app"><span class="long">App-Prototyp</span><span class="short">App</span></button>
+      <button data-nav="konzept"><span class="long">Konzept</span><span class="short">Konzept</span></button>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- =========================================================
+     VIEW 1 · PRODUKT (Showcase / Landingpage)
+     ========================================================= -->
+<section class="view" data-view="start" aria-label="Produkt">
+  <div class="wrap hero">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">Voice-first Musikstream · Prototyp</span>
+        <h1>Sag, wonach dir ist. <em>Melodyn spielt es.</em></h1>
+        <p class="lead">Melodyn erzeugt Songs für genau deinen Moment, auf der Nachtfahrt, beim Kochen oder nach einem miesen Tag. Mit jeder Reaktion versteht es deinen Geschmack ein Stück besser.</p>
+        <div class="ctas">
+          <button class="btn primary" data-nav="app"><svg class="ic solid"><use href="#i-play"/></svg>Prototyp ausprobieren</button>
+          <button class="btn" data-nav="konzept">So funktioniert es technisch</button>
+        </div>
+      </div>
+      <div class="hero-stage">
+        <canvas id="hero-canvas" aria-hidden="true"></canvas>
+        <div class="bubble say"><span class="eyebrow">Du sagst</span>„Ich fahre nachts zwei Stunden nach Hause. Mach was dafür.“</div>
+        <div class="bubble spec"><b>"genre"</b>: "synthwave",<br><b>"tempo_bpm"</b>: 96,<br><b>"mood"</b>: ["nocturnal", "steady"],<br><b>"avoid"</b>: ["heavy autotune"]</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Drei Arten anzufangen</span>
+        <h2>Kein Suchen, kein Prompt-Engineering. Ein Satz reicht.</h2>
+        <p>Du beschreibst ein Genre, eine Situation oder ein Gefühl. Melodyn übersetzt das in musikalische Parameter und erzeugt den ersten Song.</p>
+      </div>
+      <div class="moments">
+        <article class="moment">
+          <div class="kind"><span class="chip accent">Genre</span></div>
+          <p class="quote">„Mach mir 90er Hip-Hop, nicht zu aggressiv.“</p>
+          <div class="chips"><span class="chip">Boom Bap</span><span class="chip">1990s</span><span class="chip">90 BPM</span><span class="chip">avoid: aggressive delivery</span></div>
+          <button class="btn" data-try="Mach mir 90er Hip-Hop, nicht zu aggressiv."><svg class="ic solid"><use href="#i-play"/></svg>Im Prototyp hören</button>
+        </article>
+        <article class="moment">
+          <div class="kind"><span class="chip accent">Situation</span></div>
+          <p class="quote">„Ich koche gerade für Freunde. Mach was Warmes mit Groove.“</p>
+          <div class="chips"><span class="chip">Nu Jazz</span><span class="chip">warm</span><span class="chip">groovy</span><span class="chip session">Session: Kochen</span></div>
+          <button class="btn" data-try="Ich koche gerade für Freunde. Mach was Warmes mit Groove."><svg class="ic solid"><use href="#i-play"/></svg>Im Prototyp hören</button>
+        </article>
+        <article class="moment">
+          <div class="kind"><span class="chip session">Gefühl</span></div>
+          <p class="quote">„Ich hab mich gerade getrennt. Mir geht’s mies. Bau mir einen Song dazu.“</p>
+          <div class="chips"><span class="chip">eine Rückfrage</span><span class="chip">Textthema</span><span class="chip">Valenz</span><span class="chip session">bleibt flüchtig</span></div>
+          <button class="btn" data-try="Ich hab mich gerade getrennt. Mir geht's mies. Bau mir einen Song dazu."><svg class="ic solid"><use href="#i-play"/></svg>Im Prototyp hören</button>
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Vom Satz zum Song</span>
+        <h2>Fünf Schritte, ein paar Sekunden.</h2>
+        <p>Zwischen deiner Stimme und der Musik sitzt eine kleine KI-Schicht. Sie komponiert nicht selbst. Sie übersetzt deinen Wunsch in eine saubere Music-Spec.</p>
+      </div>
+      <ol class="flow" style="padding:0;margin:0">
+        <li><h3>Du sprichst</h3><p>Ein Satz, wie zu jemandem, der deinen Musikgeschmack kennt.</p><span class="who">Mikrofon oder Tastatur</span></li>
+        <li><h3>Mistral versteht</h3><p>Liest den Chat-Verlauf, deinen Geschmack und die aktuelle Session mit.</p><span class="who">Mistral AI</span></li>
+        <li><h3>Music-Spec</h3><p>Genre, BPM, Stimmung, Gesang, was vermieden wird. Als festes JSON-Format.</p><span class="who">Melodyn Prompt Engine</span></li>
+        <li><h3>Song entsteht</h3><p>Ein Adapter baut daraus den Prompt für den Musik-Anbieter.</p><span class="who">ElevenLabs Music</span></li>
+        <li><h3>Du reagierst</h3><p>Like, Skip, Speichern oder „mehr Gitarren“. Der nächste Song wird besser.</p><span class="who">Taste Engine</span></li>
+      </ol>
+      <p class="flow-loop"><svg class="ic"><use href="#i-loop"/></svg>Während ein Song läuft, ist der nächste schon vorbereitet. So entsteht ein durchgehender Stream statt einzelner Generier-Momente.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Taste Engine</span>
+        <h2>Merkt sich, was bleibt. Vergisst, was nur heute zählt.</h2>
+        <p>Melodyn trennt deinen langfristigen Geschmack von deiner aktuellen Stimmung. Ein trauriger Abend macht dich nicht dauerhaft zum Balladen-Hörer.</p>
+      </div>
+      <div class="layers">
+        <div class="layer long">
+          <h3>Geschmacksprofil</h3>
+          <div class="ex"><span class="chip">Genres</span><span class="chip">Era</span><span class="chip">BPM-Bereich</span><span class="chip">Gesang</span><span class="chip">Instrumente</span><span class="chip">Hook-Stil</span></div>
+          <span class="persist"><i></i>Langfristig, lernt mit</span>
+        </div>
+        <div class="layer sess">
+          <h3>Session-Kontext</h3>
+          <div class="ex"><span class="chip session">Nachtfahrt</span><span class="chip session">Training</span><span class="chip session">Trennung</span><span class="chip session">Fokus</span><span class="chip session">Party</span></div>
+          <span class="persist"><i></i>Flüchtig, nicht gespeichert</span>
+        </div>
+        <div class="layer rule">
+          <h3>Deine Regeln</h3>
+          <div class="ex"><span class="chip">„kein Autotune“</span><span class="chip">„keine Frauenstimme“</span><span class="chip">„mehr Gitarren“</span></div>
+          <span class="persist"><i></i>Session oder dauerhaft, du entscheidest</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap two">
+      <div>
+        <div class="section-head">
+          <span class="eyebrow">Gefühle ja, Diagnosen nein</span>
+          <h2>Du behältst die Richtung.</h2>
+        </div>
+        <ul class="principles">
+          <li><svg class="ic"><use href="#i-check"/></svg><div><b>Stimmung wird zu Musik, nicht zu einem Profil</b><span>Melodyn übersetzt nur, was du ausdrücklich sagst, in Tempo, Tonart und Textthema.</span></div></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><div><b>Emotionen bleiben in der Session</b><span>Der Session-Kontext ist standardmäßig flüchtig und lässt sich jederzeit löschen.</span></div></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><div><b>Höchstens eine Rückfrage</b><span>Zum Beispiel: „Willst du dich gerade reinfühlen oder eher rauskommen?“</span></div></li>
+          <li><svg class="ic"><use href="#i-check"/></svg><div><b>Du steuerst nach</b><span>„Weniger traurig“, „instrumental“, „kein Text über die Trennung“. Melodyn folgt.</span></div></li>
+        </ul>
+      </div>
+      <div class="versus">
+        <table>
+          <thead><tr><th></th><th>Klassisches Streaming</th><th>Melodyn</th></tr></thead>
+          <tbody>
+            <tr><td>Quelle</td><td>Fester Katalog</td><td>Neu erzeugt für deinen Moment</td></tr>
+            <tr><td>Einstieg</td><td>Suchen, Playlists</td><td>Ein gesprochener Satz</td></tr>
+            <tr><td>Stimmung</td><td>Mood-Playlists</td><td>Nächster Song passt genau dazu</td></tr>
+            <tr><td>Danach</td><td>Algorithmus bleibt beim Mood</td><td>Zurück zu deinem normalen Geschmack</td></tr>
+            <tr><td>Hände frei</td><td>Eher nicht</td><td>Voice-first, auch im Auto</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap">
+      <div class="cta-band">
+        <div>
+          <h2>Probier den Stream aus.</h2>
+          <p>Der Prototyp spielt Demo-Musik direkt im Browser. Echte Songs kommen später von ElevenLabs Music.</p>
+        </div>
+        <button class="btn" data-nav="app"><svg class="ic solid"><use href="#i-play"/></svg>App-Prototyp öffnen</button>
+      </div>
+    </div>
+    <div class="wrap footer">
+      <span>Melodyn · Working Concept · Stand 29.09.2026</span>
+      <span>Your music, always evolving.</span>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     VIEW 2 · APP-PROTOTYP
+     ========================================================= -->
+<section class="view" data-view="app" aria-label="App-Prototyp" hidden>
+  <div class="app">
+    <nav class="app-nav" aria-label="App-Bereiche">
+      <button data-pane="stream" aria-current="true"><svg class="ic"><use href="#i-radio"/></svg>Stream</button>
+      <button data-pane="library"><svg class="ic"><use href="#i-lib"/></svg>Bibliothek</button>
+      <button data-pane="taste"><svg class="ic"><use href="#i-taste"/></svg>Mein Geschmack</button>
+      <button data-pane="account"><svg class="ic"><use href="#i-user"/></svg>Abo &amp; Nutzung</button>
+      <p class="note">Prototyp mit Beispieldaten. Die KI-Antworten sind simuliert, der Sound ist ein Demo-Synth im Browser.</p>
+    </nav>
+
+    <div class="app-main">
+      <!-- STREAM -->
+      <div class="pane" data-pane="stream">
+        <div class="stream">
+          <div class="stream-col">
+            <div class="card now">
+              <div class="now-top">
+                <canvas class="cover" id="cover" width="300" height="300" aria-label="Generiertes Cover"></canvas>
+                <div class="now-meta">
+                  <span class="eyebrow" id="np-eyebrow">Läuft gerade</span>
+                  <h2 id="np-title">–</h2>
+                  <p class="sub" id="np-sub"></p>
+                  <div class="chips" id="np-chips"></div>
+                </div>
+              </div>
+              <canvas class="viz" id="viz" aria-hidden="true"></canvas>
+              <div class="progress"><span id="t-cur">0:00</span><div class="bar"><i id="prog"></i></div><span id="t-dur">3:00</span></div>
+              <div class="controls">
+                <div class="ctl-wrap"><button class="ctl" id="btn-dislike" aria-pressed="false" aria-label="Gefällt mir nicht"><svg class="ic"><use href="#i-down"/></svg></button><span class="ctl-label">Nicht mein Ding</span></div>
+                <div class="ctl-wrap"><button class="ctl" id="btn-like" aria-pressed="false" aria-label="Gefällt mir"><svg class="ic"><use href="#i-up"/></svg></button><span class="ctl-label">Like</span></div>
+                <div class="ctl-wrap"><button class="ctl play" id="btn-play" aria-label="Abspielen"><svg class="ic solid"><use href="#i-play" id="play-icon"/></svg></button><span class="ctl-label" id="play-label">Abspielen</span></div>
+                <div class="ctl-wrap"><button class="ctl" id="btn-skip" aria-label="Überspringen"><svg class="ic solid"><use href="#i-skip"/></svg></button><span class="ctl-label">Skip</span></div>
+                <div class="ctl-wrap"><button class="ctl" id="btn-save" aria-pressed="false" aria-label="In Bibliothek speichern"><svg class="ic"><use href="#i-save"/></svg></button><span class="ctl-label">Speichern</span></div>
+              </div>
+              <p class="toast" id="toast" aria-live="polite"></p>
+              <div class="upnext"><span>Als Nächstes: <b id="next-title">wird vorbereitet …</b></span><span class="chip" id="next-chip">vorausgeneriert</span></div>
+            </div>
+
+            <div class="card chat">
+              <div class="chat-log" id="chat-log" aria-live="polite"></div>
+              <div class="suggest" id="suggest"></div>
+              <form class="composer" id="composer" autocomplete="off">
+                <button type="button" class="mic" id="btn-mic" aria-label="Sprechen (simuliert)"><svg class="ic"><use href="#i-mic"/></svg></button>
+                <input id="chat-input" type="text" placeholder="Sag oder schreib, wonach dir ist …" aria-label="Wunsch an Melodyn">
+                <button type="submit" class="send" aria-label="Senden"><svg class="ic"><use href="#i-send"/></svg></button>
+              </form>
+              <p class="composer-hint">Das Mikrofon ist im Prototyp simuliert und tippt einen Beispielsatz. Probier auch Folgewünsche wie „schneller“ oder „kein Autotune, dauerhaft“.</p>
+            </div>
+          </div>
+
+          <aside class="card hood" aria-label="Unter der Haube">
+            <h3>Unter der Haube <span class="chip">Nur im Prototyp sichtbar</span></h3>
+            <ol class="pipe" id="pipe"></ol>
+            <div class="hood-tabs">
+              <div class="seg" role="group" aria-label="Ansicht">
+                <button data-hood="spec" aria-pressed="true">Music-Spec</button>
+                <button data-hood="prompt" aria-pressed="false">Provider-Prompt</button>
+                <button data-hood="context" aria-pressed="false">Kontext</button>
+              </div>
+              <div class="seg" role="group" aria-label="Musik-Anbieter" id="provider-seg">
+                <button data-provider="eleven" aria-pressed="true">ElevenLabs</button>
+                <button data-provider="mureka" aria-pressed="false">Mureka</button>
+              </div>
+            </div>
+            <div id="hood-body"></div>
+            <div class="hood-meta" id="hood-meta"></div>
+          </aside>
+        </div>
+      </div>
+
+      <!-- LIBRARY -->
+      <div class="pane" data-pane="library" hidden>
+        <div class="pane-head">
+          <div><h2>Bibliothek</h2><p>Gespeicherte Songs laufen aus dem Speicher. Wiederhören kostet kein Fresh-Music-Budget.</p></div>
+          <span class="chip good" id="lib-count"></span>
+        </div>
+        <div class="lib-grid" id="lib-grid"></div>
+      </div>
+
+      <!-- TASTE -->
+      <div class="pane" data-pane="taste" hidden>
+        <div class="pane-head">
+          <div><h2>Mein Geschmack</h2><p>Das weiß Melodyn über dich. Alles sichtbar, alles änderbar.</p></div>
+        </div>
+        <div class="taste-grid">
+          <div class="card">
+            <h3>Langfristiges Profil <span class="chip accent">lernt mit</span></h3>
+            <div class="bars" id="genre-bars"></div>
+            <div class="meter-label"><span>Energie-Vorliebe</span><span id="energy-v" class="num"></span></div>
+            <div class="bar"><i id="energy-bar"></i></div>
+            <div class="meter-label"><span>Gesang</span><span></span></div>
+            <div class="stack" id="vocal-stack"></div>
+            <div class="stack-legend" id="vocal-legend"></div>
+          </div>
+          <div style="display:grid;gap:18px">
+            <div class="card session-card">
+              <h3>Aktuelle Session <span class="chip session">flüchtig</span></h3>
+              <dl class="kv" id="session-kv"></dl>
+              <button class="btn" id="btn-forget"><svg class="ic"><use href="#i-x"/></svg>Session vergessen</button>
+              <p class="small-note">Stimmung und Situation werden nicht in dein Profil übernommen und beim Schließen gelöscht.</p>
+            </div>
+            <div class="card">
+              <h3>Deine Regeln</h3>
+              <ul class="rules" id="rules"></ul>
+              <p class="small-note">Neue Regeln sagst du einfach im Chat, zum Beispiel „nie wieder Autotune“ oder „heute instrumental“.</p>
+            </div>
+          </div>
+          <div class="card" style="grid-column:1/-1">
+            <h3>Was Melodyn zuletzt gelernt hat</h3>
+            <ul class="log" id="learn-log"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACCOUNT -->
+      <div class="pane" data-pane="account" hidden>
+        <div class="pane-head">
+          <div><h2>Abo &amp; Nutzung</h2><p>Nutzer denken in Hörzeit, intern wird jede Generation gezählt.</p></div>
+          <span class="chip">Preise sind Hypothesen für Tests</span>
+        </div>
+        <div class="acct-grid">
+          <div class="card">
+            <span class="eyebrow">Dein Tarif</span>
+            <div class="plan-name">PLUS</div>
+            <div class="meter-label"><span>Neue Songs diesen Monat</span><span id="fresh-v" class="num"></span></div>
+            <div class="bar big-meter"><i id="fresh-bar"></i></div>
+            <div class="stat-row">
+              <div class="stat"><b id="st-fresh"></b><span>neu erzeugt</span></div>
+              <div class="stat"><b id="st-replay"></b><span>Replays, kostenlos</span></div>
+              <div class="stat"><b id="st-skip"></b><span>Skips</span></div>
+            </div>
+            <div class="plans-mini">
+              <div><b>START</b>€7,99</div>
+              <div class="on"><b>PLUS</b>€14,99</div>
+              <div><b>PRO</b>€24,99</div>
+              <div><b>MAX</b>€39,99</div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Schutzmechanismen</h3>
+            <ul class="guard" id="guard"></ul>
+          </div>
+          <div class="card internal" style="grid-column:1/-1">
+            <h3>Kosten-Monitor <span class="chip"><svg class="ic" style="width:12px;height:12px"><use href="#i-lock"/></svg>nur fürs Team</span></h3>
+            <div class="stat-row" id="cost-stats"></div>
+            <p class="small-note">Annahme: ElevenLabs Music ≈ $0,15 pro Minute laut Vergleichsseiten, Ø 3 Minuten pro Song. Vor echter Planung auf elevenlabs.io prüfen.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     VIEW 3 · KONZEPT (für Team, Partner, Pitch)
+     ========================================================= -->
+<section class="view" data-view="konzept" aria-label="Konzept" hidden>
+  <div class="wrap doc-hero">
+    <span class="eyebrow">Produktkonzept · Stand 29.09.2026</span>
+    <h1>Wie Melodyn gebaut wird</h1>
+    <p class="lead">Die Architektur, der Datenfluss und die nächsten Schritte. Aktualisiert gegenüber dem Pitch-PDF: Mistral übernimmt Sprache und Kontext, ElevenLabs Music erzeugt die Songs.</p>
+    <div class="changes">
+      <div class="change"><span class="eyebrow">Sprach-KI</span><span class="was">„kleines LLM“ / OpenAI</span><b>Mistral AI</b><span>Music-Spec als JSON und Verständnis über den ganzen Chat-Verlauf.</span></div>
+      <div class="change"><span class="eyebrow">Musik</span><span class="was">Mureka als Start</span><b>ElevenLabs Music</b><span>Höhere Qualität, höherer Preis. Mureka bleibt als Reserve-Adapter.</span></div>
+      <div class="change"><span class="eyebrow">Erster Build</span><span class="was">React-Native-App</span><b>Web-Prototyp</b><span>Schneller testbar, läuft auf jedem Gerät. Die App folgt danach.</span></div>
+      <div class="change"><span class="eyebrow">Kosten</span><span class="was">≈ $0,012 pro Song</span><b>≈ $0,45 pro Song</b><span>Preismodell wird mit echten Nutzungsdaten neu gerechnet.</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Architektur</span>
+        <h2>So fließt ein Wunsch durchs System</h2>
+        <p>Die App spricht nie direkt mit den KI-Anbietern. Alle Schlüssel und Budgets liegen im Backend.</p>
+      </div>
+      <div class="arch">
+        <div class="tier">
+          <div class="tier-label"><b>Client</b><span>Was der Nutzer sieht</span></div>
+          <div class="tier-boxes">
+            <div class="box"><b>Web-App</b><span>Chat, Player, Feedback. Später Expo-App für iOS und Android.</span></div>
+            <div class="box"><b>Mikrofon</b><span>Nimmt den Satz auf und schickt Audio ans Backend.</span></div>
+            <div class="box"><b>Player</b><span>Streamt Audio-URLs, lädt den nächsten Song vor.</span></div>
+          </div>
+        </div>
+        <div class="flowline"><span></span><div>schickt <span class="mono">Audio / Text</span> und <span class="mono">Feedback-Events</span></div></div>
+        <div class="tier">
+          <div class="tier-label"><b>Backend</b><span>Supabase</span></div>
+          <div class="tier-boxes">
+            <div class="box"><b>Auth &amp; Datenbank</b><span>Nutzer, Geschmack, Regeln, Songs, Nutzung.</span></div>
+            <div class="box hot"><b>Prompt Engine</b><span>Baut Kontext für Mistral und prüft die Music-Spec.</span></div>
+            <div class="box"><b>Taste Engine</b><span>Gewichtet Likes, Skips und Saves vorsichtig.</span></div>
+            <div class="box ephemeral"><b>Session-Speicher</b><span>Stimmung und Situation, läuft automatisch ab.</span></div>
+            <div class="box"><b>Budget-Wächter</b><span>Tageslimit, Skip-Schutz, Notbremse bei Kosten.</span></div>
+            <div class="box"><b>Storage / CDN</b><span>Gespeicherte Songs für kostenlose Replays.</span></div>
+          </div>
+        </div>
+        <div class="flowline"><span></span><div>fragt an mit <span class="mono">Chat-Verlauf + Profil</span> → bekommt <span class="mono">Music-Spec (JSON)</span> → baut <span class="mono">Provider-Prompt</span></div></div>
+        <div class="tier">
+          <div class="tier-label"><b>KI-Dienste</b><span>Austauschbar</span></div>
+          <div class="tier-boxes">
+            <div class="box hot"><b>Mistral: Transkription</b><span>Sprache zu Text, z. B. mit Voxtral.</span></div>
+            <div class="box hot"><b>Mistral: Sprachmodell</b><span>Versteht den Wunsch im Kontext, antwortet im JSON-Modus.</span></div>
+            <div class="box hot"><b>ElevenLabs Music</b><span>Erzeugt den Song aus dem Prompt.</span></div>
+            <div class="box reserve"><b>Mureka</b><span>Reserve-Adapter. Gleiche Music-Spec, anderer Prompt.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap code-grid">
+      <div>
+        <div class="section-head">
+          <span class="eyebrow">Prompt Engine</span>
+          <h2>Mistral übersetzt, komponiert aber nicht</h2>
+          <p>Bei jeder Nachricht bekommt Mistral vier Dinge mit und antwortet nur mit einer Music-Spec in festem Format.</p>
+        </div>
+        <ul class="steps-list">
+          <li><b>Regeln fürs Modell</b><span>Nur Musik-Parameter, keine Diagnosen, höchstens eine Rückfrage, keine Künstlernamen imitieren.</span></li>
+          <li><b>Chat-Verlauf</b><span>Die letzten Nachrichten. So versteht es „schneller“ oder „mehr davon“.</span></li>
+          <li><b>Kurzprofil</b><span>Top-Genres, Energie-Vorliebe, Gesang und die aktiven Regeln.</span></li>
+          <li><b>Session</b><span>Situation und Stimmung, falls vorhanden. Wird nicht dauerhaft gespeichert.</span></li>
+        </ul>
+        <p class="caveat">Die Spec wird danach ohne KI in den Prompt des Anbieters übersetzt. Der Geschmack bleibt dadurch unabhängig von ElevenLabs.</p>
+      </div>
+      <pre class="code" id="mistral-example"></pre>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Datenmodell</span>
+        <h2>Sieben Tabellen reichen für den MVP</h2>
+      </div>
+      <div class="tables">
+        <div class="tbl"><header><b>profiles</b><span class="chip">dauerhaft</span></header><ul><li>id, email, plan</li><li>created_at</li></ul></div>
+        <div class="tbl"><header><b>taste_profiles</b><span class="chip accent">lernt</span></header><ul><li>user_id</li><li>genre_weights <em>jsonb</em></li><li>energy_pref, bpm_range</li><li>vocal_pref <em>jsonb</em></li></ul></div>
+        <div class="tbl"><header><b>sessions</b><span class="chip session">flüchtig</span></header><ul><li>user_id, context, emotion</li><li>direction</li><li>expires_at <em>z. B. 6 h</em></li></ul></div>
+        <div class="tbl"><header><b>constraints</b><span class="chip">Regeln</span></header><ul><li>user_id, text</li><li>avoid / vocals / add</li><li>scope <em>session | dauerhaft</em></li></ul></div>
+        <div class="tbl"><header><b>songs</b><span class="chip">dauerhaft</span></header><ul><li>id, user_id, title</li><li>spec <em>jsonb</em>, provider</li><li>provider_prompt, audio_url</li><li>duration_s, cost_usd</li></ul></div>
+        <div class="tbl"><header><b>feedback_events</b><span class="chip">Signale</span></header><ul><li>song_id, user_id</li><li>kind <em>like | skip | save …</em></li><li>at_second, session_id</li></ul></div>
+        <div class="tbl"><header><b>usage_ledger</b><span class="chip">Kosten</span></header><ul><li>user_id, song_id</li><li>kind <em>fresh | replay</em></li><li>seconds, cost_usd, day</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Lernen</span>
+        <h2>Welche Reaktion wie viel zählt</h2>
+        <p>Diese Startwerte nutzt auch der Prototyp. Ein einzelner Skip bedeutet nicht „Genre schlecht“.</p>
+      </div>
+      <div class="doc-table-wrap">
+        <table class="doc-table">
+          <thead><tr><th>Signal</th><th>Wirkung aufs Profil</th><th>Warum</th></tr></thead>
+          <tbody>
+            <tr><td>Speichern</td><td class="num pos">Genre +10 %</td><td>Stärkstes Signal: Der Nutzer will den Song wiederhören.</td></tr>
+            <tr><td>Like</td><td class="num pos">Genre +6 %</td><td>Klar positiv. Energie-Vorliebe rückt 20 % in Richtung des Songs.</td></tr>
+            <tr><td>Komplett gehört</td><td class="num pos">Genre +2 %</td><td>Leise Zustimmung.</td></tr>
+            <tr><td>Skip nach über 30 s</td><td class="num">±0</td><td>Song lief schon eine Weile. Kaum Aussagekraft.</td></tr>
+            <tr><td>Skip unter 30 s, mit Session</td><td class="num">nur Session</td><td>Passt vielleicht nur gerade nicht. Langzeit-Profil bleibt.</td></tr>
+            <tr><td>Skip unter 30 s, ohne Session</td><td class="num neg">Genre −2 %</td><td>Schwaches negatives Signal.</td></tr>
+            <tr><td>Nicht mein Ding</td><td class="num neg">Genre −8 %</td><td>Klar negativ. Geht direkt zum nächsten Song.</td></tr>
+            <tr><td>Sprachfeedback</td><td class="num">Regel</td><td>„Kein Autotune“ wird zur Regel, für die Session oder dauerhaft.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Kosten, vorläufig</span>
+        <h2>Die wichtigste Zahl: Kosten pro Hörstunde</h2>
+        <p>Mit ElevenLabs Music ist jeder neue Song deutlich teurer als im PDF angenommen. Für den Prototyp ist das egal, fürs Preismodell nicht.</p>
+      </div>
+      <div class="cost-grid">
+        <div class="cost"><b>$0,15</b><span>pro Minute Musik</span></div>
+        <div class="cost"><b>≈ $0,45</b><span>pro Song mit 3 Minuten</span></div>
+        <div class="cost"><b>≈ $9</b><span>pro Stunde nur neue Songs</span></div>
+      </div>
+      <ul class="levers">
+        <li><b>Replays sind gratis</b><span>Gespeicherte Songs kommen aus dem Speicher. Je mehr Favoriten, desto günstiger die Stunde.</span></li>
+        <li><b>Kürzere Songs</b><span>2 Minuten statt 3 senken die Kosten pro Song um ein Drittel.</span></li>
+        <li><b>Nur 1 Song vorausgenerieren</b><span>Jeder vorbereitete, aber übersprungene Song kostet trotzdem.</span></li>
+        <li><b>Anbieter mischen</b><span>ElevenLabs für Premium-Momente, ein günstigerer Anbieter fürs Dauerradio.</span></li>
+        <li><b>Tarife in Songs denken</b><span>„400 neue Songs im Monat“ ist planbarer als „60 Stunden“.</span></li>
+        <li><b>Später B2B-Preis</b><span>Mit echten Nutzungszahlen Volumenrabatte verhandeln.</span></li>
+      </ul>
+      <p class="caveat">Preis laut Vergleichsseiten (Stand September 2026), nicht direkt bei ElevenLabs geprüft. Vor jeder Planung auf elevenlabs.io/pricing/api nachsehen.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Roadmap</span>
+        <h2>Erst die Kernfrage beweisen</h2>
+        <p>Kann jemand einen Satz sagen, einen passenden Song bekommen und den nächsten durch Feedback spürbar verbessern?</p>
+      </div>
+      <ol class="road">
+        <li class="now"><b>Klick-Prototyp</b><span>Diese Seite. Ablauf, Aussehen und Taste Engine zum Anfassen, ohne echte KI.</span></li>
+        <li><b>Web-MVP mit echten APIs</b><span>Login, Mistral für die Music-Spec, ElevenLabs für echte Songs, Kosten-Log.</span></li>
+        <li><b>Taste Engine v0</b><span>Gewichtetes Profil, Session-Kontext, Regeln. Werte aus der Tabelle oben.</span></li>
+        <li><b>20 bis 100 echte Tests</b><span>Qualität, Wartezeit, Kosten pro Hörstunde, Anteil Sprache, Wiederkehr.</span></li>
+        <li><b>Mobile App</b><span>Expo für iOS und Android mit Hintergrund-Wiedergabe fürs Auto.</span></li>
+        <li><b>Anbieter-Verhandlung</b><span>Mit echten Zahlen nutzungsbasierte Volumenpreise anfragen.</span></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Messen ab Tag 1</span>
+        <h2>Vier Gruppen von Kennzahlen</h2>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><h3>Produkt</h3><ul><li>Songs pro Nutzer und Tag</li><li>Hörstunden pro Nutzer</li><li>Anteil Spracheingabe</li></ul></div>
+        <div class="kpi"><h3>Qualität</h3><ul><li>Like- und Save-Rate</li><li>Skips unter 30 s</li><li>Korrekturen per Feedback</li></ul></div>
+        <div class="kpi"><h3>Kosten</h3><ul><li>Kosten pro Song</li><li>Kosten pro Hörstunde</li><li>Kosten pro aktivem Nutzer</li></ul></div>
+        <div class="kpi"><h3>Bindung</h3><ul><li>Wiederkehr nach 1, 7, 30 Tagen</li><li>Sessions pro Woche</li><li>Anteil neu → gespeichert</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Risiken</span>
+        <h2>Was schiefgehen kann und wie wir gegensteuern</h2>
+      </div>
+      <div class="doc-table-wrap">
+        <table class="doc-table">
+          <thead><tr><th>Risiko</th><th>Warum relevant</th><th>Gegenmaßnahme</th></tr></thead>
+          <tbody>
+            <tr><td>Kosten pro Song</td><td>Jeder neue Song kostet mit ElevenLabs spürbar Geld.</td><td>Tagesbudget, Replays fördern, Anbieter-Mix, Tarife in Songs.</td></tr>
+            <tr><td>Anbieter-Abhängigkeit</td><td>Preise oder Qualität können sich ändern.</td><td>Adapter-Schicht und eigene Music-Spec.</td></tr>
+            <tr><td>Wartezeit</td><td>Ein Radio darf zwischen Songs nicht stocken.</td><td>Nächsten Song vorbereiten, Streaming nutzen.</td></tr>
+            <tr><td>Skip-Missbrauch</td><td>Viele Generierungen ohne echte Hörzeit.</td><td>Skip-Schutz: nach 4 schnellen Skips kurz aus der Bibliothek spielen.</td></tr>
+            <tr><td>Künstler-Imitation</td><td>Zu konkrete Nachahmung ist rechtlich heikel.</td><td>Eigenschaften statt Künstlernamen, Regeln der Anbieter.</td></tr>
+            <tr><td>Privatsphäre</td><td>Stimmungen sind persönliche Daten.</td><td>Session flüchtig, sichtbar, jederzeit löschbar.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="wrap footer">
+      <span>Melodyn · Konzept · Stand 29.09.2026</span>
+      <span>Grundlage: Pitch-Dokumentation, aktualisiert</span>
+    </div>
+  </div>
+</section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
