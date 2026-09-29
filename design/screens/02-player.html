@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Player</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+  .bg { inset: -40px; filter: saturate(1.35) brightness(1.05); }
+  .veil { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(8,8,12,.35) 0%, rgba(8,8,12,.1) 28%, rgba(8,8,12,.6) 56%, rgba(8,8,12,.92) 78%, #08080c 100%); }
+  .top { position: absolute; top: 60px; left: 16px; right: 16px; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; text-align: center; }
+  .top .circle { width: 36px; height: 36px; background: rgba(255,255,255,.14); backdrop-filter: blur(16px); }
+  .top b { display: block; font-size: 14px; font-weight: 600; }
+  .top span { font-size: 12px; color: var(--text-2); }
+  .cover { position: absolute; top: 122px; left: 28px; width: 334px; height: 334px; border-radius: 14px; box-shadow: 0 30px 60px -12px rgba(0,0,0,.55), 0 0 0 .5px rgba(255,255,255,.12) inset; }
+  .meta { position: absolute; top: 486px; left: 28px; right: 28px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+  .meta h1 { font-size: 27px; font-weight: 640; letter-spacing: -0.028em; }
+  .meta p { font-size: 15px; color: var(--text-2); margin-top: 3px; }
+  .meta .i { width: 28px; height: 28px; color: var(--text); stroke-width: 1.5; }
+  .prog { position: absolute; top: 556px; left: 28px; right: 28px; }
+  .track { height: 4px; border-radius: 2px; background: rgba(255,255,255,.18); position: relative; }
+  .track i { position: absolute; left: 0; top: 0; bottom: 0; width: 39%; border-radius: 2px; background: var(--text); }
+  .times { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; font-weight: 500; }
+  .ctrl { position: absolute; top: 606px; left: 20px; right: 20px; display: flex; align-items: center; justify-content: space-between; }
+  .ctrl .side { color: var(--text-2); width: 48px; height: 48px; }
+  .ctrl .side .i { width: 25px; height: 25px; stroke-width: 1.6; }
+  .ctrl .mid { width: 40px; height: 40px; color: var(--text); }
+  .ctrl .mid .i { width: 34px; height: 34px; }
+  .ctrl .play { width: 76px; height: 76px; background: var(--text); color: var(--ink); }
+  .ctrl .play .i { width: 30px; height: 30px; }
+  .next { position: absolute; top: 704px; left: 28px; right: 28px; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-2); }
+  .next .dots { display: inline-flex; gap: 3px; }
+  .next .dots i { width: 4px; height: 4px; border-radius: 50%; background: var(--text-2); }
+  .next .dots i:nth-child(2) { opacity: .6; } .next .dots i:nth-child(3) { opacity: .3; }
+  .next b { color: var(--text); font-weight: 560; }
+  .steer { position: absolute; left: 16px; right: 16px; bottom: 34px; height: 56px; border-radius: 28px; background: rgba(255,255,255,.1); border: .5px solid rgba(255,255,255,.14); backdrop-filter: blur(24px); display: flex; align-items: center; padding: 0 6px 0 20px; gap: 10px; }
+  .steer span { flex: 1; font-size: 15px; color: var(--text-3); }
+  .steer .circle { width: 44px; height: 44px; background: var(--text); color: var(--ink); }
+  .steer .circle .i { width: 21px; height: 21px; stroke-width: 2; }
+</style></head>
+<body>
+<div class="phone">
+  <div class="aura bg" data-p="night" data-seed="7" data-blur=".2"></div>
+  <div class="veil"></div>
+  <div class="sb" data-time="21:47"></div>
+  <div class="top">
+    <div class="circle"><svg class="i" style="width:20px;height:20px"><use href="#chev"/></svg></div>
+    <div><b>Heimfahrt, nachts</b><span>Song 4 · noch ca. 1 Std. 48 Min.</span></div>
+    <div class="circle" style="justify-self:end"><svg class="i" style="width:20px;height:20px"><use href="#more"/></svg></div>
+  </div>
+  <div class="aura cover" data-p="night" data-seed="7" data-blur=".1" data-lines="16"></div>
+  <div class="meta">
+    <div><h1>Amber Exit</h1><p>Synthwave · 96 BPM</p></div>
+    <svg class="i"><use href="#add"/></svg>
+  </div>
+  <div class="prog"><div class="track"><i></i></div><div class="times"><span>1:12</span><span>−1:52</span></div></div>
+  <div class="ctrl">
+    <div class="circle side"><svg class="i"><use href="#down"/></svg></div>
+    <div class="circle mid"><svg class="i f"><use href="#prev"/></svg></div>
+    <div class="circle play"><svg class="i f"><use href="#pause"/></svg></div>
+    <div class="circle mid"><svg class="i f"><use href="#next"/></svg></div>
+    <div class="circle side"><svg class="i"><use href="#up"/></svg></div>
+  </div>
+  <div class="next"><span class="dots"><i></i><i></i><i></i></span><span>Als Nächstes: <b>Tunnel Lights</b> · wird komponiert</span></div>
+  <div class="steer"><span>„Etwas schneller“, „mehr Gitarren“ …</span><div class="circle"><svg class="i"><use href="#mic"/></svg></div></div>
+  <div class="home-ind"></div>
+</div>
+<script src="../kit.js"></script>
+</body></html>

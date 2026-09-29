@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Conversation</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+  .bg { inset: -30px; filter: saturate(1.2); }
+  .dim { position: absolute; inset: 0; background: rgba(6,6,10,.45); }
+  .mini { position: absolute; top: 70px; left: 20px; right: 20px; display: flex; align-items: center; gap: 12px; }
+  .mini .art { position: relative; width: 48px; height: 48px; border-radius: 8px; }
+  .mini b { display: block; font-size: 15px; font-weight: 600; }
+  .mini span { font-size: 13px; color: var(--text-2); }
+  .mini .i { margin-left: auto; width: 28px; height: 28px; }
+  .sheet { position: absolute; top: 146px; left: 0; right: 0; bottom: 0; background: #121215; border-radius: 30px 30px 0 0; box-shadow: 0 -20px 50px rgba(0,0,0,.4); }
+  .grab { width: 38px; height: 5px; border-radius: 3px; background: var(--ink-4); margin: 8px auto 0; }
+  .msgs { padding: 26px 20px 0; display: grid; gap: 22px; }
+  .me { justify-self: end; max-width: 82%; background: var(--text); color: var(--ink); padding: 12px 16px; border-radius: 22px 22px 6px 22px; font-size: 15.5px; line-height: 1.4; letter-spacing: -.01em; }
+  .me-meta { justify-self: end; font-size: 11.5px; color: var(--text-3); margin-top: -16px; display: flex; gap: 5px; align-items: center; }
+  .bot { display: grid; grid-template-columns: 28px 1fr; gap: 12px; }
+  .bot .dot { position: relative; width: 28px; height: 28px; border-radius: 50%; }
+  .bot p { font-size: 17px; line-height: 1.4; letter-spacing: -.015em; font-weight: 480; padding-top: 2px; }
+  .choices { display: grid; gap: 10px; margin-left: 40px; }
+  .choice { display: grid; grid-template-columns: 56px 1fr 20px; gap: 14px; align-items: center; padding: 12px 14px 12px 12px; border-radius: 18px; background: var(--ink-3); border: .5px solid var(--hair); }
+  .choice .sw { position: relative; width: 56px; height: 56px; border-radius: 12px; }
+  .choice b { font-size: 16px; font-weight: 600; display: block; letter-spacing: -.01em; }
+  .choice span { font-size: 13px; color: var(--text-2); line-height: 1.35; }
+  .choice .i { color: var(--text-3); width: 18px; height: 18px; }
+  .priv { margin: 4px 0 0 40px; display: flex; gap: 8px; font-size: 12.5px; color: var(--text-3); line-height: 1.4; }
+  .priv .i { width: 15px; height: 15px; margin-top: 1px; }
+  .compose { position: absolute; left: 16px; right: 16px; bottom: 34px; height: 52px; border-radius: 26px; background: var(--ink-3); border: .5px solid var(--hair); display: flex; align-items: center; padding: 0 5px 0 18px; }
+  .compose span { flex: 1; font-size: 15px; color: var(--text-3); }
+  .compose .circle { width: 42px; height: 42px; background: var(--text); color: var(--ink); }
+  .compose .circle .i { width: 20px; height: 20px; stroke-width: 2; }
+</style></head>
+<body>
+<div class="phone">
+  <div class="aura bg" data-p="dusk" data-seed="2" data-blur=".2"></div>
+  <div class="dim"></div>
+  <div class="sb" data-time="23:12"></div>
+  <div class="mini">
+    <div class="art aura" data-p="rain" data-seed="3" data-blur=".12"></div>
+    <div><b>Grey Harbor</b><span>Heute Abend · pausiert</span></div>
+    <svg class="i f"><use href="#play"/></svg>
+  </div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="msgs">
+      <div class="me">Ich hab mich gerade getrennt. Mir geht’s echt mies. Bau mir einen Song dazu.</div>
+      <div class="me-meta"><svg class="i" style="width:12px;height:12px"><use href="#mic"/></svg>Gesprochen</div>
+      <div class="bot">
+        <div class="dot aura" data-p="self" data-seed="4" data-blur=".2"></div>
+        <p>Das tut mir leid. Willst du dich gerade reinfühlen oder eher rauskommen?</p>
+      </div>
+      <div class="choices">
+        <div class="choice"><div class="sw aura" data-p="dusk" data-seed="8" data-blur=".14" data-lines="6"></div><div><b>Reinfühlen</b><span>Langsam und nah. Ein Song über das, was war.</span></div><svg class="i"><use href="#chevr"/></svg></div>
+        <div class="choice"><div class="sw aura" data-p="morning" data-seed="3" data-blur=".14" data-lines="6"></div><div><b>Rauskommen</b><span>Mit Schwung nach vorn. Ein Song über das, was kommt.</span></div><svg class="i"><use href="#chevr"/></svg></div>
+      </div>
+      <p class="priv"><svg class="i"><use href="#lock"/></svg>Deine Stimmung bleibt in dieser Session. Sie fließt nicht in dein Musikprofil ein.</p>
+    </div>
+    <div class="compose"><span>Antworten …</span><div class="circle"><svg class="i"><use href="#mic"/></svg></div></div>
+  </div>
+  <div class="home-ind"></div>
+</div>
+<script src="../kit.js"></script>
+</body></html>

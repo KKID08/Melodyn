@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Web Learning</title>
+<meta name="size" content="1440x900@2">
+<link rel="stylesheet" href="../base.css"><link rel="stylesheet" href="../web.css">
+<style>
+  .site { height: 900px; }
+  .panel { position: absolute; left: 64px; top: 80px; width: 600px; height: 740px; border-radius: 32px; overflow: hidden; }
+  .panel .aura { inset: 0; }
+  .phone-img { position: absolute; left: 169px; top: 118px; width: 390px; height: 844px; z-index: 5; }
+  .copy { position: absolute; left: 760px; top: 130px; width: 600px; }
+  .copy h2 { font-size: 58px; font-weight: 650; letter-spacing: -.045em; line-height: 1.02; }
+  .copy h2 .serif { color: var(--text-2); font-size: 62px; }
+  .copy > p { margin-top: 22px; font-size: 18px; line-height: 1.55; color: var(--text-2); max-width: 520px; }
+  .rows { margin-top: 44px; }
+  .row { display: grid; grid-template-columns: 44px 1fr; gap: 18px; padding: 22px 0; border-top: .5px solid var(--hair-2); }
+  .row .mk { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--ink-3); }
+  .row b { font-size: 18px; font-weight: 600; letter-spacing: -.015em; display: block; }
+  .row span { font-size: 15.5px; color: var(--text-2); line-height: 1.5; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; }
+</style></head>
+<body>
+<div class="site">
+  <div class="panel"><div class="aura" data-p="self" data-seed="12" data-blur=".17" data-lines="20" data-la=".14"></div></div>
+  <div class="frame phone-img"><img src="../shots/06-taste.png"></div>
+  <div class="copy">
+    <span class="eyebrow">Dein Sound</span>
+    <h2 style="margin-top:14px">Lernt dich kennen. <span class="serif">Vergisst, was nur heute zählt.</span></h2>
+    <p>Ein trauriger Abend macht dich nicht zum Balladen-Hörer. Melodyn trennt deinen Geschmack von deiner Stimmung, und du siehst jederzeit, was es gelernt hat.</p>
+    <div class="rows">
+      <div class="row"><div class="mk"><i class="dot" style="background:var(--text)"></i></div><div><b>Dein Profil wächst mit</b><span>Likes, Skips und Favoriten formen über Wochen, was du wirklich magst.</span></div></div>
+      <div class="row"><div class="mk"><i class="dot" style="border:1.5px dashed var(--text)"></i></div><div><b>Stimmungen bleiben in der Session</b><span>Nachtfahrt, Liebeskummer, Training: gilt für jetzt und wird danach vergessen.</span></div></div>
+      <div class="row"><div class="mk"><svg class="i" style="width:20px;height:20px"><use href="#tune"/></svg></div><div><b>Deine Regeln gelten</b><span>„Nie wieder Autotune“ sagst du einmal. Melodyn hält sich daran.</span></div></div>
+    </div>
+  </div>
+</div>
+<script src="../kit.js"></script>
+</body></html>

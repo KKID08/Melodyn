@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Web Moments</title>
+<meta name="size" content="1440x900@2">
+<link rel="stylesheet" href="../base.css"><link rel="stylesheet" href="../web.css">
+<style>
+  .site { height: 900px; padding: 90px 64px 0; }
+  .top { display: grid; grid-template-columns: 1fr 440px; align-items: end; gap: 60px; margin-bottom: 56px; }
+  .top h2 { font-size: 64px; font-weight: 650; letter-spacing: -.045em; line-height: 1; }
+  .top h2 .serif { color: var(--text-2); font-size: 70px; }
+  .top p { font-size: 18px; line-height: 1.55; color: var(--text-2); }
+  .cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .card { border-radius: 26px; background: var(--ink-2); border: .5px solid var(--hair); overflow: hidden; }
+  .art { position: relative; height: 430px; overflow: hidden; border-radius: 26px 26px 0 0; }
+  .art .aura { inset: 0; }
+  .art .shade { position: absolute; inset: 0; z-index: 4; background: linear-gradient(to top, rgba(0,0,0,.5), rgba(0,0,0,0) 60%); }
+  .art .kind { position: absolute; top: 22px; left: 24px; z-index: 5; font-size: 13px; font-weight: 560; padding: 6px 12px; border-radius: 99px; background: rgba(0,0,0,.28); backdrop-filter: blur(10px); }
+  .art q { position: absolute; left: 24px; right: 24px; bottom: 24px; z-index: 5; font-size: 30px; line-height: 1.12; font-weight: 600; letter-spacing: -.03em; quotes: "„" "“"; }
+  .res { display: grid; grid-template-columns: 52px 1fr 44px; gap: 14px; align-items: center; padding: 18px 20px; }
+  .res .c { position: relative; width: 52px; height: 52px; border-radius: 9px; }
+  .res b { display: block; font-size: 16px; font-weight: 600; letter-spacing: -.01em; }
+  .res span { font-size: 13.5px; color: var(--text-3); }
+  .res .circle { width: 44px; height: 44px; background: var(--text); color: var(--ink); }
+  .res .circle .i { width: 18px; height: 18px; margin-left: 2px; }
+</style></head>
+<body>
+<div class="site">
+  <div class="top">
+    <h2>Kein Suchen. <span class="serif">Ein Satz reicht.</span></h2>
+    <p>Ein Genre, eine Situation oder ein Gefühl. Melodyn macht daraus Tempo, Stimmung und Klang und spielt nach wenigen Sekunden.</p>
+  </div>
+  <div class="cols">
+    <div class="card">
+      <div class="art"><div class="aura" data-p="night" data-seed="7" data-blur=".13" data-lines="14"></div><div class="shade"></div><span class="kind">Situation</span><q>Ich fahre nachts heim. Mach was dafür.</q></div>
+      <div class="res"><div class="c aura" data-p="tunnel" data-seed="1" data-blur=".12"></div><div><b>Amber Exit</b><span>Synthwave · 96 BPM · ruhig, nächtlich</span></div><div class="circle"><svg class="i f"><use href="#play"/></svg></div></div>
+    </div>
+    <div class="card">
+      <div class="art"><div class="aura" data-p="kitchen" data-seed="3" data-blur=".13" data-lines="14"></div><div class="shade"></div><span class="kind">Genre</span><q>90er Hip-Hop, aber nicht zu aggressiv.</q></div>
+      <div class="res"><div class="c aura" data-p="kitchen" data-seed="9" data-blur=".12"></div><div><b>Corner Store Sun</b><span>Boom Bap · 90 BPM · lässig, warm</span></div><div class="circle"><svg class="i f"><use href="#play"/></svg></div></div>
+    </div>
+    <div class="card">
+      <div class="art"><div class="aura" data-p="dusk" data-seed="8" data-blur=".13" data-lines="14"></div><div class="shade"></div><span class="kind">Gefühl</span><q>Ich hab mich getrennt. Mir geht’s mies.</q></div>
+      <div class="res"><div class="c aura" data-p="dusk" data-seed="2" data-blur=".12"></div><div><b>Zwei Tassen</b><span>Piano-Ballade · 72 BPM · nah, ehrlich</span></div><div class="circle"><svg class="i f"><use href="#play"/></svg></div></div>
+    </div>
+  </div>
+</div>
+<script src="../kit.js"></script>
+</body></html>

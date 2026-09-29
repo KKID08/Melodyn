@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Abo</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+  .top-art { position: absolute; top: 0; left: 0; right: 0; height: 430px; }
+  .top-fade { position: absolute; top: 0; left: 0; right: 0; height: 432px; background: linear-gradient(to bottom, rgba(10,10,12,0) 40%, var(--ink) 100%); z-index: 3; }
+  .close { position: absolute; top: 62px; right: 20px; width: 34px; height: 34px; background: rgba(0,0,0,.25); z-index: 10; }
+  .wm { position: absolute; top: 66px; left: 22px; z-index: 10; display: flex; align-items: center; gap: 7px; font-weight: 650; font-size: 18px; letter-spacing: -.03em; }
+  .wm svg { width: 24px; height: 24px; }
+  .copy { position: absolute; top: 232px; left: 24px; right: 24px; z-index: 5; }
+  .copy h1 { font-size: 34px; font-weight: 650; letter-spacing: -.035em; line-height: 1.04; }
+  .copy p { margin-top: 12px; font-size: 15.5px; color: var(--text-2); line-height: 1.45; }
+  .plans { position: absolute; top: 398px; left: 20px; right: 20px; display: grid; gap: 10px; }
+  .plan { display: grid; grid-template-columns: 22px 1fr auto; gap: 14px; align-items: center; padding: 15px 16px; border-radius: 16px; background: var(--ink-2); border: 1px solid var(--hair); }
+  .plan.on { border: 1.5px solid var(--text); background: var(--ink-3); }
+  .radio { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--text-3); }
+  .plan.on .radio { border: 7px solid var(--text); }
+  .plan b { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .plan b em { font-style: normal; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--text); color: var(--ink); }
+  .plan span { font-size: 13px; color: var(--text-2); }
+  .plan .p { text-align: right; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .plan .p small { display: block; font-size: 11.5px; font-weight: 450; color: var(--text-3); }
+  .feat { position: absolute; top: 666px; left: 24px; right: 24px; display: grid; gap: 6px; font-size: 13.5px; color: var(--text-2); }
+  .feat div { display: flex; gap: 8px; align-items: center; }
+  .feat .i { width: 16px; height: 16px; color: var(--text); stroke-width: 2.2; }
+  .cta { position: absolute; left: 20px; right: 20px; bottom: 58px; height: 56px; font-size: 16.5px; }
+  .fine { position: absolute; bottom: 30px; left: 0; right: 0; text-align: center; font-size: 11.5px; color: var(--text-3); }
+</style></head>
+<body>
+<div class="phone">
+  <div class="aura top-art" data-p="morning" data-seed="6" data-blur=".17" data-lines="15" data-la=".24"></div>
+  <div class="top-fade"></div>
+  <div class="sb" data-time="09:14"></div>
+  <div class="wm"><svg><use href="#logo"/></svg>melodyn</div>
+  <div class="circle close"><svg class="i" style="width:18px;height:18px"><use href="#x"/></svg></div>
+  <div class="copy"><h1>Musik, die es vorher nicht gab.</h1><p>Jeden Tag neue Songs für deinen Moment. Deine Favoriten hörst du so oft du willst.</p></div>
+  <div class="plans">
+    <div class="plan"><div class="radio"></div><div><b>Start</b><span>150 neue Songs im Monat</span></div><div class="p">7,99 €<small>pro Monat</small></div></div>
+    <div class="plan on"><div class="radio"></div><div><b>Plus <em>Beliebt</em></b><span>400 neue Songs im Monat</span></div><div class="p">14,99 €<small>pro Monat</small></div></div>
+    <div class="plan"><div class="radio"></div><div><b>Pro</b><span>1.000 neue Songs im Monat</span></div><div class="p">24,99 €<small>pro Monat</small></div></div>
+  </div>
+  <div class="feat">
+    <div><svg class="i"><use href="#check"/></svg>Favoriten und Stationen unbegrenzt hören</div>
+    <div><svg class="i"><use href="#check"/></svg>Steuerung per Sprache, auch im Auto</div>
+  </div>
+  <div class="btn-w cta">7 Tage kostenlos testen</div>
+  <div class="fine">Danach 14,99 € pro Monat. Jederzeit kündbar.</div>
+  <div class="home-ind"></div>
+</div>
+<script src="../kit.js"></script>
+</body></html>

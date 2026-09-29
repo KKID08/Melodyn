@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>CarPlay</title>
+<meta name="size" content="800x480@3">
+<link rel="stylesheet" href="../base.css">
+<style>
+  body { background: #000; }
+  .car { position: relative; width: 800px; height: 480px; background: #000; overflow: hidden; display: grid; grid-template-columns: 84px 1fr; }
+  .dock { background: #111114; display: flex; flex-direction: column; align-items: center; padding: 14px 0; gap: 14px; }
+  .dock .t { font-size: 15px; font-weight: 600; }
+  .dock .sig { font-size: 11px; color: var(--text-3); margin-top: -10px; }
+  .app { width: 54px; height: 54px; border-radius: 13px; position: relative; overflow: hidden; display: grid; place-items: center; }
+  .app .i { width: 28px; height: 28px; color: #fff; position: relative; z-index: 5; }
+  .dock .grid { margin-top: auto; width: 26px; height: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+  .dock .grid i { background: var(--text-2); border-radius: 2px; }
+  .main { position: relative; overflow: hidden; }
+  .bg { inset: -40px; opacity: .55; filter: saturate(1.3); }
+  .veil { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,.2), rgba(0,0,0,.65)); }
+  .hdr { position: absolute; top: 20px; left: 32px; right: 32px; display: flex; justify-content: space-between; align-items: center; z-index: 5; font-size: 16px; font-weight: 600; }
+  .hdr span { color: var(--text-2); font-weight: 500; font-size: 14px; }
+  .cover { position: absolute; left: 32px; top: 76px; width: 238px; height: 238px; border-radius: 14px; box-shadow: 0 20px 40px rgba(0,0,0,.5); }
+  .info { position: absolute; left: 300px; top: 92px; right: 32px; z-index: 5; }
+  .info h1 { font-size: 36px; font-weight: 650; letter-spacing: -.03em; }
+  .info p { font-size: 17px; color: var(--text-2); margin-top: 4px; }
+  .info .bar { margin-top: 26px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.2); position: relative; }
+  .info .bar i { position: absolute; inset: 0 auto 0 0; width: 34%; background: var(--text); border-radius: 3px; }
+  .info .tm { display: flex; justify-content: space-between; margin-top: 8px; font-size: 13px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .ctl { position: absolute; left: 300px; right: 32px; top: 240px; display: flex; align-items: center; justify-content: space-between; z-index: 5; }
+  .ctl .i { width: 40px; height: 40px; }
+  .ctl .play { width: 78px; height: 78px; background: var(--text); color: var(--ink); }
+  .ctl .play .i { width: 34px; height: 34px; }
+  .talk { position: absolute; left: 32px; right: 32px; bottom: 26px; height: 84px; border-radius: 22px; background: rgba(255,255,255,.12); backdrop-filter: blur(20px); border: .5px solid rgba(255,255,255,.16); display: flex; align-items: center; gap: 18px; padding: 0 12px 0 26px; z-index: 5; }
+  .talk p { flex: 1; font-size: 19px; color: var(--text-2); }
+  .talk p b { color: var(--text); font-weight: 600; }
+  .talk .circle { width: 62px; height: 62px; background: var(--text); color: var(--ink); }
+  .talk .circle .i { width: 28px; height: 28px; }
+</style></head>
+<body>
+<div class="car">
+  <div class="dock">
+    <div class="t">21:52</div><div class="sig">5G</div>
+    <div class="app" style="background:linear-gradient(160deg,#5ac8fa,#2a7df0)"><svg class="i"><use href="#car"/></svg></div>
+    <div class="app aura" data-p="self" data-seed="4" data-blur=".2"><svg class="i"><use href="#logo"/></svg></div>
+    <div class="app" style="background:linear-gradient(160deg,#5fe07a,#27b14a)"><svg class="i f" viewBox="0 0 24 24"><path d="M6.6 3.8l2.3-.5a1 1 0 0 1 1.1.6l1.2 2.9a1 1 0 0 1-.3 1.2L9.4 9.2a11 11 0 0 0 5.4 5.4l1.2-1.5a1 1 0 0 1 1.2-.3l2.9 1.2a1 1 0 0 1 .6 1.1l-.5 2.3a1.6 1.6 0 0 1-1.6 1.3C10.8 18.7 5.3 13.2 5.3 5.4a1.6 1.6 0 0 1 1.3-1.6z"/></svg></div>
+    <div class="grid"><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="main">
+    <div class="aura bg" data-p="night" data-seed="7" data-blur=".2"></div>
+    <div class="veil"></div>
+    <div class="hdr">Heimfahrt, nachts<span>noch ca. 1 Std. 36 Min. Musik geplant</span></div>
+    <div class="aura cover" data-p="tunnel" data-seed="1" data-blur=".11" data-lines="12"></div>
+    <div class="info"><h1>Tunnel Lights</h1><p>Synthwave · 98 BPM</p><div class="bar"><i></i></div><div class="tm"><span>1:02</span><span>−2:05</span></div></div>
+    <div class="ctl"><svg class="i"><use href="#down"/></svg><svg class="i f"><use href="#prev"/></svg><div class="circle play"><svg class="i f"><use href="#pause"/></svg></div><svg class="i f"><use href="#next"/></svg><svg class="i"><use href="#up"/></svg></div>
+    <div class="talk"><p>Sag einfach <b>„Hey Melodyn, etwas wacher“</b></p><div class="circle"><svg class="i"><use href="#mic"/></svg></div></div>
+  </div>
+</div>
+<script src="../kit.js"></script>
+</body></html>

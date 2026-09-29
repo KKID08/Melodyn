@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Web Pricing</title>
+<meta name="size" content="1440x920@2">
+<link rel="stylesheet" href="../base.css"><link rel="stylesheet" href="../web.css">
+<style>
+  .site { height: 920px; }
+  .head { text-align: center; margin-top: 70px; }
+  .head h2 { font-size: 62px; font-weight: 650; letter-spacing: -.045em; line-height: 1; }
+  .head h2 .serif { color: var(--graphite-2); font-size: 66px; }
+  .head p { margin-top: 18px; font-size: 18px; color: var(--graphite-2); }
+  .toggle { margin: 28px auto 0; width: max-content; display: flex; padding: 4px; border-radius: 99px; background: var(--paper-2); font-size: 14.5px; font-weight: 540; }
+  .toggle span { padding: 8px 18px; border-radius: 99px; color: var(--graphite-2); }
+  .toggle span.on { background: #fff; color: var(--graphite); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .toggle em { font-style: normal; color: #2f7d4f; margin-left: 6px; }
+  .plans { margin: 48px auto 0; width: 1180px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; align-items: stretch; }
+  .plan { position: relative; border-radius: 28px; background: #fff; padding: 32px; border: 1px solid #e2e2de; overflow: hidden; }
+  .plan h3 { font-size: 22px; font-weight: 620; letter-spacing: -.02em; }
+  .plan .who { font-size: 15px; color: var(--graphite-2); margin-top: 4px; }
+  .plan .price { margin-top: 28px; font-size: 52px; font-weight: 650; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+  .plan .price small { font-size: 16px; font-weight: 450; color: var(--graphite-2); letter-spacing: 0; margin-left: 4px; }
+  .plan .big { margin-top: 18px; font-size: 17px; font-weight: 600; }
+  .plan ul { list-style: none; margin-top: 18px; display: grid; gap: 10px; font-size: 15px; color: #3a3a3f; }
+  .plan li { display: flex; gap: 10px; align-items: center; }
+  .plan li .i { width: 17px; height: 17px; stroke-width: 2.2; }
+  .plan .btn { margin-top: 30px; height: 50px; border-radius: 99px; display: grid; place-items: center; font-weight: 600; font-size: 15.5px; border: 1px solid #d6d6d1; }
+  .plan.hot { background: var(--ink); color: var(--text); border-color: var(--ink); }
+  .plan.hot .who, .plan.hot .price small { color: var(--text-2); }
+  .plan.hot ul { color: var(--text-2); }
+  .plan.hot .btn { background: var(--text); color: var(--ink); border: 0; }
+  .plan.hot .strip { position: absolute; left: 0; right: 0; top: 0; height: 6px; }
+  .plan.hot .tag { position: absolute; top: 30px; right: 30px; font-size: 12.5px; font-weight: 600; padding: 5px 11px; border-radius: 99px; background: rgba(255,255,255,.12); }
+  .note { text-align: center; margin-top: 30px; font-size: 15px; color: var(--graphite-2); }
+  .note b { color: var(--graphite); font-weight: 600; }
+</style></head>
+<body>
+<div class="site light">
+  <nav class="nav">
+    <div class="wm"><svg><use href="#logo"/></svg>melodyn</div>
+    <ul><li>So funktioniert’s</li><li>Im Auto</li><li style="color:var(--graphite)">Preise</li><li>Für Artists</li></ul>
+    <div class="r"><a>Anmelden</a><span class="btn-w">Warteliste</span></div>
+  </nav>
+  <div class="head">
+    <h2>Zahl für neue Musik. <span class="serif">Nicht fürs Wiederhören.</span></h2>
+    <p>Jeder Tarif enthält neue Songs pro Monat. Deine Favoriten hörst du immer so oft du willst.</p>
+    <div class="toggle"><span class="on">Monatlich</span><span>Jährlich<em>2 Monate gratis</em></span></div>
+  </div>
+  <div class="plans">
+    <div class="plan"><h3>Start</h3><p class="who">Zum Reinhören</p><div class="price">7,99 €<small>/ Monat</small></div><div class="big">150 neue Songs im Monat</div>
+      <ul><li><svg class="i"><use href="#check"/></svg>Favoriten unbegrenzt</li><li><svg class="i"><use href="#check"/></svg>Steuerung per Sprache</li><li><svg class="i"><use href="#check"/></svg>3 Stationen</li></ul><div class="btn">Start wählen</div></div>
+    <div class="plan hot"><div class="aura strip" data-p="tunnel" data-seed="3" data-blur=".2"></div><span class="tag">Beliebt</span><h3>Plus</h3><p class="who">Für den Alltag und jeden Arbeitsweg</p><div class="price">14,99 €<small>/ Monat</small></div><div class="big">400 neue Songs im Monat</div>
+      <ul><li><svg class="i"><use href="#check"/></svg>Alles aus Start</li><li><svg class="i"><use href="#check"/></svg>Unbegrenzt Stationen</li><li><svg class="i"><use href="#check"/></svg>CarPlay und Android Auto</li></ul><div class="btn">7 Tage kostenlos testen</div></div>
+    <div class="plan"><h3>Pro</h3><p class="who">Für alle, bei denen immer Musik läuft</p><div class="price">24,99 €<small>/ Monat</small></div><div class="big">1.000 neue Songs im Monat</div>
+      <ul><li><svg class="i"><use href="#check"/></svg>Alles aus Plus</li><li><svg class="i"><use href="#check"/></svg>Längere Songs bis 5 Minuten</li><li><svg class="i"><use href="#check"/></svg>Songs als Datei behalten</li></ul><div class="btn">Pro wählen</div></div>
+  </div>
+  <p class="note"><b>Was zählt als neuer Song?</b> Jeder Song, den Melodyn frisch für dich komponiert. Gespeicherte Songs und Stationen nochmal hören kostet nichts.</p>
+</div>
+<script src="../kit.js"></script>
+</body></html>

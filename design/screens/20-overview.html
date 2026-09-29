@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Overview</title>
+<meta name="size" content="2000x2140@1">
+<link rel="stylesheet" href="../base.css">
+<style>
+  body { background: #0d0d10; }
+  .board { position: relative; width: 2000px; height: 2140px; padding: 110px 110px; overflow: hidden; }
+  .bgaura { position: absolute; inset: 0; opacity: .22; }
+  .head { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 70px; }
+  .head .wm { display: flex; align-items: center; gap: 12px; font-size: 30px; font-weight: 650; letter-spacing: -.03em; }
+  .head .wm svg { width: 40px; height: 40px; }
+  .head p { font-size: 20px; color: var(--text-2); }
+  .grid { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(4, 1fr); gap: 70px 60px; }
+  .dev { width: 390px; }
+  .frame { width: 390px; height: 844px; border-radius: 54px; overflow: hidden; box-shadow: 0 0 0 10px #050506, 0 0 0 11.5px #2c2c33, 0 40px 80px rgba(0,0,0,.5); }
+  .frame img { width: 390px; height: 844px; display: block; }
+  .cap { margin-top: 34px; font-size: 19px; font-weight: 600; letter-spacing: -.01em; }
+  .cap span { display: block; font-size: 15px; font-weight: 450; color: var(--text-3); margin-top: 3px; }
+</style></head>
+<body>
+<div class="board">
+  <div class="aura bgaura" data-p="self" data-seed="9" data-blur=".2" data-n="5"></div>
+  <div class="head"><div class="wm"><svg><use href="#logo"/></svg>melodyn</div><p>App-Screens · Konzept v2 · September 2026</p></div>
+  <div class="grid">
+    <div class="dev"><div class="frame"><img src="../shots/01-home.png"></div><div class="cap">Start<span>Ein Satz reicht</span></div></div>
+    <div class="dev"><div class="frame"><img src="../shots/03-listening.png"></div><div class="cap">Zuhören<span>Melodyn zeigt, was es verstanden hat</span></div></div>
+    <div class="dev"><div class="frame"><img src="../shots/02-player.png"></div><div class="cap">Player<span>Jeder Song hat sein eigenes Bild</span></div></div>
+    <div class="dev"><div class="frame"><img src="../shots/04-conversation.png"></div><div class="cap">Gespräch<span>Eine Rückfrage, dann Musik</span></div></div>
+    <div class="dev"><div class="frame"><img src="../shots/05-library.png"></div><div class="cap">Bibliothek<span>Stationen und Favoriten</span></div></div>
+    <div class="dev"><div class="frame"><img src="../shots/06-taste.png"></div><div class="cap">Dein Sound<span>Sichtbar, was Melodyn gelernt hat</span></div></div>
+    <div class="dev"><div class="frame"><img src="../shots/07-paywall.png"></div><div class="cap">Abo<span>Neue Songs pro Monat</span></div></div>
+    <div class="dev"><div class="frame"><img src="../shots/08-lockscreen.png"></div><div class="cap">Sperrbildschirm<span>Steuern, ohne die App zu öffnen</span></div></div>
+  </div>
+</div>
+<script src="../kit.js"></script>
+</body></html>

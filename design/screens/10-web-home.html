@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Web Home</title>
+<meta name="size" content="1440x900@2">
+<link rel="stylesheet" href="../base.css"><link rel="stylesheet" href="../web.css">
+<style>
+  .site { height: 900px; }
+  .glow { position: absolute; right: -260px; top: -120px; width: 1100px; height: 1100px; border-radius: 50%; opacity: .95; }
+  .glow-fade { position: absolute; inset: 0; background: radial-gradient(ellipse 60% 70% at 78% 45%, transparent 30%, var(--ink) 72%); }
+  .hero { position: absolute; left: 64px; top: 196px; width: 640px; z-index: 5; }
+  .hero h1 { font-size: 78px; font-weight: 660; letter-spacing: -.045em; line-height: .98; }
+  .hero h1 .serif { display: block; font-size: 84px; color: var(--text-2); margin-top: 6px; letter-spacing: -.02em; }
+  .hero p { margin-top: 28px; font-size: 20px; line-height: 1.5; color: var(--text-2); max-width: 520px; }
+  .form { margin-top: 36px; display: flex; gap: 10px; width: 520px; padding: 6px; border-radius: 999px; background: rgba(255,255,255,.07); border: .5px solid var(--hair-2); }
+  .form .ph { flex: 1; padding: 0 18px; display: flex; align-items: center; font-size: 16px; color: var(--text-3); }
+  .form .btn-w { padding: 15px 24px; font-size: 16px; }
+  .small { margin-top: 18px; font-size: 14px; color: var(--text-3); display: flex; gap: 18px; }
+  .small b { color: var(--text-2); font-weight: 520; }
+  .ph1 { position: absolute; left: 842px; top: 176px; width: 312px; height: 675px; transform: rotate(-4deg); opacity: .96; }
+  .ph2 { position: absolute; left: 1064px; top: 110px; width: 340px; height: 736px; }
+  .ph1.frame, .ph2.frame { border-radius: 46px; }
+</style></head>
+<body>
+<div class="site">
+  <div class="aura glow" data-p="tunnel" data-seed="3" data-blur=".17" data-lines="22" data-la=".14"></div>
+  <div class="glow-fade"></div>
+  <nav class="nav">
+    <div class="wm"><svg><use href="#logo"/></svg>melodyn</div>
+    <ul><li>So funktioniert’s</li><li>Im Auto</li><li>Preise</li><li>Für Artists</li></ul>
+    <div class="r"><a>Anmelden</a><span class="btn-w">Warteliste</span></div>
+  </nav>
+  <div class="hero">
+    <h1>Musik, die es noch nicht gab.<span class="serif">Bis du gefragt hast.</span></h1>
+    <p>Sag Melodyn, wo du bist und wie es dir geht. Melodyn komponiert den passenden Song, spielt ihn sofort und lernt mit jedem Skip dazu.</p>
+    <div class="form"><span class="ph">deine@email.de</span><span class="btn-w">Auf die Warteliste</span></div>
+    <div class="small"><span><b>Beta ab Winter 2026</b></span><span>iPhone und Android</span><span>Deutsch und Englisch</span></div>
+  </div>
+  <div class="frame ph1"><img src="../shots/03-listening.png"></div>
+  <div class="frame ph2"><img src="../shots/02-player.png"></div>
+</div>
+<script src="../kit.js"></script>
+</body></html>

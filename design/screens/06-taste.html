@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Dein Sound</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+  .head { position: absolute; top: 62px; left: 20px; right: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .hero { position: absolute; top: 116px; left: 20px; right: 20px; height: 212px; border-radius: 20px; overflow: hidden; }
+  .hero .aura { inset: 0; }
+  .hero .txt { position: absolute; left: 20px; right: 20px; bottom: 18px; z-index: 5; }
+  .hero .txt p { font-size: 21px; line-height: 1.22; font-weight: 580; letter-spacing: -.022em; text-shadow: 0 1px 16px rgba(0,0,0,.25); }
+  .hero .txt span { display: block; margin-top: 10px; font-size: 12.5px; color: rgba(255,255,255,.8); }
+  .hero .shade { position: absolute; inset: 0; z-index: 4; background: linear-gradient(to top, rgba(0,0,0,.45), transparent 70%); }
+  .blk { position: absolute; left: 20px; right: 20px; }
+  .blk .h-s { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: baseline; }
+  .blk .h-s small { font-size: 12.5px; color: var(--text-3); font-weight: 450; }
+  .g { display: grid; grid-template-columns: 112px 1fr 34px; gap: 12px; align-items: center; padding: 7px 0; font-size: 14.5px; }
+  .g .ln { height: 3px; border-radius: 2px; background: var(--ink-4); position: relative; }
+  .g .ln i { position: absolute; inset: 0 auto 0 0; border-radius: 2px; background: var(--text); }
+  .g .v { font-size: 12.5px; color: var(--text-3); text-align: right; font-variant-numeric: tabular-nums; }
+  .now { border-radius: 16px; padding: 14px 16px; background: var(--ink-2); border: .5px dashed rgba(255,255,255,.28); display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; }
+  .now b { font-size: 15px; font-weight: 580; }
+  .now span { font-size: 12.5px; color: var(--text-3); }
+  .now .btn-g { grid-row: 1 / 3; grid-column: 2; padding: 8px 14px; font-size: 13px; font-weight: 560; }
+  .rule { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-top: .5px solid var(--hair-2); font-size: 15px; }
+  .rule span { font-size: 13px; color: var(--text-2); display: inline-flex; align-items: center; gap: 4px; }
+</style></head>
+<body>
+<div class="phone">
+  <div class="sb" data-time="21:53"></div>
+  <div class="head"><div class="h-xl">Dein Sound</div><svg class="i"><use href="#tune"/></svg></div>
+  <div class="hero"><div class="aura" data-p="self" data-seed="4" data-blur=".15" data-lines="14" data-la=".2"></div><div class="shade"></div>
+    <div class="txt"><p>Nächtlich und warm, meist 90 bis 105 BPM, gern mit männlicher Stimme.</p><span>Gelernt aus 214 Reaktionen in 5 Wochen</span></div></div>
+  <div class="blk" style="top:350px">
+    <div class="h-s">Was du magst <small>Diese Woche +2 neue</small></div>
+    <div class="g"><span>Synthwave</span><div class="ln"><i style="width:78%"></i></div><span class="v">78</span></div>
+    <div class="g"><span>Boom Bap</span><div class="ln"><i style="width:64%"></i></div><span class="v">64</span></div>
+    <div class="g"><span>Lo-Fi</span><div class="ln"><i style="width:55%"></i></div><span class="v">55</span></div>
+    <div class="g"><span>Nu Jazz</span><div class="ln"><i style="width:47%"></i></div><span class="v">47</span></div>
+  </div>
+  <div class="blk" style="top:538px">
+    <div class="now"><b>Gerade: Heimfahrt, nachts</b><span>Bleibt nur für diese Session</span><div class="btn-g">Vergessen</div></div>
+  </div>
+  <div class="blk" style="top:622px">
+    <div class="h-s">Deine Regeln</div>
+    <div class="rule">Kein Autotune<span>Immer<svg class="i" style="width:16px;height:16px"><use href="#chevr"/></svg></span></div>
+    <div class="rule">Mehr Gitarren<span>Nur heute<svg class="i" style="width:16px;height:16px"><use href="#chevr"/></svg></span></div>
+  </div>
+  <nav class="tabbar">
+    <a><svg class="i"><use href="#listen"/></svg>Hören</a>
+    <a><svg class="i"><use href="#lib"/></svg>Bibliothek</a>
+    <a class="on"><svg class="i"><use href="#user"/></svg>Dein Sound</a>
+  </nav>
+  <div class="home-ind"></div>
+</div>
+<script src="../kit.js"></script>
+</body></html>

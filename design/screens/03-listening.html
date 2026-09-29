@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Listening</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+  .halo { position: absolute; left: -120px; right: -120px; top: 500px; height: 600px; border-radius: 50%; filter: saturate(1.3); opacity: .9; }
+  .fade { position: absolute; inset: 0; background: linear-gradient(to bottom, var(--ink) 0%, var(--ink) 40%, rgba(10,10,12,.2) 75%, rgba(10,10,12,.35) 100%); }
+  .top { position: absolute; top: 62px; left: 20px; right: 20px; display: flex; justify-content: space-between; align-items: center; }
+  .top .circle { width: 36px; height: 36px; background: rgba(255,255,255,.1); }
+  .live { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); font-weight: 520; }
+  .live i { width: 7px; height: 7px; border-radius: 50%; background: #ff5a4e; box-shadow: 0 0 0 4px rgba(255,90,78,.2); }
+  .said { position: absolute; top: 136px; left: 28px; right: 28px; font-size: 31px; line-height: 1.18; font-weight: 560; letter-spacing: -0.028em; }
+  .said .soft { color: var(--text-3); }
+  .said .caret { display: inline-block; width: 2.5px; height: 30px; background: var(--text); vertical-align: -4px; margin-left: 2px; border-radius: 2px; }
+  .got { position: absolute; top: 300px; left: 28px; right: 28px; }
+  .got .lab { font-size: 13px; color: var(--text-3); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .got dl { display: grid; }
+  .got dl div { display: flex; justify-content: space-between; padding: 12px 0; border-top: .5px solid var(--hair-2); font-size: 15px; }
+  .got dt { color: var(--text-2); }
+  .got dd { font-weight: 560; }
+  .got dd small { font-weight: 450; color: var(--text-3); font-size: 13px; margin-left: 6px; }
+  .wave { position: absolute; left: 28px; right: 28px; bottom: 170px; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+  .wave i { width: 3px; border-radius: 2px; background: rgba(255,255,255,.85); }
+  .stop { position: absolute; bottom: 58px; left: 50%; width: 76px; height: 76px; margin-left: -38px; background: var(--text); color: var(--ink); }
+  .stop .i { width: 26px; height: 26px; }
+  .hint { position: absolute; bottom: 30px; left: 0; right: 0; text-align: center; font-size: 12.5px; color: var(--text-2); }
+</style></head>
+<body>
+<div class="phone">
+  <div class="aura halo" data-p="night" data-seed="11" data-blur=".18"></div>
+  <div class="fade"></div>
+  <div class="sb" data-time="21:46"></div>
+  <div class="top">
+    <div class="circle"><svg class="i" style="width:18px;height:18px"><use href="#x"/></svg></div>
+    <span class="live"><i></i>Melodyn hört zu</span>
+    <div style="width:36px"></div>
+  </div>
+  <p class="said">Ich fahre nachts zwei Stunden nach Hause. <span class="soft">Mach was dafür</span><span class="caret"></span></p>
+  <div class="got">
+    <div class="lab">Verstanden</div>
+    <dl>
+      <div><dt>Situation</dt><dd>Nachtfahrt</dd></div>
+      <div><dt>Stimmung</dt><dd>ruhig, gleichmäßig</dd></div>
+      <div><dt>Länge</dt><dd>ca. 2 Stunden</dd></div>
+      <div><dt>Deine Regel</dt><dd>kein Autotune<small>immer</small></dd></div>
+    </dl>
+  </div>
+  <div class="wave" id="wave"></div>
+  <div class="circle stop"><svg class="i f"><use href="#stop"/></svg></div>
+  <div class="hint">Loslassen zum Senden</div>
+</div>
+<script>
+  const w = document.getElementById('wave');
+  for (let k = 0; k < 46; k++) {
+    const x = k / 45, env = Math.sin(Math.PI * x);
+    const h = 6 + env * 48 * (0.35 + 0.65 * Math.abs(Math.sin(k * 1.7) * Math.cos(k * 0.45)));
+    w.insertAdjacentHTML('beforeend', `<i style="height:${h.toFixed(1)}px;opacity:${(0.35 + env * 0.65).toFixed(2)}"></i>`);
+  }
+</script>
+<script src="../kit.js"></script>
+</body></html>

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Home</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+  .head { position: absolute; top: 66px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .head p { font-size: 15px; color: var(--text-2); margin-bottom: 6px; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; position: relative; }
+  .orbwrap { position: absolute; top: 172px; left: 50%; width: 250px; height: 250px; margin-left: -125px; }
+  .glow { position: absolute; inset: -60px; border-radius: 50%; filter: blur(50px); opacity: .55; }
+  .orb { position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 .5px rgba(255,255,255,.2) inset; }
+  .orb-label { position: absolute; top: 444px; left: 0; right: 0; text-align: center; }
+  .orb-label b { font-size: 15px; font-weight: 580; display: block; }
+  .orb-label span { font-size: 13px; color: var(--text-3); }
+  .sec { position: absolute; top: 520px; left: 24px; right: 0; }
+  .sec-h { display: flex; justify-content: space-between; align-items: baseline; padding-right: 24px; margin-bottom: 12px; }
+  .sec-h a { font-size: 13px; color: var(--text-3); }
+  .row { display: flex; gap: 12px; }
+  .card { width: 148px; flex: none; }
+  .card .art { position: relative; width: 148px; height: 148px; border-radius: 12px; }
+  .card b { display: block; font-size: 14px; font-weight: 580; margin-top: 9px; letter-spacing: -.01em; }
+  .card span { font-size: 12.5px; color: var(--text-3); }
+</style></head>
+<body>
+<div class="phone">
+  <div class="sb" data-time="21:41"></div>
+  <div class="head">
+    <div><p>Guten Abend, Elias</p><div class="h-xl">Wonach ist dir?</div></div>
+    <div class="avatar aura" data-p="self" data-seed="2" data-blur=".2"></div>
+  </div>
+  <div class="orbwrap">
+    <div class="glow aura" data-p="self" data-seed="4" data-blur=".22"></div>
+    <div class="orb aura" data-p="self" data-seed="4" data-blur=".14" data-lines="11" data-la=".28"></div>
+  </div>
+  <div class="orb-label"><b>Tippen und einfach sagen</b><span>„Was Ruhiges für die Heimfahrt“</span></div>
+  <div class="sec">
+    <div class="sec-h"><div class="h-s">Weiter hören</div><a>Alle</a></div>
+    <div class="row">
+      <div class="card"><div class="art aura" data-p="night" data-seed="7" data-blur=".12" data-lines="9"></div><b>Heimfahrt, nachts</b><span>Gestern · 31 Songs</span></div>
+      <div class="card"><div class="art aura" data-p="kitchen" data-seed="3" data-blur=".12" data-lines="9"></div><b>Sonntags kochen</b><span>Nu Jazz, warm</span></div>
+      <div class="card"><div class="art aura" data-p="focus" data-seed="5" data-blur=".12" data-lines="9"></div><b>Deep Work</b><span>Instrumental</span></div>
+    </div>
+  </div>
+  <nav class="tabbar">
+    <a class="on"><svg class="i"><use href="#listen"/></svg>Hören</a>
+    <a><svg class="i"><use href="#lib"/></svg>Bibliothek</a>
+    <a><svg class="i"><use href="#user"/></svg>Dein Sound</a>
+  </nav>
+  <div class="home-ind"></div>
+</div>
+<script src="../kit.js"></script>
+</body></html>

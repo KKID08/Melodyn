@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Lockscreen</title>
+<link rel="stylesheet" href="../base.css">
+<style>
+  .wall { inset: -40px; filter: saturate(1.25) brightness(.8); }
+  .date { position: absolute; top: 96px; left: 0; right: 0; text-align: center; font-size: 19px; font-weight: 560; color: rgba(255,255,255,.85); }
+  .time { position: absolute; top: 116px; left: 0; right: 0; text-align: center; font-size: 104px; font-weight: 650; letter-spacing: -.04em; line-height: 1; color: rgba(255,255,255,.92); }
+  .lock { position: absolute; top: 58px; left: 50%; margin-left: -9px; width: 18px; height: 18px; color: rgba(255,255,255,.9); stroke-width: 2; }
+  .np { position: absolute; left: 12px; right: 12px; top: 486px; border-radius: 26px; padding: 16px; background: rgba(30,30,40,.42); backdrop-filter: blur(30px) saturate(1.4); border: .5px solid rgba(255,255,255,.14); }
+  .np .row1 { display: grid; grid-template-columns: 52px 1fr 26px; gap: 12px; align-items: center; }
+  .np .art { position: relative; width: 52px; height: 52px; border-radius: 10px; }
+  .np b { display: block; font-size: 16px; font-weight: 600; }
+  .np span { font-size: 13px; color: rgba(255,255,255,.7); }
+  .np .bar { margin-top: 16px; display: grid; grid-template-columns: 36px 1fr 36px; gap: 8px; align-items: center; font-size: 11px; color: rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
+  .np .bar .t { height: 5px; border-radius: 3px; background: rgba(255,255,255,.25); position: relative; }
+  .np .bar .t i { position: absolute; inset: 0 auto 0 0; width: 22%; border-radius: 3px; background: rgba(255,255,255,.95); }
+  .np .ctl { margin-top: 12px; display: flex; justify-content: space-around; align-items: center; }
+  .np .ctl .i { width: 30px; height: 30px; }
+  .np .ctl .big { width: 38px; height: 38px; }
+  .np .note { margin-top: 12px; padding-top: 12px; border-top: .5px solid rgba(255,255,255,.14); display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: rgba(255,255,255,.75); }
+  .np .note .pill { display: inline-flex; gap: 6px; align-items: center; padding: 7px 12px; border-radius: 99px; background: rgba(255,255,255,.9); color: #111; font-weight: 600; font-size: 13px; }
+  .np .note .pill .i { width: 15px; height: 15px; stroke-width: 2; }
+  .qa { position: absolute; bottom: 44px; width: 50px; height: 50px; border-radius: 50%; background: rgba(20,20,26,.45); backdrop-filter: blur(20px); display: grid; place-items: center; }
+  .qa .i { width: 22px; height: 22px; }
+</style></head>
+<body>
+<div class="phone">
+  <div class="aura wall" data-p="tunnel" data-seed="5" data-blur=".2" data-lines="18" data-la=".12"></div>
+  <div class="sb" data-time="Telekom"></div>
+  <svg class="i lock"><use href="#lock"/></svg>
+  <div class="date">Dienstag, 29. September</div>
+  <div class="time">21:58</div>
+  <div class="np">
+    <div class="row1"><div class="art aura" data-p="tunnel" data-seed="1" data-blur=".12" data-lines="7"></div><div><b>Tunnel Lights</b><span>Melodyn · Heimfahrt, nachts</span></div><svg class="i"><use href="#airplay"/></svg></div>
+    <div class="bar"><span>0:41</span><div class="t"><i></i></div><span>−2:26</span></div>
+    <div class="ctl"><svg class="i"><use href="#down"/></svg><svg class="i f"><use href="#prev"/></svg><svg class="i f big"><use href="#pause"/></svg><svg class="i f"><use href="#next"/></svg><svg class="i"><use href="#up"/></svg></div>
+    <div class="note"><span>Nächster Song ist fertig</span><span class="pill"><svg class="i"><use href="#mic"/></svg>Sag was</span></div>
+  </div>
+  <div class="qa" style="left:46px"><svg class="i"><use href="#flash"/></svg></div>
+  <div class="qa" style="right:46px"><svg class="i"><use href="#cam"/></svg></div>
+  <div class="home-ind"></div>
+</div>
+<script src="../kit.js"></script>
+</body></html>
