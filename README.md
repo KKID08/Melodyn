@@ -18,6 +18,13 @@ Voice-first Musikstream: Du sagst, wonach dir ist, Melodyn erzeugt passende Song
 3. Die App baut daraus den Musik-Prompt und `api/compose.js` bestellt den Song bei **Lyria 3.5** (voll, ca. 3 Min.) oder **Lyria Clip** (30 s).
 4. Die MP3 läuft im Player. Während sie läuft, wird der nächste Song vorbereitet und im Takt übergeblendet (ohne DJ-Ansage). Die DJ-Stimme kommt nur bei einem neuen Wunsch oder Richtungswechsel.
 
+Was die App mitdenkt:
+- **Wartezeit:** Erst ein 30-Sekunden-Clip plus DJ-Ansage, der volle Song übernimmt im Takt. Die Einstellungen zeigen die gemessene „Zeit bis Musik“.
+- **Kosten:** Der nächste Song wird erst nach 15 Sekunden Hören geplant. So fließen schnelles Skippen und „Nicht mein Ding“ noch ein, und bei einem Richtungswechsel ist nichts umsonst bezahlt. Gespeicherte Songs laufen kostenlos der Reihe nach, mit denselben Übergängen.
+- **Zuhören:** Laufende Musik wird leiser, solange Melodyn zuhört.
+- **Stabilität:** Überlastet Google kurz (Fehler 5xx), versucht die App es einmal automatisch neu.
+- **Tastatur (Desktop):** Leertaste Play/Pause, Pfeiltasten Skip/Zurück, Esc schließt.
+
 Der Google-Schlüssel liegt nur auf dem Server (Vercel). Im Browser und im Repo taucht er nie auf.
 
 ## Auf GitHub Pages nutzen

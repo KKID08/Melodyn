@@ -744,3 +744,21 @@ body.app-live .phone.real { --top: calc(env(safe-area-inset-top, 0px) + 10px); -
   body.app-live #appmode { padding: 0; }
 }
 #pnexttxt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ================= Polish pass ================= */
+/* Desktop: the phone stays in view while the call log grows */
+@media (min-width: 901px) {
+  body.app-live #appmode { align-items: start; }
+  body.app-live .stage { position: sticky; top: 24px; }
+  body.app-live .panel { padding-top: 12px; }
+}
+/* Toasts wrap long messages and can carry one action */
+.toast { white-space: normal; text-align: left; line-height: 1.35; border-radius: 18px; width: max-content; max-width: calc(100% - 32px); }
+.toast.act { pointer-events: auto; padding-right: 6px; }
+.toast button { flex: none; margin-left: 4px; padding: 7px 13px; border-radius: 99px; background: var(--text); color: var(--ink); font-size: 13px; font-weight: 600; }
+/* Orb glow scales with the orb on short screens instead of covering the greeting */
+.orbwrap .glow { inset: -24%; -webkit-mask-image: radial-gradient(closest-side, #000 45%, transparent 100%); mask-image: radial-gradient(closest-side, #000 45%, transparent 100%); }
+/* Player: extra height is shared above the cover and above the steer field */
+#s-player > .pcover { margin-top: max(clamp(12px, 3cqh, 28px), calc((100cqh - 800px) / 2)); }
+/* Keyboard focus is visible, pointer taps stay clean */
+button:focus-visible { outline: 2px solid rgba(255,255,255,.7); outline-offset: 2px; }

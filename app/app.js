@@ -146,7 +146,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     taste: store.get('taste', {}), rules: store.get('rules', []), reactions: store.get('reactions', 0), liked: new Set(),
     settings: Object.assign({ len: 'full', pregen: true, quick: true, dj: true, limit: 25, code: '', key: '' }, store.get('settings', {})),
     total: store.get('costs', { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }),
-    sess: { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], audioSec: 0, genSec: 0 },
+    sess: { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], firstMs: [], audioSec: 0, genSec: 0 },
     day: store.get('day', { date: '', count: 0 }),
     tab: 'home', libseg: 'songs', talkMode: null, limitOk: false,
   };
@@ -156,12 +156,16 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   const saveState = () => { store.set('taste', S.taste); store.set('rules', S.rules); store.set('reactions', S.reactions); store.set('settings', S.settings); store.set('costs', S.total); store.set('day', S.day); store.set('stations', S.stations.slice(0, 8)); };
 
   // ------------------------------------------------------------ toast + log + costs
-  let toastT;
-  function toast(msg, ok = true) {
+  let toastT, toastFn = null;
+  function toast(msg, ok = true, action = null) {
     $('#toasttxt').textContent = msg;
     $('#toast svg').style.display = ok ? '' : 'none';
+    const b = $('#toastact');
+    b.hidden = !action; b.textContent = action ? action.label : '';
+    toastFn = action ? action.fn : null;
+    $('#toast').classList.toggle('act', !!action);
     $('#toast').classList.add('on');
-    clearTimeout(toastT); toastT = setTimeout(() => $('#toast').classList.remove('on'), 2800);
+    clearTimeout(toastT); toastT = setTimeout(() => $('#toast').classList.remove('on'), action ? 6000 : Math.min(6000, 2200 + msg.length * 35));
   }
   function log(html, detail, err) {
     const ul = $('#calllog');
@@ -183,13 +187,15 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     const s = S.sess, t = S.total;
     const sum = s.lyria + s.gemini, tsum = t.lyria + t.gemini;
     const avg = s.genMs.length ? s.genMs.reduce((a, b) => a + b, 0) / s.genMs.length / 1000 : 0;
+    const firstAvg = s.firstMs.length ? s.firstMs.reduce((a, b) => a + b, 0) / s.firstMs.length / 1000 : 0;
     // Music cost per hour of freshly generated audio (skips not included), plus Gemini share
     const perHour = s.genSec > 0 ? (s.lyria + s.gemini) / (s.genSec / 3600) : (S.settings.len === 'clip' ? PRICE.clip * 120 : PRICE.full * 20.3);
     const html = `<div class="big"><b>${usd(sum)}</b><span>diese Sitzung<br>${usd(tsum)} insgesamt</span></div>
       <dl>
         <dt>Songs von Lyria</dt><dd>${s.songs + s.clips} · ${usd(s.lyria)}</dd>
         <dt>Gemini (Zuhören, Prompt)</dt><dd>${s.calls} · ${usd(s.gemini, 4)}</dd>
-        <dt>Ø Wartezeit pro Song</dt><dd>${avg ? avg.toFixed(0) + ' s' : '–'}</dd>
+        <dt>Ø Zeit bis Musik</dt><dd>${firstAvg ? firstAvg.toFixed(1).replace('.', ',') + ' s' : '–'}</dd>
+        <dt>Ø Rechenzeit pro Song</dt><dd>${avg ? avg.toFixed(0) + ' s' : '–'}</dd>
         <dt>Pro Stunde neue Musik${s.genSec ? '' : ' (geschätzt)'}</dt><dd>≈ ${usd(perHour)}</dd>
         <dt>Erzeugte Musik</dt><dd>${fmt(s.genSec)} Min.</dd>
         <dt>Heute erzeugt</dt><dd>${S.day.count} / ${S.settings.limit}</dd>
@@ -224,13 +230,22 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   }
   // Direct mode: no server of our own (GitHub Pages, local file) or the user brought a key
   const DIRECT = () => !!S.settings.key || /github\.io$/.test(location.hostname) || location.protocol === 'file:';
-  async function google(model, body) {
+  async function google(model, body, attempt = 0) {
     if (!S.settings.key) { openKey(); throw new ApiError('Trag zuerst deinen Google API-Schlüssel ein.', 'nokey'); }
     let r;
     try {
       r = await fetch(`${API}/${model}:generateContent`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': S.settings.key }, body: JSON.stringify(body) });
-    } catch { throw new ApiError('Keine Verbindung zu Google. Bist du online?', 'net'); }
+    } catch {
+      if (attempt < 1 && navigator.onLine !== false) { await sleep(1500); return google(model, body, attempt + 1); }
+      throw new ApiError('Keine Verbindung zu Google. Bist du online?', 'net');
+    }
     if (r.ok) return r.json();
+    // Overloaded or hiccup on Google's side: one quiet retry before bothering the listener
+    if ((r.status === 500 || r.status === 502 || r.status === 503 || r.status === 504) && attempt < 1) {
+      log(`<b>Google</b> meldet ${r.status}, neuer Versuch`, '', true);
+      await sleep(1500);
+      return google(model, body, attempt + 1);
+    }
     let m = '';
     try { m = (await r.json()).error.message || ''; } catch { /* not json */ }
     if (/api key not valid|api_key_invalid|api key expired/i.test(m)) { openKey(true); throw new ApiError('Google akzeptiert den Schlüssel nicht. Trag ihn neu ein.', 'key'); }
@@ -381,6 +396,27 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     } catch { /* no audio */ }
   }
 
+  // How long from "wish sent" to the first thing the listener hears (DJ or music)
+  let wishT0 = 0;
+  function wishSent() { wishT0 = performance.now(); }
+  function heard() {
+    if (!wishT0) return;
+    const ms = performance.now() - wishT0; wishT0 = 0;
+    S.sess.firstMs.push(ms); renderCosts();
+    log(`<b>Erster Ton</b> ${(ms / 1000).toFixed(1)} s nach dem Wunsch`);
+  }
+  // Music gets quiet while Melodyn listens, so the microphone hears the voice and not the song
+  let duckT;
+  function duck(on) {
+    clearInterval(duckT);
+    const target = on ? 0.18 : 1, step = on ? -0.06 : 0.05;
+    duckT = setInterval(() => {
+      const v = audio.volume + step;
+      audio.volume = on ? Math.max(target, v) : Math.min(target, v);
+      if (audio.volume === target) clearInterval(duckT);
+    }, 30);
+  }
+
   // ------------------------------------------------------------ screens
   function isOn(id) { return $('#' + id).classList.contains('on'); }
   function setOn(id, on) { $('#' + id).classList.toggle('on', on); syncChrome(); }
@@ -481,8 +517,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     if (S.next === to) { S.next = null; S.nextState = 'none'; }
     S.cur = to;
     paintNow(to); renderNow(); mediaSession(to);
-    if (S.session) S.session.title = to.title;
-    prepareNext();
+    if (to.replay) prepQueue(to);
+    else { if (S.session) S.session.title = to.title; armNext(to); }
     if (S.tab === 'lib') renderLib();
   }
   function mixPos(m) {
@@ -527,12 +563,36 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     m.to._buf = null;
   }
   // Where the current track is heading: the full version of a preview, otherwise the prepared next song
-  function mixTarget(c) { return c.preview ? c.full : S.next; }
+  function mixTarget(c) { return c.preview ? c.full : c.replay ? queueNext(c) : S.next; }
+  // Playing from the saved songs: go through them in order, free of charge, with the same transitions
+  const repCache = new Map();
+  function asReplay(song) {
+    let r = repCache.get(song.id);
+    if (!r) { r = Object.assign({}, song, { replay: true, url: song.url || URL.createObjectURL(song.blob) }); repCache.set(song.id, r); }
+    return r;
+  }
+  function queueNext(c) {
+    if (!S.queue || !c || !c.replay) return null;
+    const list = S.queue.list, i = list.findIndex(x => x.id === c.id);
+    return i >= 0 && list[i + 1] ? asReplay(list[i + 1]) : null;
+  }
+  function prepQueue(c) { const n = queueNext(c); if (n) prepMix(c, n); }
+  // The next song is planned once the listener has heard a bit of this one, so a quick skip or
+  // "not my thing" still shapes it, and nothing is paid for if they change direction right away
+  function armNext(song) {
+    S.nextToken++; S.next = null; S.nextPromise = null; S.nextTitle = '';
+    S.armed = S.settings.pregen && S.session ? song : null;
+    S.nextState = S.armed ? 'armed' : 'none';
+    renderNext();
+  }
 
   function setSong(song, { replay = false, djUrl = null, noPregen = false } = {}) {
     abortMix();
+    clearInterval(duckT); audio.volume = 1;
     if (S.cur && S.cur !== song && !S.cur.replay && !S.cur.preview) S.history.push(S.cur);
-    S.cur = replay ? Object.assign({}, song, { replay: true }) : song;
+    if (replay && !song.replay) song = asReplay(song);
+    replay = !!song.replay;
+    S.cur = song;
     S.composing = null;
     audio.src = song.url;
     audio.currentTime = 0;
@@ -541,7 +601,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     mediaSession(S.cur);
     if (djUrl) playDj(djUrl).then(() => { if (S.cur === song && !S.composing) setPlaying(true); });
     else setPlaying(true);
-    if (!replay && !song.preview) { S.session && (S.session.title = song.title); if (!noPregen) prepareNext(); }
+    if (replay) { S.armed = null; prepQueue(song); }
+    else if (!song.preview) { S.session && (S.session.title = song.title); if (!noPregen) armNext(song); }
     if (S.tab === 'lib') renderLib();
   }
   function mediaSession(s) {
@@ -565,7 +626,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     $('#pgenre').textContent = c ? (c.error ? c.error : `${c.spec.genre_de} · ${c.spec.tempo_bpm} BPM · „${c.title}“`) : `${s.spec.genre_de} · ${s.spec.tempo_bpm} BPM`;
     $('#pstation').textContent = s.station;
     $('#psub').textContent = c ? (c.waitFull ? 'Die ganze Version ist gleich fertig' : 'Melodyn komponiert für dich') : s.replay ? 'Aus deiner Bibliothek · kostet nichts' : s.preview ? 'Vorschau · die ganze Version kommt gleich' : `für dich komponiert · ${(s.genMs / 1000).toFixed(0)} s Rechenzeit`;
-    const saved = S.cur && S.library.some(x => x.id === S.cur.id);
+    const saved = S.cur && (S.cur.preview ? (S.cur.wantSave || (S.cur.full && S.library.some(x => x.id === S.cur.full.id))) : S.library.some(x => x.id === S.cur.id));
     $('#paddicon').setAttribute('href', saved ? '#added' : '#add');
     $('#pup').classList.toggle('on', !!(S.cur && S.liked.has(S.cur.id)) && !c);
     $('#pcover').classList.toggle('composing', !!c && !c.error);
@@ -615,9 +676,15 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     }
     if (S.composing) { t.innerHTML = S.composing.error ? 'Tippe unten und versuch es nochmal' : 'Der erste Song braucht einen Moment'; return; }
     if (!S.cur) { t.textContent = ''; return; }
-    if (S.cur.replay) { t.textContent = 'Wiederhören aus der Bibliothek · kostenlos'; el.classList.add('ready'); return; }
-    if (!S.settings.pregen) { t.textContent = 'Vorbereiten ist aus · nächster Song startet beim Skip'; return; }
-    if (S.nextState === 'working') t.innerHTML = `Als Nächstes: <b>${esc(S.nextTitle || 'neuer Song')}</b> · wird komponiert`;
+    if (S.cur.replay) {
+      const n = queueNext(S.cur);
+      if (n) t.innerHTML = `Als Nächstes: <b>${esc(n.title)}</b> · gespeichert, kostenlos`;
+      else t.textContent = 'Aus deiner Bibliothek · kostenlos';
+      el.classList.add('ready'); return;
+    }
+    if (!S.settings.pregen) { t.textContent = 'Vorbereiten aus · Skip startet neuen Song'; return; }
+    if (S.nextState === 'armed') t.textContent = 'Nächster Song wird gleich geplant';
+    else if (S.nextState === 'working') t.innerHTML = `Als Nächstes: <b>${esc(S.nextTitle || 'neuer Song')}</b> · wird komponiert`;
     else if (S.nextState === 'ready' && S.next) { t.innerHTML = `Als Nächstes: <b>${esc(S.next.title)}</b> · bereit`; el.classList.add('ready'); }
     else if (S.nextState === 'error') t.textContent = 'Nächster Song kommt beim Skip';
     else t.textContent = '';
@@ -635,20 +702,30 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     } else Object.assign(S.session, { spec: res.spec, palette: res.palette || S.session.palette });
     const st = { station: S.session.station, palette: S.session.palette, spec: S.session.spec };
     S.stations = [st, ...S.stations.filter(x => x.station !== st.station)].slice(0, 8);
-    saveState(); renderTaste(false); renderRecent();
+    saveState(); renderTaste(false); renderRecent(); paintOrb();
   }
-  function overLimit() {
+  // The orb on the home screen takes on the colours of the current moment
+  let orbPal = 'self';
+  function paintOrb() {
+    const pal = S.session ? S.session.palette || 'self' : 'self';
+    if (pal === orbPal) return;
+    orbPal = pal;
+    paint($('#orb .glow'), pal, '4', { blur: 0.22 });
+    paint($('#orb .orb'), pal, '4', { blur: 0.14, lines: 11, la: 0.28 });
+  }
+  function overLimit(retry) {
     if (S.day.count < S.settings.limit || S.limitOk) return false;
-    toast(`Tageslimit von ${S.settings.limit} Songs erreicht. In den Einstellungen erhöhen.`, false);
+    toast(`Tageslimit von ${S.settings.limit} Songs erreicht`, false, retry ? { label: 'Trotzdem', fn: () => { S.limitOk = true; retry(); } } : null);
     return true;
   }
   let composeToken = 0;
   // New wish or change of direction: DJ + 30 s clip first, full song takes over when ready
-  async function startSong(res, { delayOpen = 0, dj: withDj = true } = {}) {
+  async function startSong(res, opts = {}) {
+    const { delayOpen = 0, dj: withDj = true } = opts;
     applyResult(res);
-    if (overLimit()) return;
+    if (overLimit(() => startSong(res, Object.assign({}, opts, { delayOpen: 0 })))) return;
     const token = ++composeToken;
-    S.nextToken++; S.next = null; S.nextPromise = null; S.nextState = 'none';
+    S.nextToken++; S.next = null; S.nextPromise = null; S.nextState = 'none'; S.armed = null; S.queue = null;
     stopDj();
     const quick = S.settings.len === 'full' && S.settings.quick;
     const t0 = performance.now();
@@ -677,7 +754,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
       if (token !== composeToken) return;
       if (clip) {
         clip.preview = true; clip.fullP = fullP; clip.fullT0 = t0;
-        fullP.then(f => { clip.full = f; if (S.cur === clip) renderNext(); prepMix(clip, f); }, () => { clip.fullError = true; if (S.cur === clip) renderNext(); });
+        fullP.then(f => { clip.full = f; if (clip.wantSave) keep(f, true); if (S.cur === clip) { renderNext(); renderNow(); } prepMix(clip, f); }, () => { clip.fullError = true; if (S.cur === clip) renderNext(); });
         setSong(clip);
         return;
       }
@@ -730,9 +807,23 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     if (S.composing && !S.composing.error) return;
     if (mix) { const m = abortMix(); if (!m.adopted) { setSong(m.to); return; } }
     if (S.cur && S.cur.preview && reason !== 'dislike') return handoff(S.cur);
+    stopDj();
+    // Saved songs play on in order and cost nothing
+    const q = S.cur && S.cur.replay ? queueNext(S.cur) : null;
+    if (q) {
+      const c = S.cur;
+      if (reason === 'skip' && c.mixTo && c.mixTo.to === q && !document.hidden && !audio.paused) {
+        const qp = Mix.quickPlan(c.mixTo.ia, c.mixTo.ib, audio.currentTime);
+        if (qp && runMix(c, qp)) return;
+      }
+      setSong(q);
+      return;
+    }
+    if (S.cur && S.cur.replay && S.queue) { S.queue = null; if (!S.session) { toast('Das war dein letzter gespeicherter Song'); return; } }
     if (!S.session) { if (S.cur) toast('Sag Melodyn zuerst, wonach dir ist', false); return; }
     if (reason === 'skip' && S.cur && !S.cur.replay) feedback('skip');
-    stopDj();
+    // "Not my thing": a song planned before this reaction would be more of the same
+    if (reason === 'dislike') { S.nextToken++; S.next = null; S.nextPromise = null; S.nextState = 'none'; S.armed = null; }
     if (S.next && S.nextState === 'ready') {
       const n = S.next, c = S.cur;
       // Skip with the next song already analysed: short echo-out on the next beat instead of a hard cut
@@ -743,7 +834,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
       setSong(n);
       return;
     }
-    if (overLimit()) return;
+    if (overLimit(() => nextSong(reason))) return;
     const token = ++composeToken;
     if (S.nextState === 'working' && S.nextPromise) {
       S.composing = { title: S.nextTitle || 'Nächster Song', station: S.session.station, palette: S.session.palette, seed: 'n' + token, spec: S.session.spec, t0: performance.now(), expect: 40 };
@@ -771,6 +862,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     if (audio.currentTime > 5 || !S.history.length) { audio.currentTime = 0; return; }
     const p = S.history.pop();
     const cur = S.cur; S.cur = null;
+    S.queue = null;
     setSong(p, { replay: true });
     S.history.push(cur);
   }
@@ -796,16 +888,29 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     nextSong('dislike');
   }
   async function save() {
-    const s = S.cur; if (!s || S.composing) return;
+    let s = S.cur; if (!s || S.composing) return;
+    // During the preview clip the listener means the song, so the full version is what gets saved
+    if (s.preview) {
+      if (s.full) s = s.full;
+      else {
+        s.wantSave = !s.wantSave;
+        if (s.wantSave) feedback('save');
+        toast(s.wantSave ? 'Wird gespeichert, sobald die ganze Version da ist' : 'Wird doch nicht gespeichert');
+        pop('#padd'); renderNow(); return;
+      }
+    }
     const i = S.library.findIndex(x => x.id === s.id);
     if (i >= 0) { S.library.splice(i, 1); await DB.del(s.id); toast('Aus Bibliothek entfernt'); }
-    else {
-      const rec = { id: s.id, title: s.title, station: s.station, palette: s.palette, seed: s.seed, spec: s.spec, lyrics: s.lyrics, blob: s.blob, dur: audio.duration || 0, created: Date.now(), url: s.url };
-      S.library.unshift(rec); feedback('save');
-      const ok = await DB.put(rec);
-      toast(ok ? 'In Bibliothek gespeichert' : 'Gespeichert, bleibt aber nur bis zum Neuladen');
-    }
+    else { feedback('save'); await keep(s); }
     pop('#padd'); renderNow();
+  }
+  async function keep(s, quiet) {
+    if (S.library.some(x => x.id === s.id)) return;
+    const rec = { id: s.id, title: s.title, station: s.station, palette: s.palette, seed: s.seed, spec: s.spec, lyrics: s.lyrics, blob: s.blob, dur: s.dur || s.blob.size * 8 / 192000, created: Date.now(), url: s.url };
+    S.library.unshift(rec);
+    const ok = await DB.put(rec);
+    if (!quiet || !ok) toast(ok ? 'In Bibliothek gespeichert' : 'Gespeichert, bleibt aber nur bis zum Neuladen');
+    if (S.tab === 'lib') renderLib();
   }
   function pop(sel) { const b = $(sel); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
 
@@ -935,8 +1040,9 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   async function listen() {
     const id = ++listenId;
     unlockAudio();
+    duck(true);
     try { await micStart(); }
-    catch (e) { toast(e.message, false); openTalk('solo'); return; }
+    catch (e) { duck(false); toast(e.message, false); openTalk('solo'); return; }
     paint($('#halo'), 'self', 'halo' + id, { blur: 0.18, fade: false });
     $('#halo').style.transform = '';
     $('#said').innerHTML = '<span class="w in" style="color:var(--text-3)">Sprich jetzt …</span>';
@@ -965,9 +1071,9 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     });
     if (id !== listenId) return;
     const clip = await Rec.stop();
-    if (clip) chime();
+    if (clip) { chime(); wishSent(); }
     bars.forEach(b => { b.style.height = '4px'; });
-    if (!clip) { setOn('s-listen', false); toast('Ich habe nichts gehört. Nochmal?', false); return; }
+    if (!clip) { duck(false); setOn('s-listen', false); toast('Ich habe nichts gehört. Nochmal?', false); return; }
     $('#livelabel').innerHTML = 'Melodyn versteht …';
     $('#listenhint').textContent = 'Gemini hört sich deine Aufnahme an';
     $('#stopbtn').style.visibility = 'hidden';
@@ -976,6 +1082,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     try { res = await understand({ mode: 'request', audio: { mime: clip.mime, data: clip.data } }); }
     catch (e) {
       if (id !== listenId) return;
+      duck(false); wishT0 = 0;
       $('#said').innerHTML = `<span class="w in" style="font-size:22px">${esc(e.message)}</span>`;
       $('#livelabel').textContent = 'Hat nicht geklappt';
       $('#listenhint').textContent = 'Schließen mit ✕ oben links';
@@ -983,6 +1090,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     }
     if (id !== listenId) return;
     if (!String(res.transcript || '').trim()) {
+      duck(false); wishT0 = 0;
       $('#said').innerHTML = '<span class="w in" style="font-size:24px">Ich habe dich nicht richtig verstanden. Magst du es nochmal sagen?</span>';
       $('#livelabel').textContent = 'Nicht verstanden';
       $('#listenhint').textContent = 'Schließen mit ✕ und nochmal auf die Kugel tippen';
@@ -1009,6 +1117,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     $('#halo').style.transform = 'translateY(-160px) scale(1.2)';
     await sleep(300);
     if (res.ask) {
+      duck(false); wishT0 = 0;
       setOn('s-listen', false);
       openTalk('solo', { silent: true });
       addMeMsg(res.transcript || '…', true);
@@ -1020,7 +1129,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
       setOn('s-listen', false);
     }
   }
-  function cancelListen() { listenId++; Rec.cancel(); if (sendNow) sendNow(); setOn('s-listen', false); }
+  function cancelListen() { listenId++; Rec.cancel(); if (sendNow) sendNow(); duck(false); setOn('s-listen', false); }
 
   // ------------------------------------------------------------ conversation sheet
   function scrollMsgs() { const m = $('#msgs'); m.scrollTop = m.scrollHeight; }
@@ -1084,7 +1193,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     if (talkBusy) return;
     talkBusy = true;
     unlockAudio();
-    chime();
+    chime(); wishSent();
     $$('.choice').forEach(c => { c.disabled = true; });
     if (text) addMeMsg(text, false);
     const t = botShell();
@@ -1093,13 +1202,14 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     try {
       res = await understand(audioClip ? { mode: 'request', audio: audioClip } : { mode: 'request', text });
     } catch (e) {
-      t.remove(); addBotMsg(e.message, true); talkBusy = false; setChips(); return;
+      duck(false); wishT0 = 0; t.remove(); addBotMsg(e.message, true); talkBusy = false; setChips(); return;
     }
+    if (res.ask || !String(res.transcript || text || '').trim()) duck(false);
     if (audioClip && !String(res.transcript || '').trim()) { t.remove(); addBotMsg('Ich habe dich nicht richtig verstanden. Sag es nochmal oder schreib es.'); talkBusy = false; setChips(); return; }
     if (audioClip) { t.insertAdjacentHTML('beforebegin', `<div class="me">${esc(res.transcript || '…')}</div><div class="me-meta"><svg class="i" style="width:12px;height:12px"><use href="#mic"/></svg>Gesprochen</div>`); }
     S.chat.push({ role: 'user', text: res.transcript || text || '' });
     S.chat.push({ role: 'model', text: [res.reply, res.question].filter(Boolean).join(' ') });
-    if (res.ask) { t.remove(); await showQuestion(res); talkBusy = false; return; }
+    if (res.ask) { wishT0 = 0; t.remove(); await showQuestion(res); talkBusy = false; return; }
     t.lastElementChild.outerHTML = `<p>${esc(res.reply || 'Okay, kommt sofort.')}</p>`;
     scrollMsgs();
     startSong(res, { delayOpen: REDUCED ? 100 : 1100 });
@@ -1113,7 +1223,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     if (inp.value.trim()) { const v = inp.value; inp.value = ''; updateComposeIcon(); talk({ text: v }); return; }
     if (!talkRec) {
       unlockAudio();
-      try { await micStart(); } catch (e) { toast(e.message, false); inp.focus(); return; }
+      duck(true);
+      try { await micStart(); } catch (e) { duck(false); toast(e.message, false); inp.focus(); return; }
       talkRec = true; form.classList.add('recording');
       inp.placeholder = 'Aufnahme läuft … zum Senden tippen';
       $('#composeicon use').setAttribute('href', '#stop');
@@ -1126,7 +1237,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     inp.placeholder = 'Schreib Melodyn, wonach dir ist …';
     updateComposeIcon();
     const clip = await Rec.stop();
-    if (!clip) { toast('Ich habe nichts gehört', false); return; }
+    if (!clip) { duck(false); toast('Ich habe nichts gehört', false); return; }
     talk({ audioClip: { mime: clip.mime, data: clip.data } });
   }
   function updateComposeIcon() { $('#composeicon use').setAttribute('href', $('#composein').value.trim() ? '#send' : '#mic'); }
@@ -1208,7 +1319,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
         unlockAudio();
         if (S.cur && S.cur.id === s.id) { setOn('s-player', true); return; }
         if (!s.url && s.blob) s.url = URL.createObjectURL(s.blob);
-        setSong(s, { replay: true }); setOn('s-player', true); toast('Wiederhören · kostet nichts');
+        S.queue = S.libseg === 'songs' ? { list: S.library } : null;
+        setSong(s, { replay: true }); setOn('s-player', true); toast(S.queue ? 'Deine Songs laufen der Reihe nach · kostenlos' : 'Wiederhören · kostet nichts');
         return;
       }
       if (d.station !== undefined) {
@@ -1217,7 +1329,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
         unlockAudio();
         if (S.session && S.session.station === st.station && S.cur && !S.cur.replay) { setOn('s-player', true); return; }
         S.session = { id: 'st' + Date.now().toString(36), station: st.station, palette: st.palette, spec: st.spec, title: '' };
-        S.nextState = 'none'; S.next = null;
+        S.nextState = 'none'; S.next = null; S.armed = null; S.queue = null;
+        wishSent(); paintOrb();
         setOn('s-player', true);
         nextSong('station');
         return;
@@ -1235,12 +1348,12 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
         if (o) talk({ text: `${o.label}: ${o.description}` });
         return;
       }
-      if (d.len) { S.settings.len = d.len; saveState(); renderSettings(); toast(d.len === 'clip' ? 'Kurze Songs: 30 s, schneller und günstiger' : 'Volle Songs: ca. 3 Minuten'); if (S.nextState !== 'none') prepareNext(); return; }
+      if (d.len) { S.settings.len = d.len; saveState(); renderSettings(); toast(d.len === 'clip' ? 'Kurze Songs: 30 s, schneller und günstiger' : 'Volle Songs: ca. 3 Minuten'); if (S.nextState === 'working' || S.nextState === 'ready') prepareNext(); return; }
       if (d.limit) { S.settings.limit = clamp(S.settings.limit + +d.limit, 5, 200); S.limitOk = false; saveState(); renderSettings(); return; }
       if (t.id === 'forget') {
         S.session = null; S.chat = []; S.nextToken++; S.next = null; S.nextState = 'none';
         $('#msgs').innerHTML = '';
-        renderTaste(false); renderNext(); toast('Session vergessen');
+        renderTaste(false); renderNext(); paintOrb(); toast('Session vergessen');
       }
     });
     $('#orb').addEventListener('click', listen);
@@ -1277,11 +1390,11 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     $('#setdim').addEventListener('click', () => setOn('s-set', false));
     $('#avatar').addEventListener('click', () => { renderSettings(); setOn('s-set', true); });
     $('#tastecost').addEventListener('click', () => { renderSettings(); setOn('s-set', true); });
-    $('#pregen').addEventListener('click', () => { S.settings.pregen = !S.settings.pregen; saveState(); renderSettings(); if (!S.settings.pregen) { S.nextToken++; S.next = null; S.nextState = 'none'; renderNext(); } else if (S.cur) prepareNext(); });
+    $('#pregen').addEventListener('click', () => { S.settings.pregen = !S.settings.pregen; saveState(); renderSettings(); if (!S.settings.pregen) { S.nextToken++; S.next = null; S.nextState = 'none'; S.armed = null; renderNext(); } else if (S.cur && !S.cur.replay && !S.cur.preview) armNext(S.cur); });
     $('#quick').addEventListener('click', () => { S.settings.quick = !S.settings.quick; saveState(); renderSettings(); });
     $('#djset').addEventListener('click', () => { S.settings.dj = !S.settings.dj; if (!S.settings.dj) stopDj(); saveState(); renderSettings(); });
     $('#setcode').addEventListener('click', () => { setOn('s-set', false); openCode(); });
-    $('#resetcost').addEventListener('click', () => { S.total = { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }; S.sess = { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], audioSec: 0, genSec: 0 }; saveState(); renderSettings(); toast('Kostenzähler zurückgesetzt'); });
+    $('#resetcost').addEventListener('click', () => { S.total = { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }; S.sess = { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], firstMs: [], audioSec: 0, genSec: 0 }; saveState(); renderSettings(); toast('Kostenzähler zurückgesetzt'); });
     $('#keyform').addEventListener('submit', e => {
       e.preventDefault();
       const k = $('#keyin').value.trim();
@@ -1290,14 +1403,36 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
       toast('Schlüssel gespeichert. Tippe auf die Kugel.');
     });
     $('#keyclose').addEventListener('click', () => setOn('s-key', false));
+    $('#toastact').addEventListener('click', () => { const f = toastFn; toastFn = null; $('#toast').classList.remove('on'); if (f) f(); });
     $('#setkey').addEventListener('click', () => openKey());
     $('#delkey').addEventListener('click', () => { S.settings.key = ''; saveState(); renderSettings(); toast('Schlüssel aus diesem Browser entfernt'); });
     $('#codeform').addEventListener('submit', e => { e.preventDefault(); S.settings.code = $('#codein').value.trim(); saveState(); setOn('s-code', false); toast('Code gespeichert. Versuch es nochmal.'); });
+    // Keyboard on desktop: space plays/pauses, arrows skip, escape closes the top layer
+    document.addEventListener('keydown', e => {
+      if (e.metaKey || e.ctrlKey || e.altKey || (e.target.closest && e.target.closest('input, textarea'))) return;
+      if (e.key === 'Escape') {
+        if (isOn('s-listen')) cancelListen();
+        else if (isOn('s-lyr')) setOn('s-lyr', false);
+        else if (isOn('s-set')) setOn('s-set', false);
+        else if (isOn('s-talk')) setOn('s-talk', false);
+        else if (isOn('s-key') && S.settings.key) setOn('s-key', false);
+        else if (isOn('s-player')) setOn('s-player', false);
+        return;
+      }
+      if (e.target.closest && e.target.closest('button') && (e.code === 'Space' || e.key === 'Enter')) return;
+      if (e.code === 'Space' && S.cur) { e.preventDefault(); $('#pplay').click(); }
+      else if (e.key === 'ArrowRight' && S.cur) nextSong('skip');
+      else if (e.key === 'ArrowLeft' && S.cur) prevSong();
+    });
     const ci = $('#composein');
     ci.addEventListener('input', updateComposeIcon);
     $('#compose').addEventListener('submit', e => { e.preventDefault(); composeMic(); });
 
     audio.addEventListener('timeupdate', renderTime);
+    audio.addEventListener('timeupdate', () => {
+      const a = S.armed;
+      if (a && S.cur === a && !S.composing && !audio.paused && audio.currentTime >= (a.len === 'clip' ? 3 : 15)) { S.armed = null; prepareNext(); }
+    });
     audio.addEventListener('timeupdate', () => {
       const c = S.cur;
       if (!c || mix || document.hidden || audio.paused || !c.mixTo || !c.mixTo.plan) return;
@@ -1306,6 +1441,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     });
     setInterval(() => { if (mix) renderTime(); }, 250);
     audio.addEventListener('play', syncPlayIcons);
+    audio.addEventListener('playing', () => { if (audio.src !== SILENT) heard(); });
+    dj.addEventListener('playing', () => { if (dj.src !== SILENT) heard(); });
     audio.addEventListener('pause', syncPlayIcons);
     audio.addEventListener('loadedmetadata', () => { if (S.cur && audio.src === S.cur.url) { S.cur.dur = audio.duration; renderTime(); } });
     let lastT = 0;
