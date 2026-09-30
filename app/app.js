@@ -2,6 +2,7 @@
    Real microphone -> Gemini (understands) -> Music-Spec -> Lyria (composes) -> real MP3.
    On GitHub Pages the browser talks to Google directly with the user's own key (kept in localStorage).
    On Vercel it goes through /api/* so the key stays on the server. */
+import * as Mix from './mix.js';
 import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, speakBody, understandBody } from './prompt.js';
 
 (() => {
@@ -367,7 +368,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   let chimeCtx;
   function chime() {
     try {
-      chimeCtx = chimeCtx || new (window.AudioContext || window.webkitAudioContext)();
+      chimeCtx = getMixCtx();
+      if (!chimeCtx) return;
       chimeCtx.resume();
       const t = chimeCtx.currentTime;
       [[660, 0], [990, 0.12]].forEach(([f, d]) => {
@@ -410,6 +412,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   })();
   let unlocked = false;
   function unlockAudio() {
+    const ctx = getMixCtx();
+    if (ctx && ctx.state === 'suspended') ctx.resume();
     if (unlocked) return;
     unlocked = true;
     for (const el of S.cur ? [dj] : [audio, dj]) {
@@ -420,17 +424,96 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   }
   function setPlaying(on) {
     if (!S.cur) return;
+    if (mix) { finishMix({ paused: !on }); return; }
     if (on) { const p = audio.play(); if (p && p.catch) p.catch(() => toast('Tippe auf Play, um zu starten', false)); }
     else audio.pause();
   }
   function syncPlayIcons() {
-    S.playing = !audio.paused && !!S.cur;
+    S.playing = (!audio.paused || !!mix) && !!S.cur;
     $$('.playuse').forEach(u => u.setAttribute('href', S.playing ? '#pause' : '#play'));
     $('#miniplay use').setAttribute('href', S.playing ? '#pause' : '#play');
     $('#pcover').classList.toggle('paused', !S.playing && !S.composing);
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = S.playing ? 'playing' : 'paused';
   }
+  // ------------------------------------------------------------ DJ transition: clip -> full song
+  // Normal playback stays on the <audio> element (lock screen, background). Only the few seconds
+  // of the transition run through Web Audio, then the full song is handed back to the element.
+  let mixCtx = null, mix = null;
+  function getMixCtx() {
+    if (!mixCtx) { try { mixCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch { mixCtx = null; } }
+    return mixCtx;
+  }
+  async function prepMix(clip) {
+    const ctx = getMixCtx();
+    if (!ctx || !clip.full || clip.mix) return;
+    try {
+      const a = await ctx.decodeAudioData(await clip.blob.arrayBuffer());
+      const b = await ctx.decodeAudioData(await clip.full.blob.arrayBuffer());
+      const bpm = clip.spec && clip.spec.tempo_bpm;
+      const ia = Mix.analyze(a, bpm), ib = Mix.analyze(b, bpm, 40);
+      const now = S.cur === clip ? audio.currentTime : 0;
+      const plan = Mix.plan(ia, ib, now + 2);
+      if (!plan) { log('<b>Übergang</b> kam zu spät für einen Mix, es folgt ein direkter Wechsel'); return; }
+      clip.mix = { plan, a, b };
+      log(`<b>Übergang</b> geplant: ${plan.mode === 'blend' ? 'DJ-Blend mit Bass-Tausch' : 'Echo-Out mit Filter-Einstieg'} · Clip ${ia.bpm.toFixed(0)} BPM, Song ${ib.bpm.toFixed(0)} BPM`);
+    } catch (e) { log('<b>Übergang</b> konnte nicht analysiert werden, es folgt ein direkter Wechsel', String(e), true); }
+  }
+  function runMix(clip) {
+    const ctx = getMixCtx();
+    if (!ctx || ctx.state !== 'running' || !clip.full) return;
+    const lead = 0.15, at = ctx.currentTime + lead, aOffset = audio.currentTime + lead;
+    const h = Mix.schedule(ctx, ctx.destination, clip.mix.a, clip.mix.b, clip.mix.plan, at, aOffset);
+    const m = mix = { clip, full: clip.full, h, ctx, at, aOffset, rate: clip.mix.plan.rate, adopted: false };
+    setTimeout(() => { if (mix === m) audio.pause(); }, lead * 1000);
+    setTimeout(() => { if (mix === m) adoptFull(m); }, Math.max(0, (h.bStart - ctx.currentTime) * 1000));
+    setTimeout(() => { if (mix === m) finishMix(); }, Math.max(0, (h.doneAt + 1.2 - ctx.currentTime) * 1000));
+  }
+  // The full song is audible now: switch everything on screen over to it
+  function adoptFull(m) {
+    m.adopted = true;
+    const full = m.full;
+    S.cur = full;
+    paintNow(full); renderNow(); mediaSession(full);
+    if (S.session) S.session.title = full.title;
+    prepareNext();
+    if (S.tab === 'lib') renderLib();
+  }
+  function mixPos(m) {
+    const t = m.ctx.currentTime;
+    return m.adopted ? m.h.fullPos(t) : m.aOffset + (t - m.at) * m.rate;
+  }
+  // Hand the full song over from Web Audio to the <audio> element without an audible seam
+  function finishMix({ paused = false } = {}) {
+    const m = mix;
+    if (!m) return;
+    if (!m.adopted) adoptFull(m);
+    audio.src = m.full.url;
+    const go = () => {
+      if (paused) { audio.currentTime = m.h.fullPos(m.ctx.currentTime); m.h.stop(); mix = null; syncPlayIcons(); renderTime(); return; }
+      audio.currentTime = m.h.fullPos(m.ctx.currentTime + 0.2);
+      const pr = audio.play();
+      audio.addEventListener('playing', function onPlay() {
+        audio.removeEventListener('playing', onPlay);
+        const drift = m.h.fullPos(m.ctx.currentTime) - audio.currentTime;
+        if (Math.abs(drift) > 0.06) audio.currentTime += drift;
+        m.h.stop(m.ctx.currentTime + 0.05);
+        if (mix === m) mix = null;
+        syncPlayIcons();
+      });
+      if (pr && pr.catch) pr.catch(() => { m.h.stop(); if (mix === m) mix = null; syncPlayIcons(); });
+    };
+    if (audio.readyState >= 1) go(); else audio.addEventListener('loadedmetadata', go, { once: true });
+  }
+  function abortMix() {
+    const m = mix;
+    if (!m) return null;
+    mix = null;
+    m.h.stop();
+    return m;
+  }
+
   function setSong(song, { replay = false, djUrl = null, noPregen = false } = {}) {
+    abortMix();
     if (S.cur && S.cur !== song && !S.cur.replay && !S.cur.preview) S.history.push(S.cur);
     S.cur = replay ? Object.assign({}, song, { replay: true }) : song;
     S.composing = null;
@@ -489,6 +572,12 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   }
   function renderTime() {
     if (S.composing || !S.cur) return;
+    if (mix) {
+      const t = mixPos(mix), d = mix.adopted ? mix.full.blob.size * 8 / 192000 : mix.clip.mix.a.duration;
+      $('#pbar').style.width = (t / d * 100) + '%'; $('#miniprog').style.width = (t / d * 100) + '%';
+      $('#pcur').textContent = fmt(t); $('#prem').textContent = '−' + fmt(d - t);
+      return;
+    }
     const d = audio.duration && isFinite(audio.duration) ? audio.duration : S.cur.dur || 0, t = audio.currentTime || 0;
     const pct = d ? t / d * 100 : 0;
     $('#pbar').style.width = pct + '%';
@@ -571,7 +660,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
       if (token !== composeToken) return;
       if (clip) {
         clip.preview = true; clip.fullP = fullP; clip.fullT0 = t0;
-        fullP.then(f => { clip.full = f; if (S.cur === clip) renderNext(); }, () => { clip.fullError = true; if (S.cur === clip) renderNext(); });
+        fullP.then(f => { clip.full = f; if (S.cur === clip) renderNext(); prepMix(clip); }, () => { clip.fullError = true; if (S.cur === clip) renderNext(); });
         setSong(clip);
         return;
       }
@@ -622,6 +711,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   }
   async function nextSong(reason) {
     if (S.composing && !S.composing.error) return;
+    if (mix) { const m = abortMix(); if (!m.adopted) { setSong(m.full); return; } }
     if (S.cur && S.cur.preview && reason !== 'dislike') return handoff(S.cur);
     if (!S.session) { if (S.cur) toast('Sag Melodyn zuerst, wonach dir ist', false); return; }
     if (reason === 'skip' && S.cur && !S.cur.replay) feedback('skip');
@@ -651,6 +741,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   }
   function prevSong() {
     if (!S.cur || S.composing) return;
+    if (mix) { const m = abortMix(); setSong(m.full); return; }
     if (audio.currentTime > 5 || !S.history.length) { audio.currentTime = 0; return; }
     const p = S.history.pop();
     const cur = S.cur; S.cur = null;
@@ -1136,7 +1227,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     $('#pplay').addEventListener('click', () => {
       if (S.composing && S.composing.error) { openTalk('steer'); return; }
       if (S.djActive) { stopDj(); if (S.cur && !S.composing) setPlaying(true); return; }
-      setPlaying(audio.paused);
+      setPlaying(!S.playing);
     });
     $('#pnextbtn').addEventListener('click', () => nextSong('skip'));
     $('#pprev').addEventListener('click', prevSong);
@@ -1145,12 +1236,12 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     $('#padd').addEventListener('click', save);
     $('#steer').addEventListener('click', () => openTalk(S.cur || S.composing ? 'steer' : 'solo'));
     $('#ptrack').addEventListener('click', e => {
-      if (!S.cur || S.composing || !audio.duration) return;
+      if (!S.cur || S.composing || !audio.duration || mix) return;
       const r = e.currentTarget.getBoundingClientRect();
       audio.currentTime = clamp((e.clientX - r.left) / r.width, 0, 0.99) * audio.duration;
     });
     $('#mini').addEventListener('click', e => {
-      if (e.target.closest('#miniplay')) { setPlaying(audio.paused); return; }
+      if (e.target.closest('#miniplay')) { setPlaying(!S.playing); return; }
       if (e.target.closest('#mininext')) { nextSong('skip'); return; }
       setOn('s-player', true);
     });
@@ -1181,13 +1272,18 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     $('#compose').addEventListener('submit', e => { e.preventDefault(); composeMic(); });
 
     audio.addEventListener('timeupdate', renderTime);
+    audio.addEventListener('timeupdate', () => {
+      const c = S.cur;
+      if (c && c.preview && c.mix && !mix && !document.hidden && !audio.paused && audio.currentTime >= c.mix.plan.takeover) runMix(c);
+    });
+    setInterval(() => { if (mix) renderTime(); }, 250);
     audio.addEventListener('play', syncPlayIcons);
     audio.addEventListener('pause', syncPlayIcons);
     audio.addEventListener('loadedmetadata', () => { if (S.cur && audio.src === S.cur.url) { S.cur.dur = audio.duration; renderTime(); } });
     let lastT = 0;
     audio.addEventListener('timeupdate', () => { const t = audio.currentTime; if (S.cur && !S.cur.replay && t > lastT && t - lastT < 2) S.sess.audioSec += t - lastT; lastT = t; });
     audio.addEventListener('ended', () => {
-      if (!S.cur || audio.src === SILENT) return;
+      if (!S.cur || audio.src === SILENT || mix) return;
       if (S.cur.preview) { handoff(S.cur); return; }
       feedback('complete'); nextSong('end');
     });
