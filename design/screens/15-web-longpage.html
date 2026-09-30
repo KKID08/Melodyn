@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>Homepage lang</title>
+<meta name="size" content="1440x5180@2">
+<link rel="stylesheet" href="../base.css"><link rel="stylesheet" href="../web.css">
+<style>
+  body { width: 1440px; }
+  iframe { display: block; border: 0; width: 1440px; }
+  .clip { overflow: hidden; }
+  .clip.pricing { height: 836px; background: var(--paper); }
+  .clip.pricing iframe { height: 920px; margin-top: -84px; }
+
+  /* Im Auto */
+  .car { position: relative; height: 860px; overflow: hidden; }
+  .car .glow { position: absolute; left: 520px; top: 60px; width: 1100px; height: 760px; border-radius: 50%; opacity: .7; }
+  .car .fade { position: absolute; inset: 0; background: radial-gradient(ellipse 55% 60% at 72% 50%, transparent 25%, var(--ink) 75%); }
+  .car .copy { position: absolute; left: 64px; top: 170px; width: 470px; z-index: 5; }
+  .car h2 { font-size: 58px; font-weight: 650; letter-spacing: -.045em; line-height: 1.02; margin-top: 14px; }
+  .car h2 .serif { color: var(--text-2); font-size: 62px; }
+  .car p { margin-top: 22px; font-size: 18px; line-height: 1.55; color: var(--text-2); }
+  .car ul { list-style: none; margin-top: 36px; display: grid; gap: 14px; }
+  .car li { display: flex; gap: 12px; align-items: center; font-size: 16px; }
+  .car li .i { width: 18px; height: 18px; stroke-width: 2.2; }
+  .dash { position: absolute; left: 600px; top: 190px; width: 776px; height: 480px; padding: 16px; border-radius: 34px; background: linear-gradient(160deg, #222228, #0c0c0f); box-shadow: 0 0 0 1px #2e2e35, 0 60px 120px -30px rgba(0,0,0,.8); z-index: 5; }
+  .dash img { width: 744px; height: 448px; border-radius: 20px; display: block; }
+
+  /* Schluss */
+  .end { padding: 40px 64px 0; }
+  .band { position: relative; height: 470px; border-radius: 36px; overflow: hidden; }
+  .band .aura { inset: 0; }
+  .band .shade { position: absolute; inset: 0; z-index: 4; background: linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,0) 70%); }
+  .band .in { position: absolute; left: 72px; top: 92px; z-index: 5; width: 640px; }
+  .band h2 { font-size: 72px; font-weight: 660; letter-spacing: -.045em; line-height: .98; }
+  .band h2 .serif { display: block; font-size: 78px; color: rgba(255,255,255,.78); }
+  .band .form { margin-top: 36px; display: flex; width: 520px; padding: 6px; border-radius: 999px; background: rgba(0,0,0,.28); backdrop-filter: blur(14px); border: .5px solid rgba(255,255,255,.2); }
+  .band .form .ph { flex: 1; padding: 0 18px; display: flex; align-items: center; font-size: 16px; color: rgba(255,255,255,.6); }
+  .band .form .btn-w { padding: 15px 24px; font-size: 16px; }
+  .foot { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 40px; padding: 72px 0 40px; border-bottom: .5px solid var(--hair-2); }
+  .foot .wm { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 650; letter-spacing: -.035em; }
+  .foot .wm svg { width: 30px; height: 30px; }
+  .foot p { margin-top: 14px; font-size: 15px; color: var(--text-3); max-width: 300px; line-height: 1.5; }
+  .foot h4 { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+  .foot ul { list-style: none; display: grid; gap: 10px; font-size: 14.5px; color: var(--text-2); }
+  .legal { display: flex; justify-content: space-between; padding: 26px 0 40px; font-size: 13.5px; color: var(--text-3); }
+</style></head>
+<body>
+<iframe src="10-web-home.html" style="height:900px"></iframe>
+<iframe src="11-web-moments.html" style="height:900px"></iframe>
+<iframe src="12-web-learning.html" style="height:900px"></iframe>
+
+<section class="car">
+  <div class="aura glow" data-p="night" data-seed="7" data-blur=".18"></div>
+  <div class="fade"></div>
+  <div class="copy">
+    <span class="eyebrow">Im Auto</span>
+    <h2>Hände ans Lenkrad. <span class="serif">Musik im Kopf.</span></h2>
+    <p>Sag, wohin du fährst. Melodyn plant Musik für die ganze Strecke und reagiert auf „etwas wacher“ oder „ruhiger“, ohne dass du aufs Display schaust.</p>
+    <ul>
+      <li><svg class="i"><use href="#check"/></svg>Steuerung komplett per Sprache</li>
+      <li><svg class="i"><use href="#check"/></svg>Musik passend zur Fahrzeit geplant</li>
+      <li><svg class="i"><use href="#check"/></svg>CarPlay und Android Auto</li>
+    </ul>
+  </div>
+  <div class="dash"><img src="../shots/09-carplay.png"></div>
+</section>
+
+<div class="clip pricing"><iframe src="13-web-pricing.html"></iframe></div>
+
+<section class="end">
+  <div class="band">
+    <div class="aura" data-p="tunnel" data-seed="3" data-blur=".16" data-lines="22" data-la=".16"></div>
+    <div class="shade"></div>
+    <div class="in">
+      <h2>Sag, wonach dir ist. <span class="serif">Den Rest macht Melodyn.</span></h2>
+      <div class="form"><span class="ph">deine@email.de</span><span class="btn-w">Auf die Warteliste</span></div>
+    </div>
+  </div>
+  <div class="foot">
+    <div><div class="wm"><svg><use href="#logo"/></svg>melodyn</div><p>Musik, die für deinen Moment entsteht und mit dir wächst.</p></div>
+    <div><h4>Produkt</h4><ul><li>So funktioniert’s</li><li>Im Auto</li><li>Preise</li></ul></div>
+    <div><h4>Unternehmen</h4><ul><li>Über uns</li><li>Für Artists</li><li>Presse</li></ul></div>
+    <div><h4>Rechtliches</h4><ul><li>Datenschutz</li><li>AGB</li><li>Impressum</li></ul></div>
+  </div>
+  <div class="legal"><span>© 2026 Melodyn</span><span>Deutsch · English</span></div>
+</section>
+<script src="../kit.js"></script>
+</body></html>

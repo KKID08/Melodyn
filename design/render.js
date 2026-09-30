@@ -19,11 +19,11 @@ const filter = process.argv[2] || '';
     const errs = [];
     page.on('pageerror', e => errs.push(e.message));
     page.on('requestfailed', r => errs.push('failed ' + r.url()));
-    await page.goto('file://' + path.join(dir, f));
+    await page.goto('file://' + path.join(dir, f), { waitUntil: 'load' });
     await page.waitForFunction(() => document.documentElement.dataset.ready === '1');
     await page.evaluate(() => document.fonts.ready);
-    await page.waitForTimeout(300);
-    await page.screenshot({ path: path.join(out, f.replace('.html', '.png')) });
+    await page.waitForTimeout(f.includes("longpage") ? 1500 : 300);
+    await page.screenshot({ path: path.join(out, f.replace('.html', '.png')), fullPage: f.includes('longpage') });
     console.log(f, `${w}x${h}@${s}`, errs.length ? errs : 'ok');
     await page.close();
   }
