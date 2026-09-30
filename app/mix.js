@@ -1,13 +1,15 @@
-// Melodyn mixer: DJ-style transition from the 30 s preview clip into the full song.
+// Melodyn mixer: DJ-style transitions (preview clip → full song, song → next song, skip).
 // Works on any BaseAudioContext, so the same code runs live and in an OfflineAudioContext for tests.
 
 const FPS = 200; // analysis frames per second (5 ms)
 
 // Beat analysis: low-band onset envelope, tempo near the hint, best beat phase
-export function analyze(buf, bpmHint, maxSeconds = 40) {
+export function analyze(buf, bpmHint, maxSeconds = 40, fromSeconds = 0) {
   const sr = buf.sampleRate;
-  const len = Math.min(buf.length, Math.floor(maxSeconds * sr));
-  const c0 = buf.getChannelData(0), c1 = buf.numberOfChannels > 1 ? buf.getChannelData(1) : c0;
+  const from = Math.max(0, Math.min(fromSeconds, buf.duration - 5));
+  const first = Math.floor(from * sr);
+  const len = Math.min(buf.length - first, Math.floor(maxSeconds * sr));
+  const c0 = buf.getChannelData(0).subarray(first), c1 = buf.numberOfChannels > 1 ? buf.getChannelData(1).subarray(first) : c0;
   const hop = Math.round(sr / FPS), n = Math.floor(len / hop);
   const a = Math.exp(-2 * Math.PI * 160 / sr);
   const env = new Float32Array(n);
@@ -36,7 +38,7 @@ export function analyze(buf, bpmHint, maxSeconds = 40) {
     for (let k = ph; k < n; k += P) s += on[Math.round(k)] || 0;
     if (s > ps) { ps = s; phase = ph; }
   }
-  return { bpm: best.bpm, beat: 60 / best.bpm, phase: phase / FPS, duration: buf.duration };
+  return { bpm: best.bpm, beat: 60 / best.bpm, phase: from + phase / FPS, duration: buf.duration };
 }
 
 // Last beat of the clip at or before t
@@ -47,7 +49,7 @@ export function plan(clipInfo, fullInfo, minStart = 0) {
   const ratio = fullInfo.bpm / clipInfo.bpm;
   const blend = Math.abs(ratio - 1) <= 0.045;
   const end = clipInfo.duration - 0.8; // Lyria clips tend to fade in the last moment
-  const fullOffset = fullInfo.phase; // start the full song on its first beat
+  const fullOffset = fullInfo.phase % fullInfo.beat; // start the incoming song on its first beat
   if (blend) {
     const beats = 8;
     const ts = beatAtOrBefore(clipInfo, end - beats * clipInfo.beat);
@@ -57,6 +59,14 @@ export function plan(clipInfo, fullInfo, minStart = 0) {
   const cut = beatAtOrBefore(clipInfo, end - 0.4);
   if (cut - 2 * clipInfo.beat < minStart) return null;
   return { mode: 'echo', rate: 1, ts: cut, beat: clipInfo.beat, beatB: fullInfo.beat, fullOffset, takeover: Math.max(minStart, cut - 2 * clipInfo.beat - 1.2) };
+}
+
+// Skip pressed: short echo-out on the next beat, no build-up
+export function quickPlan(fromInfo, toInfo, now) {
+  const b = fromInfo.beat;
+  let ts = fromInfo.phase + Math.ceil((now + 0.3 - fromInfo.phase) / b) * b;
+  if (ts > fromInfo.duration - 0.2) return null;
+  return { mode: 'echo', quick: true, rate: 1, ts, beat: b, beatB: toInfo.beat, fullOffset: toInfo.phase % toInfo.beat, takeover: now };
 }
 
 let noiseCache = null;
@@ -124,7 +134,8 @@ export function schedule(ctx, dest, clipBuf, fullBuf, p, at, aOffset) {
     doneAt = end + 4 * b;
   } else {
     const tc = T(p.ts), b = p.beat;
-    // Riser over the last two beats
+    // Riser over the last two beats (not when the listener skipped)
+    if (!p.quick) {
     const nz = ctx.createBufferSource(); nz.buffer = noise(ctx); nz.loop = true;
     const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.2; bp.frequency.value = 500;
     const gR = ctx.createGain(); gR.gain.value = 0;
@@ -135,6 +146,7 @@ export function schedule(ctx, dest, clipBuf, fullBuf, p, at, aOffset) {
     bp.frequency.setValueAtTime(500, tc - 2 * b);
     bp.frequency.exponentialRampToValueAtTime(7000, tc);
     nz.start(tc - 2 * b); nz.stop(tc + 0.4);
+    }
     // Echo out: last beat into the delay, dry cut on the beat, echoes ring on
     hpA.frequency.setValueAtTime(20, tc - b);
     hpA.frequency.exponentialRampToValueAtTime(700, tc);

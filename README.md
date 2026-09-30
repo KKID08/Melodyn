@@ -16,7 +16,7 @@ Voice-first Musikstream: Du sagst, wonach dir ist, Melodyn erzeugt passende Song
 1. Du tippst auf die Kugel und sprichst (oder schreibst).
 2. `api/understand.js` schickt Aufnahme, Chat-Verlauf, Geschmack und Regeln an **Gemini 2.5 Flash**. Zurück kommt eine Music-Spec als JSON.
 3. Die App baut daraus den Musik-Prompt und `api/compose.js` bestellt den Song bei **Lyria 3.5** (voll, ca. 3 Min.) oder **Lyria Clip** (30 s).
-4. Die MP3 läuft im Player. Während sie läuft, wird der nächste Song vorbereitet.
+4. Die MP3 läuft im Player. Während sie läuft, wird der nächste Song vorbereitet und im Takt übergeblendet (ohne DJ-Ansage). Die DJ-Stimme kommt nur bei einem neuen Wunsch oder Richtungswechsel.
 
 Der Google-Schlüssel liegt nur auf dem Server (Vercel). Im Browser und im Repo taucht er nie auf.
 

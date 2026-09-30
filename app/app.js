@@ -435,46 +435,53 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     $('#pcover').classList.toggle('paused', !S.playing && !S.composing);
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = S.playing ? 'playing' : 'paused';
   }
-  // ------------------------------------------------------------ DJ transition: clip -> full song
-  // Normal playback stays on the <audio> element (lock screen, background). Only the few seconds
-  // of the transition run through Web Audio, then the full song is handed back to the element.
+  // ------------------------------------------------------------ DJ transitions between tracks
+  // Clip -> full song and song -> next song. Normal playback stays on the <audio> element (lock screen,
+  // background). Only the seconds of a transition run through Web Audio, then the element takes over again.
   let mixCtx = null, mix = null;
   function getMixCtx() {
     if (!mixCtx) { try { mixCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch { mixCtx = null; } }
     return mixCtx;
   }
-  async function prepMix(clip) {
+  function decoded(song) {
     const ctx = getMixCtx();
-    if (!ctx || !clip.full || clip.mix) return;
+    if (!ctx) return Promise.reject(new Error('Kein Web Audio'));
+    if (!song._buf) song._buf = song.blob.arrayBuffer().then(ab => ctx.decodeAudioData(ab));
+    return song._buf;
+  }
+  // Analyse the end of `from` and the start of `to`, then plan the transition
+  async function prepMix(from, to) {
+    if (!from || !to || !from.blob || !to.blob || (from.mixTo && from.mixTo.to === to)) return;
     try {
-      const a = await ctx.decodeAudioData(await clip.blob.arrayBuffer());
-      const b = await ctx.decodeAudioData(await clip.full.blob.arrayBuffer());
-      const bpm = clip.spec && clip.spec.tempo_bpm;
-      const ia = Mix.analyze(a, bpm), ib = Mix.analyze(b, bpm, 40);
-      const now = S.cur === clip ? audio.currentTime : 0;
+      const [a, b] = await Promise.all([decoded(from), decoded(to)]);
+      const ia = Mix.analyze(a, from.spec && from.spec.tempo_bpm, 45, a.duration - 45);
+      const ib = Mix.analyze(b, (to.spec && to.spec.tempo_bpm) || ia.bpm, 40);
+      const now = S.cur === from ? audio.currentTime : 0;
       const plan = Mix.plan(ia, ib, now + 2);
-      if (!plan) { log('<b>Übergang</b> kam zu spät für einen Mix, es folgt ein direkter Wechsel'); return; }
-      clip.mix = { plan, a, b };
-      log(`<b>Übergang</b> geplant: ${plan.mode === 'blend' ? 'DJ-Blend mit Bass-Tausch' : 'Echo-Out mit Filter-Einstieg'} · Clip ${ia.bpm.toFixed(0)} BPM, Song ${ib.bpm.toFixed(0)} BPM`);
+      from.mixTo = { to, a, b, ia, ib, plan };
+      if (plan) log(`<b>Übergang</b> geplant: ${plan.mode === 'blend' ? 'DJ-Blend mit Bass-Tausch' : 'Echo-Out mit Filter-Einstieg'} · ${ia.bpm.toFixed(0)} → ${ib.bpm.toFixed(0)} BPM`);
     } catch (e) { log('<b>Übergang</b> konnte nicht analysiert werden, es folgt ein direkter Wechsel', String(e), true); }
   }
-  function runMix(clip) {
-    const ctx = getMixCtx();
-    if (!ctx || ctx.state !== 'running' || !clip.full) return;
+  function runMix(from, plan) {
+    const ctx = getMixCtx(), mt = from.mixTo;
+    if (!ctx || ctx.state !== 'running' || !mt || !plan) return false;
     const lead = 0.15, at = ctx.currentTime + lead, aOffset = audio.currentTime + lead;
-    const h = Mix.schedule(ctx, ctx.destination, clip.mix.a, clip.mix.b, clip.mix.plan, at, aOffset);
-    const m = mix = { clip, full: clip.full, h, ctx, at, aOffset, rate: clip.mix.plan.rate, adopted: false };
+    const h = Mix.schedule(ctx, ctx.destination, mt.a, mt.b, plan, at, aOffset);
+    const m = mix = { from, to: mt.to, h, ctx, at, aOffset, rate: plan.rate, adopted: false };
     setTimeout(() => { if (mix === m) audio.pause(); }, lead * 1000);
-    setTimeout(() => { if (mix === m) adoptFull(m); }, Math.max(0, (h.bStart - ctx.currentTime) * 1000));
+    setTimeout(() => { if (mix === m) adoptTarget(m); }, Math.max(0, (h.bStart - ctx.currentTime) * 1000));
     setTimeout(() => { if (mix === m) finishMix(); }, Math.max(0, (h.doneAt + 1.2 - ctx.currentTime) * 1000));
+    return true;
   }
-  // The full song is audible now: switch everything on screen over to it
-  function adoptFull(m) {
+  // The incoming track is audible now: switch the screen over to it
+  function adoptTarget(m) {
     m.adopted = true;
-    const full = m.full;
-    S.cur = full;
-    paintNow(full); renderNow(); mediaSession(full);
-    if (S.session) S.session.title = full.title;
+    const to = m.to;
+    if (!m.from.preview && !m.from.replay) S.history.push(m.from);
+    if (S.next === to) { S.next = null; S.nextState = 'none'; }
+    S.cur = to;
+    paintNow(to); renderNow(); mediaSession(to);
+    if (S.session) S.session.title = to.title;
     prepareNext();
     if (S.tab === 'lib') renderLib();
   }
@@ -482,14 +489,15 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     const t = m.ctx.currentTime;
     return m.adopted ? m.h.fullPos(t) : m.aOffset + (t - m.at) * m.rate;
   }
-  // Hand the full song over from Web Audio to the <audio> element without an audible seam
+  function mixDur(m) { return m.adopted ? m.to.blob.size * 8 / 192000 : m.from.mixTo.a.duration; }
+  // Hand the incoming track from Web Audio back to the <audio> element without an audible seam
   function finishMix({ paused = false } = {}) {
     const m = mix;
     if (!m) return;
-    if (!m.adopted) adoptFull(m);
-    audio.src = m.full.url;
+    if (!m.adopted) adoptTarget(m);
+    audio.src = m.to.url;
     const go = () => {
-      if (paused) { audio.currentTime = m.h.fullPos(m.ctx.currentTime); m.h.stop(); mix = null; syncPlayIcons(); renderTime(); return; }
+      if (paused) { audio.currentTime = m.h.fullPos(m.ctx.currentTime); m.h.stop(); mix = null; release(m); syncPlayIcons(); renderTime(); return; }
       audio.currentTime = m.h.fullPos(m.ctx.currentTime + 0.2);
       const pr = audio.play();
       audio.addEventListener('playing', function onPlay() {
@@ -498,6 +506,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
         if (Math.abs(drift) > 0.06) audio.currentTime += drift;
         m.h.stop(m.ctx.currentTime + 0.05);
         if (mix === m) mix = null;
+        release(m);
         syncPlayIcons();
       });
       if (pr && pr.catch) pr.catch(() => { m.h.stop(); if (mix === m) mix = null; syncPlayIcons(); });
@@ -509,8 +518,16 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     if (!m) return null;
     mix = null;
     m.h.stop();
+    release(m);
     return m;
   }
+  // Decoded songs take ~60 MB each: drop them as soon as a transition is over
+  function release(m) {
+    m.from._buf = null; m.from.mixTo = null;
+    m.to._buf = null;
+  }
+  // Where the current track is heading: the full version of a preview, otherwise the prepared next song
+  function mixTarget(c) { return c.preview ? c.full : S.next; }
 
   function setSong(song, { replay = false, djUrl = null, noPregen = false } = {}) {
     abortMix();
@@ -573,7 +590,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   function renderTime() {
     if (S.composing || !S.cur) return;
     if (mix) {
-      const t = mixPos(mix), d = mix.adopted ? mix.full.blob.size * 8 / 192000 : mix.clip.mix.a.duration;
+      const t = mixPos(mix), d = mixDur(mix);
       $('#pbar').style.width = (t / d * 100) + '%'; $('#miniprog').style.width = (t / d * 100) + '%';
       $('#pcur').textContent = fmt(t); $('#prem').textContent = '−' + fmt(d - t);
       return;
@@ -627,7 +644,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   }
   let composeToken = 0;
   // New wish or change of direction: DJ + 30 s clip first, full song takes over when ready
-  async function startSong(res, { delayOpen = 0 } = {}) {
+  async function startSong(res, { delayOpen = 0, dj: withDj = true } = {}) {
     applyResult(res);
     if (overLimit()) return;
     const token = ++composeToken;
@@ -644,7 +661,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     res.station = S.session.station;
     const fullP = compose(res, { len: S.settings.len });
     const clipP = quick ? compose(res, { len: 'clip' }).catch(() => null) : null;
-    const djP = tts(res.dj_line);
+    const djP = withDj ? tts(res.dj_line) : Promise.resolve(null);
     const fail = e => {
       if (token !== composeToken) return;
       S.composing = S.composing || { title: res.title, station: S.session.station, palette: res.palette, seed: 'e' + token, spec: res.spec, t0 };
@@ -660,7 +677,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
       if (token !== composeToken) return;
       if (clip) {
         clip.preview = true; clip.fullP = fullP; clip.fullT0 = t0;
-        fullP.then(f => { clip.full = f; if (S.cur === clip) renderNext(); prepMix(clip); }, () => { clip.fullError = true; if (S.cur === clip) renderNext(); });
+        fullP.then(f => { clip.full = f; if (S.cur === clip) renderNext(); prepMix(clip, f); }, () => { clip.fullError = true; if (S.cur === clip) renderNext(); });
         setSong(clip);
         return;
       }
@@ -701,22 +718,31 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
       if (token !== S.nextToken) return null;
       S.nextTitle = res.title; renderNext();
       res.station = S.session ? S.session.station : res.station;
-      const [song, djUrl] = await Promise.all([compose(res), tts(res.dj_line)]);
+      const song = await compose(res);
       if (token !== S.nextToken) return null;
-      song.djUrl = djUrl;
       if (S.session) S.session.spec = res.spec;
       S.next = song; S.nextState = 'ready'; renderNext();
+      if (S.cur && !S.cur.preview && !S.cur.replay) prepMix(S.cur, song);
       return song;
     })().catch(e => { if (token === S.nextToken) { S.nextState = 'error'; renderNext(); log(`<b>Nächster Song</b> nicht vorbereitet: ${esc(e.message)}`, '', true); } return null; });
   }
   async function nextSong(reason) {
     if (S.composing && !S.composing.error) return;
-    if (mix) { const m = abortMix(); if (!m.adopted) { setSong(m.full); return; } }
+    if (mix) { const m = abortMix(); if (!m.adopted) { setSong(m.to); return; } }
     if (S.cur && S.cur.preview && reason !== 'dislike') return handoff(S.cur);
     if (!S.session) { if (S.cur) toast('Sag Melodyn zuerst, wonach dir ist', false); return; }
     if (reason === 'skip' && S.cur && !S.cur.replay) feedback('skip');
     stopDj();
-    if (S.next && S.nextState === 'ready') { const n = S.next; setSong(n, { djUrl: n.djUrl }); return; }
+    if (S.next && S.nextState === 'ready') {
+      const n = S.next, c = S.cur;
+      // Skip with the next song already analysed: short echo-out on the next beat instead of a hard cut
+      if (reason === 'skip' && c && c.mixTo && c.mixTo.to === n && !document.hidden && !audio.paused) {
+        const qp = Mix.quickPlan(c.mixTo.ia, c.mixTo.ib, audio.currentTime);
+        if (qp && runMix(c, qp)) return;
+      }
+      setSong(n);
+      return;
+    }
     if (overLimit()) return;
     const token = ++composeToken;
     if (S.nextState === 'working' && S.nextPromise) {
@@ -724,7 +750,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
       audio.pause(); paintNow(S.composing); renderNow();
       const song = await S.nextPromise;
       if (token !== composeToken) return;
-      if (song) { setSong(song, { djUrl: song.djUrl }); return; }
+      if (song) { setSong(song); return; }
     }
     // Nothing prepared: same fast path as a new wish
     S.composing = { title: 'Nächster Song', station: S.session.station, palette: S.session.palette, seed: 'n' + token, spec: S.session.spec, t0: performance.now(), expect: 12 };
@@ -733,7 +759,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
       const res = await understand({ mode: 'next' });
       if (token !== composeToken) return;
       res.new_session = false;
-      startSong(res);
+      startSong(res, { dj: false });
     } catch (e) {
       if (token !== composeToken) return;
       S.composing.error = e.message; renderNow(); toast(e.message, false);
@@ -741,7 +767,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   }
   function prevSong() {
     if (!S.cur || S.composing) return;
-    if (mix) { const m = abortMix(); setSong(m.full); return; }
+    if (mix) { const m = abortMix(); setSong(m.to); return; }
     if (audio.currentTime > 5 || !S.history.length) { audio.currentTime = 0; return; }
     const p = S.history.pop();
     const cur = S.cur; S.cur = null;
@@ -1274,7 +1300,9 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     audio.addEventListener('timeupdate', renderTime);
     audio.addEventListener('timeupdate', () => {
       const c = S.cur;
-      if (c && c.preview && c.mix && !mix && !document.hidden && !audio.paused && audio.currentTime >= c.mix.plan.takeover) runMix(c);
+      if (!c || mix || document.hidden || audio.paused || !c.mixTo || !c.mixTo.plan) return;
+      if (c.mixTo.to !== mixTarget(c)) return;
+      if (audio.currentTime >= c.mixTo.plan.takeover) runMix(c, c.mixTo.plan);
     });
     setInterval(() => { if (mix) renderTime(); }, 250);
     audio.addEventListener('play', syncPlayIcons);
