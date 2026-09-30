@@ -25,7 +25,7 @@ Regeln:
 - "station": kurzer deutscher Name für diesen Moment, z. B. "Heimfahrt, nachts", "Sonntags kochen", "Heute Abend".
 - "title": ein eigenständiger, schöner Songtitel (Deutsch oder Englisch, passend zur Sprache des Songs), nicht generisch.
 - "palette" wählt das Farbbild: night (nächtlich, urban, blau-orange), tunnel (dunkel, Nachtfahrt, blau-bernstein), kitchen (warm, gesellig, rot-orange-oliv), brass (Hip-Hop, Soul, Gold-Braun), focus (ruhig, konzentriert, grün-grau), dusk (traurig, zart, violett-rosa), run (Sport, Energie, Neon), morning (hoffnungsvoll, hell, gelb-pfirsich), rain (melancholisch, grau-blau).
-- "spec.genre" auf Englisch und präzise (z. B. "90s boom bap hip-hop", "nocturnal synthwave"), "spec.genre_de" kurz auf Deutsch für die Anzeige (z. B. "Boom Bap", "Synthwave").
+- "spec.genre" auf Englisch und so genau wie möglich. Übernimm jede Angabe des Nutzers zu Subgenre, Ära, Region und Szene wörtlich und verallgemeinere nie: "Hip-Hop, 90s, Westside" wird "1990s West Coast G-funk hip-hop", nicht "hip-hop"; "Hyperpop" bleibt "hyperpop", nicht "pop". "spec.genre_de" kurz auf Deutsch für die Anzeige, mit Ära und Region, wenn genannt (z. B. "90er West Coast", "Hyperpop", "Synthwave").
 - "spec.tempo_bpm" realistisch für das Genre. "energy" und "valence" zwischen 0 und 1.
 - "spec.vocals": none, male, female oder duet. Instrumental bei Fokus/Arbeit oder wenn gewünscht.
 - "spec.lyrics_language": de, wenn der Nutzer Deutsch spricht, außer er wünscht Englisch. "spec.lyrics_theme" kurz, konkret und passend zum Moment.
@@ -105,4 +105,73 @@ export function speakBody(text, voice = 'Charon') {
     contents: [{ parts: [{ text: `Say in a warm, relaxed, confident German radio DJ voice, natural pace, no pauses at the start: ${String(text).slice(0, 300)}` }] }],
     generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } },
   };
+}
+
+// ------------------------------------------------------------ producer
+// Second step: a producer model turns the spec plus the listener's own words into a detailed Lyria prompt.
+// Lyria follows concrete sonic descriptions far better than genre labels, and drifts to mainstream pop when
+// the prompt is vague. So the producer spells out what makes the genre unmistakable and what it must not become.
+export const PRODUCER_FAST = 'gemini-3.8-flash';
+export const PRODUCER_DEEP = 'gemini-3.1-pro-preview';
+
+export const PRODUCER_SYSTEM = `You are a senior record producer and the prompt writer for Google Lyria 3.5, a text-to-music model.
+You receive the listener's own words, a structured music spec, the session's earlier wishes and the listener's rules.
+You write the prompt that makes Lyria produce exactly the requested style. Genre fidelity matters more than anything else.
+
+How Lyria behaves:
+- It follows concrete sonic descriptions (drum machines, grooves, synth types, vocal delivery, mix aesthetics) much better than genre labels.
+- With vague prompts it drifts toward polished mainstream pop. Every prompt must actively prevent that drift.
+- It refuses prompts that name real artists, bands, songs, producers or labels. Never name any. Describe the sound instead.
+- It accepts exact BPM, key, and a timestamped structure like "[0:00-0:12] Intro: ...".
+
+Method:
+1. Pin down the exact target: micro-genre, era, region or scene. The listener's own qualifiers win over the spec (e.g. "90s", "West Coast", "hyper", "underground", "lo-fi"). Never widen them.
+2. Describe the signature of that style concretely and era-accurately:
+   drums (specific machines or break styles, swing, hi-hat patterns, kick character), bass (instrument, playing style),
+   harmony and leads (instruments, synth types, sampling style), sound design and effects, vocal delivery and processing
+   (rap flow vs singing, tone, ad-libs, pitch effects), arrangement habits, mix and master aesthetic (tape, grit, loudness, stereo width).
+3. Give tempo as exact BPM with the genre's feel (half-time, swing, straight), and a fitting key or mode.
+4. Vocals: gender, language, delivery, and the lyrical theme in a few words. Do not write full lyrics.
+5. "avoid": 4 to 8 short English phrases naming the styles and production traits this genre typically drifts into and must not become.
+6. English only. "core": 70 to 130 words describing the sound, without timeline. "structure": a timestamped arrangement for a full song of about 2:50 to 3:10, 5 to 7 sections, each with what enters or changes.
+7. The listener's rules always win over genre conventions (for example "no autotune" in a hyperpop song means natural, unprocessed vocals). Put rules that forbid something into "avoid".
+8. In mode "next", keep the same genre identity but make a clearly different song: new hook idea, shifted instrumentation focus, tempo within ±6 BPM.
+
+Example (listener said "Hyperpop, richtig drüber"):
+target: 2020s hyperpop, maximalist internet-underground sound
+core: Hyperpop at 158 BPM in F# major, maximalist and abrasive but sugary. Blown-out distorted 808 kicks and clipped snares, bitcrushed supersaw chords, sparkling glassy arpeggios and chiptune squares. Lead vocal pitched up a few semitones with hard, obvious autotune, playful and breathless, stacked chipmunk harmonies and glitchy vocal chops. Sudden stutter edits, tape-stop drops, one abrupt switch into a double-time breakcore section. Crushed, loud, deliberately clipping master with wide stereo glitter.
+avoid: polite radio pop, clean natural vocals, acoustic guitar, restrained dynamics, soft piano ballad, generic EDM build and drop
+
+Example (listener said "Hip-Hop, 90s, Westside"):
+target: early-to-mid 1990s West Coast G-funk
+core: 1990s West Coast G-funk hip-hop at 92 BPM in G minor, laid-back and sunny with a menacing undertone. Swung drum-machine groove with a punchy 808-style kick, crisp snare and relaxed 16th hi-hats, deep rubbery funk bassline, high whining portamento sine lead synth, warm Rhodes and string pads, talk-box ad-libs. Male rap vocal with a smooth, unhurried West Coast flow, gang-vocal hooks, occasional sung female chorus. Warm analog mix, tape saturation, spacious low end, no modern sheen.
+avoid: trap hi-hat rolls, 2010s pop-rap, glossy EDM synths, auto-tuned melodic rap, pop chorus, boom-bap East Coast grit`;
+
+const P = (type, extra = {}) => ({ type, ...extra });
+export const PRODUCER_SCHEMA = P('OBJECT', {
+  properties: { target: P('STRING'), core: P('STRING'), structure: P('STRING'), avoid: P('ARRAY', { items: P('STRING') }) },
+  required: ['target', 'core', 'structure', 'avoid'],
+});
+
+// input: { mode, words: [..], spec, rules: [..], previous }
+export function producerBody(input, model) {
+  const i = input && typeof input === 'object' ? input : {};
+  const brief = {
+    mode: i.mode === 'next' ? 'next' : 'first',
+    listener_words: (Array.isArray(i.words) ? i.words : []).map(w => String(w).slice(0, 400)).slice(-5),
+    spec: i.spec || {},
+    listener_rules: (Array.isArray(i.rules) ? i.rules : []).map(r => String(r).slice(0, 120)).slice(0, 12),
+    previous_song_prompt: i.previous ? String(i.previous).slice(0, 1500) : null,
+  };
+  const thinking = /^gemini-2\./.test(model) ? { thinkingBudget: 512 } : { thinkingLevel: 'low' };
+  return {
+    systemInstruction: { parts: [{ text: PRODUCER_SYSTEM }] },
+    contents: [{ role: 'user', parts: [{ text: 'Brief (JSON):\n' + JSON.stringify(brief) }] }],
+    generationConfig: { responseMimeType: 'application/json', responseSchema: PRODUCER_SCHEMA, temperature: 0.8, thinkingConfig: thinking },
+  };
+}
+export function readProducer(data) {
+  const r = readUnderstand(data);
+  if (!r || !String(r.core || '').trim()) throw new Error('empty');
+  return r;
 }

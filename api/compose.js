@@ -11,7 +11,7 @@ export async function POST(request) {
   let body;
   try { body = await request.json(); } catch { return json({ error: 'Ungültige Anfrage.' }, 400); }
   const prompt = String(body.prompt || '').trim();
-  if (!prompt || prompt.length > 2500) return json({ error: 'Der Musik-Prompt fehlt oder ist zu lang.' }, 400);
+  if (!prompt || prompt.length > 4000) return json({ error: 'Der Musik-Prompt fehlt oder ist zu lang.' }, 400);
   const model = body.length === 'clip' ? LYRIA_CLIP : LYRIA_FULL;
 
   const upstream = await fetch(`${API}/${model}:generateContent`, {

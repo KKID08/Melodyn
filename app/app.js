@@ -3,7 +3,7 @@
    On GitHub Pages the browser talks to Google directly with the user's own key (kept in localStorage).
    On Vercel it goes through /api/* so the key stays on the server. */
 import * as Mix from './mix.js';
-import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, speakBody, understandBody } from './prompt.js';
+import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js';
 
 (() => {
   'use strict';
@@ -22,6 +22,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   };
 
   const PRICE = { full: 0.08, clip: 0.04, gText: 0.30e-6, gAudio: 1.0e-6, gOut: 2.5e-6 };
+  // Per-model token prices [input, output] in $ per token, public list prices Sept 2026
+  const MODEL_PRICE = { [PRODUCER_FAST]: [0.75e-6, 3.75e-6], [PRODUCER_DEEP]: [2.0e-6, 12.0e-6] };
 
   // ------------------------------------------------------------ icons
   document.body.insertAdjacentHTML('afterbegin', `<svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -144,7 +146,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     session: null, stations: store.get('stations', []),
     chat: [], feedback: [],
     taste: store.get('taste', {}), rules: store.get('rules', []), reactions: store.get('reactions', 0), liked: new Set(),
-    settings: Object.assign({ len: 'full', pregen: true, quick: true, dj: true, limit: 25, code: '', key: '' }, store.get('settings', {})),
+    settings: Object.assign({ len: 'full', pregen: true, quick: true, dj: true, deep: true, limit: 25, code: '', key: '' }, store.get('settings', {})),
     total: store.get('costs', { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }),
     sess: { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], firstMs: [], audioSec: 0, genSec: 0 },
     day: store.get('day', { date: '', count: 0 }),
@@ -176,8 +178,10 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     ul.prepend(li);
     while (ul.children.length > 30) ul.lastChild.remove();
   }
-  function geminiCost(u) {
+  function geminiCost(u, model) {
     if (!u) return 0;
+    const mp = MODEL_PRICE[model];
+    if (mp) return (u.promptTokenCount || 0) * mp[0] + ((u.candidatesTokenCount || 0) + (u.thoughtsTokenCount || 0)) * mp[1];
     let text = 0, aud = 0;
     for (const d of u.promptTokensDetails || []) { if (d.modality === 'AUDIO') aud += d.tokenCount; else text += d.tokenCount; }
     if (!u.promptTokensDetails) text = u.promptTokenCount || 0;
@@ -214,7 +218,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
   }
 
   // ------------------------------------------------------------ server calls
-  class ApiError extends Error { constructor(m, code) { super(m); this.code = code; } }
+  class ApiError extends Error { constructor(m, code, status) { super(m); this.code = code; this.status = status; } }
   async function post(path, body) {
     let r;
     try {
@@ -250,7 +254,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     try { m = (await r.json()).error.message || ''; } catch { /* not json */ }
     if (/api key not valid|api_key_invalid|api key expired/i.test(m)) { openKey(true); throw new ApiError('Google akzeptiert den Schlüssel nicht. Trag ihn neu ein.', 'key'); }
     if (r.status === 429) throw new ApiError('Google meldet zu viele Anfragen oder ein aufgebrauchtes Kontingent. Warte kurz und prüf die Abrechnung in AI Studio.', 'rate');
-    throw new ApiError(m ? m.slice(0, 300) : `Google-Fehler ${r.status}`, 'google');
+    throw new ApiError(m ? m.slice(0, 300) : `Google-Fehler ${r.status}`, 'google', r.status);
   }
   function context() {
     const taste = Object.entries(S.taste).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([g, v]) => ({ genre: g, score: v }));
@@ -280,7 +284,40 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     addCost('gemini', cost);
     const tok = d.usage ? d.usage.totalTokenCount : 0;
     log(`<b>Gemini</b> ${payload.mode === 'next' ? 'plant den nächsten Song' : payload.audio ? 'hört zu und versteht' : 'versteht'} · ${((performance.now() - t0) / 1000).toFixed(1)} s · ${tok} Tokens · ${usd(cost, 4)}`, JSON.stringify(d.result, null, 2));
+    if (payload.mode === 'next') d.result._next = true;
     return d.result;
+  }
+  // The producer: a second model writes the actual Lyria prompt from the spec and the listener's own words.
+  // Falls back along the chain if a model is unavailable, and to the built-in prompt if all fail.
+  const deadModels = new Set();
+  async function produce(res, { deep = false, previous = null } = {}) {
+    const chain = [...(deep && S.settings.deep ? [PRODUCER_DEEP] : []), PRODUCER_FAST, GEMINI_MODEL].filter(m => !deadModels.has(m));
+    const input = {
+      mode: res._next ? 'next' : 'first',
+      words: (S.session && S.session.words) || [],
+      spec: res.spec,
+      rules: S.rules.filter(r => r.scope !== 'Aus').map(r => r.text),
+      previous,
+    };
+    for (const model of chain) {
+      const t0 = performance.now();
+      try {
+        let r, usage;
+        if (DIRECT()) { const raw = await google(model, producerBody(input, model)); r = readProducer(raw); usage = raw.usageMetadata; }
+        else { const d = await (await post('/api/produce', { model, input })).json(); r = d.result; usage = d.usage; }
+        const cost = geminiCost(usage, model);
+        addCost('gemini', cost);
+        log(`<b>Produzent</b> schreibt den Lyria-Prompt · ${esc(r.target || '')} · ${model} · ${((performance.now() - t0) / 1000).toFixed(1)} s · ${usd(cost, 4)}`, `${r.core}\n\n${r.structure}\n\nAvoid: ${(r.avoid || []).join(', ')}`);
+        res.lyria = r;
+        return r;
+      } catch (e) {
+        if (e.code === 'nokey' || e.code === 'key') throw e;
+        // Unknown model or unsupported option: don't try this one again in this session
+        if (e.status === 400 || e.status === 403 || e.status === 404) deadModels.add(model);
+        log(`<b>Produzent</b> ${model} nicht verfügbar${chain[chain.length - 1] === model ? ', nutze einfachen Prompt' : ', nächstes Modell'}`, e.message, true);
+      }
+    }
+    return null;
   }
   function lyriaPrompt(res) {
     const s = res.spec, v = s.vocals;
@@ -292,13 +329,25 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     if (avoid.length) parts.push('Avoid: ' + avoid.join(', '));
     return parts.join('. ') + '.';
   }
+  // Final text for Lyria: the producer's sound description, plus a timeline for full songs or a
+  // "straight into the hook" note for 30 s clips, plus everything the song must not become
+  function lyriaText(res, len) {
+    const L = res.lyria;
+    if (!L) return lyriaPrompt(res);
+    // The producer already turned the listener's rules into English "avoid" phrases
+    const avoid = [...new Set([...(L.avoid || []), ...(res.spec.avoid || [])])];
+    const body = len === 'clip'
+      ? `${L.core}\n30-second excerpt: start directly in the main hook with the full arrangement, so the style is unmistakable from the first second.`
+      : `${L.core}\nStructure:\n${L.structure}`;
+    return body + (avoid.length ? `\nAvoid: ${avoid.join(', ')}.` : '');
+  }
   // Plain fallback if Lyria refuses the detailed prompt (titles or themes can trip its filters)
   function simplePrompt(res) {
     const s = res.spec;
     return `${s.genre}, ${s.tempo_bpm} BPM, ${(s.mood || []).slice(0, 2).join(' and ')}. ${s.vocals === 'none' ? 'Instrumental.' : `${s.vocals === 'female' ? 'Female' : 'Male'} vocals in ${s.lyrics_language === 'en' ? 'English' : 'German'}.`}`;
   }
   async function compose(res, opts = {}) {
-    const len = opts.len || S.settings.len, retry = !!opts.retry, prompt = retry ? simplePrompt(res) : lyriaPrompt(res);
+    const len = opts.len || S.settings.len, retry = !!opts.retry, prompt = retry ? simplePrompt(res) : lyriaText(res, len);
     const t0 = performance.now();
     let d;
     try {
@@ -327,7 +376,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     const id = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     return {
       id, title: res.title, station: res.station || (S.session && S.session.station) || 'Melodyn', palette: res.palette || 'self', seed: id,
-      spec: res.spec, lyrics, prompt, blob, url: URL.createObjectURL(blob), dur: 0, genMs: ms, len,
+      spec: res.spec, target: res.lyria ? res.lyria.target : '', lyrics, prompt, blob, url: URL.createObjectURL(blob), dur: 0, genMs: ms, len,
     };
   }
 
@@ -697,10 +746,15 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
       if (ex) ex.scope = r.scope; else S.rules.push({ text: r.text, scope: r.scope });
       toast(`Gemerkt: ${r.text} (${r.scope.toLowerCase()})`);
     }
+    // The listener's own words travel with the session: the producer reads them, not just the spec
+    const said = res._next ? '' : String(res.transcript || '').trim();
     if (res.new_session || !S.session) {
-      S.session = { id: 'st' + Date.now().toString(36), station: res.station, palette: res.palette, spec: res.spec, title: res.title };
-    } else Object.assign(S.session, { spec: res.spec, palette: res.palette || S.session.palette });
-    const st = { station: S.session.station, palette: S.session.palette, spec: S.session.spec };
+      S.session = { id: 'st' + Date.now().toString(36), station: res.station, palette: res.palette, spec: res.spec, title: res.title, words: said ? [said] : [] };
+    } else {
+      Object.assign(S.session, { spec: res.spec, palette: res.palette || S.session.palette });
+      if (said) S.session.words = [...(S.session.words || []), said].slice(-5);
+    }
+    const st = { station: S.session.station, palette: S.session.palette, spec: S.session.spec, words: S.session.words };
     S.stations = [st, ...S.stations.filter(x => x.station !== st.station)].slice(0, 8);
     saveState(); renderTaste(false); renderRecent(); paintOrb();
   }
@@ -729,16 +783,20 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     stopDj();
     const quick = S.settings.len === 'full' && S.settings.quick;
     const t0 = performance.now();
-    S.composing = { title: res.title, station: S.session.station, palette: res.palette, seed: 'c' + token + res.title, spec: res.spec, t0, expect: quick || S.settings.len === 'clip' ? 10 : 46 };
+    S.composing = { title: res.title, station: S.session.station, palette: res.palette, seed: 'c' + token + res.title, spec: res.spec, t0, expect: quick || S.settings.len === 'clip' ? 13 : 49 };
     if (S.cur) audio.pause();
     paintNow(S.composing);
     if (delayOpen) setTimeout(() => { if (token === composeToken) setOn('s-player', true); }, delayOpen);
     else setOn('s-player', true);
     renderNow();
     res.station = S.session.station;
+    // The DJ can already be recorded while the producer writes the music prompt
+    const djP = withDj ? tts(res.dj_line) : Promise.resolve(null);
+    try { await produce(res, { previous: res._next && S.cur ? S.cur.prompt : null }); }
+    catch (e) { if (token === composeToken) { S.composing.error = e.message; renderNow(); toast(e.message, false); } return; }
+    if (token !== composeToken) return;
     const fullP = compose(res, { len: S.settings.len });
     const clipP = quick ? compose(res, { len: 'clip' }).catch(() => null) : null;
-    const djP = withDj ? tts(res.dj_line) : Promise.resolve(null);
     const fail = e => {
       if (token !== composeToken) return;
       S.composing = S.composing || { title: res.title, station: S.session.station, palette: res.palette, seed: 'e' + token, spec: res.spec, t0 };
@@ -795,6 +853,9 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
       if (token !== S.nextToken) return null;
       S.nextTitle = res.title; renderNext();
       res.station = S.session ? S.session.station : res.station;
+      // No one is waiting here, so the more thorough producer model gets the job
+      await produce(res, { deep: true, previous: S.cur ? S.cur.prompt : null });
+      if (token !== S.nextToken) return null;
       const song = await compose(res);
       if (token !== S.nextToken) return null;
       if (S.session) S.session.spec = res.spec;
@@ -1252,7 +1313,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
       const blocks = lyr.split(/\[\[[A-Z]\d+\]\]/).map(b => b.trim()).filter(Boolean);
       html += blocks.map(b => `<div class="part">${b.split('\n').map(l => l.replace(/^\[:\]\s*/, '').trim()).filter(Boolean).map(l => `<p>${esc(l)}</p>`).join('')}</div>`).join('');
     } else html += '<div class="part"><p>Instrumental, ohne Text.</p></div>';
-    if (s.prompt) html += `<div class="h-s">So hat Melodyn den Song bei Lyria bestellt</div><pre>${esc(s.prompt)}</pre>`;
+    if (s.prompt) html += `<div class="h-s">So hat Melodyn den Song bei Lyria bestellt</div>${s.target ? `<p class="meta">Ziel: ${esc(s.target)}</p>` : ''}<pre>${esc(s.prompt)}</pre>`;
     $('#lyrbody').innerHTML = html;
     setOn('s-lyr', true);
   }
@@ -1297,6 +1358,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     $('#pregen').setAttribute('aria-checked', String(!!S.settings.pregen));
     $('#quick').setAttribute('aria-checked', String(!!S.settings.quick));
     $('#djset').setAttribute('aria-checked', String(!!S.settings.dj));
+    $('#deepset').setAttribute('aria-checked', String(!!S.settings.deep));
     $('#limitv').textContent = S.settings.limit;
     $('#codeinfo').textContent = S.settings.code ? 'Ein Code ist gespeichert.' : 'Nur nötig, wenn auf Vercel ein APP_CODE gesetzt ist.';
     $('#coderow').hidden = DIRECT();
@@ -1328,7 +1390,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
         if (!st) return;
         unlockAudio();
         if (S.session && S.session.station === st.station && S.cur && !S.cur.replay) { setOn('s-player', true); return; }
-        S.session = { id: 'st' + Date.now().toString(36), station: st.station, palette: st.palette, spec: st.spec, title: '' };
+        S.session = { id: 'st' + Date.now().toString(36), station: st.station, palette: st.palette, spec: st.spec, title: '', words: st.words || [] };
         S.nextState = 'none'; S.next = null; S.armed = null; S.queue = null;
         wishSent(); paintOrb();
         setOn('s-player', true);
@@ -1391,6 +1453,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, s
     $('#avatar').addEventListener('click', () => { renderSettings(); setOn('s-set', true); });
     $('#tastecost').addEventListener('click', () => { renderSettings(); setOn('s-set', true); });
     $('#pregen').addEventListener('click', () => { S.settings.pregen = !S.settings.pregen; saveState(); renderSettings(); if (!S.settings.pregen) { S.nextToken++; S.next = null; S.nextState = 'none'; S.armed = null; renderNext(); } else if (S.cur && !S.cur.replay && !S.cur.preview) armNext(S.cur); });
+    $('#deepset').addEventListener('click', () => { S.settings.deep = !S.settings.deep; saveState(); renderSettings(); });
     $('#quick').addEventListener('click', () => { S.settings.quick = !S.settings.quick; saveState(); renderSettings(); });
     $('#djset').addEventListener('click', () => { S.settings.dj = !S.settings.dj; if (!S.settings.dj) stopDj(); saveState(); renderSettings(); });
     $('#setcode').addEventListener('click', () => { setOn('s-set', false); openCode(); });

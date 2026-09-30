@@ -17,7 +17,7 @@
   <aside class="panel">
     <div class="wm"><svg><use href="#logo"/></svg>melodyn<small>Live-Prototyp</small></div>
     <h1>Sag, wonach dir ist. <span class="serif">Echt diesmal.</span></h1>
-    <p class="lead">Gemini hört dir zu und versteht den Wunsch, Lyria komponiert den Song. Jeder neue Song kostet echtes Geld auf deinem Google-Konto, darum siehst du hier jeden Cent.</p>
+    <p class="lead">Gemini hört dir zu und versteht den Wunsch, ein Produzenten-Modell schreibt daraus den Musik-Prompt, Lyria komponiert den Song. Jeder neue Song kostet echtes Geld auf deinem Google-Konto, darum siehst du hier jeden Cent.</p>
     <div class="costbox" id="costbox"></div>
     <h2>Unter der Haube</h2>
     <ol class="calllog" id="calllog"><li class="muted">Noch keine Anfrage. Tippe auf die Kugel.</li></ol>
@@ -161,6 +161,8 @@
                   <button class="toggle" id="quick" role="switch" aria-checked="true" aria-label="Schnellstart mit Clip"><i></i></button></div>
                 <div class="setrow"><div><b>DJ-Stimme</b><span>Kündigt Songs an und überbrückt Wartezeit. Kostet etwa 0,002 $ pro Ansage.</span></div>
                   <button class="toggle" id="djset" role="switch" aria-checked="true" aria-label="DJ-Stimme"><i></i></button></div>
+                <div class="setrow"><div><b>Gründlicher Produzent</b><span>Vorbereitete Songs schreibt Gemini Pro als Musik-Prompt. Trifft Genres genauer, ca. 1 bis 2 Cent pro Song, keine zusätzliche Wartezeit.</span></div>
+                  <button class="toggle" id="deepset" role="switch" aria-checked="true" aria-label="Gründlicher Produzent"><i></i></button></div>
                 <div class="setrow"><div><b>Nächsten Song vorbereiten</b><span>Damit keine Pause entsteht. Kostet auch, wenn du ihn skippst.</span></div>
                   <button class="toggle" id="pregen" role="switch" aria-checked="true"><i></i></button></div>
                 <div class="setrow"><div><b>Tageslimit</b><span>Danach fragt Melodyn nach, bevor neue Songs entstehen.</span></div>

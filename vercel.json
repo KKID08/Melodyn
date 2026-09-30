@@ -1,6 +1,7 @@
 {
   "functions": {
     "api/understand.js": { "maxDuration": 60 },
+    "api/produce.js": { "maxDuration": 60 },
     "api/compose.js": { "maxDuration": 300 },
     "api/speak.js": { "maxDuration": 60 }
   }

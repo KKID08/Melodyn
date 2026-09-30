@@ -15,8 +15,9 @@ Voice-first Musikstream: Du sagst, wonach dir ist, Melodyn erzeugt passende Song
 
 1. Du tippst auf die Kugel und sprichst (oder schreibst).
 2. `api/understand.js` schickt Aufnahme, Chat-Verlauf, Geschmack und Regeln an **Gemini 2.5 Flash**. Zurück kommt eine Music-Spec als JSON.
-3. Die App baut daraus den Musik-Prompt und `api/compose.js` bestellt den Song bei **Lyria 3.5** (voll, ca. 3 Min.) oder **Lyria Clip** (30 s).
-4. Die MP3 läuft im Player. Während sie läuft, wird der nächste Song vorbereitet und im Takt übergeblendet (ohne DJ-Ansage). Die DJ-Stimme kommt nur bei einem neuen Wunsch oder Richtungswechsel.
+3. Ein **Produzenten-Modell** schreibt daraus den eigentlichen Musik-Prompt: typische Drums, Bass, Synths, Gesang und Mix des Genres, Tempo, Tonart, Songaufbau mit Zeitmarken und eine Liste, was der Song nicht werden darf (z. B. „kein 2010er Pop-Rap“). Es bekommt dafür auch die wörtlichen Worte des Nutzers, damit „90s Westside“ nicht zu „Hip-Hop“ verwässert. Für den ersten Song arbeitet Gemini 3.8 Flash (schnell), für vorbereitete Songs Gemini 3.1 Pro (gründlicher, niemand wartet). Fällt ein Modell aus, springt das nächste ein.
+4. `api/compose.js` bestellt den Song bei **Lyria 3.5** (voll, ca. 3 Min.) oder **Lyria Clip** (30 s).
+5. Die MP3 läuft im Player. Während sie läuft, wird der nächste Song vorbereitet und im Takt übergeblendet (ohne DJ-Ansage). Die DJ-Stimme kommt nur bei einem neuen Wunsch oder Richtungswechsel.
 
 Was die App mitdenkt:
 - **Wartezeit:** Erst ein 30-Sekunden-Clip plus DJ-Ansage, der volle Song übernimmt im Takt. Die Einstellungen zeigen die gemessene „Zeit bis Musik“.
@@ -52,6 +53,7 @@ Optionale Variablen: `GEMINI_MODEL` (Standard `gemini-2.5-flash`), `LYRIA_MODEL`
 | Schritt | Preis | Gemessen im Test |
 |---|---|---|
 | Gemini versteht Sprache oder Text | 0,30 $ je 1 Mio. Text-Tokens, 1,00 $ je 1 Mio. Audio-Tokens, 2,50 $ je 1 Mio. Antwort-Tokens | ca. 0,001 $ pro Wunsch, ca. 2 s |
+| Produzent (Musik-Prompt) | Gemini 3.8 Flash 0,75 $ / 3,75 $ je 1 Mio. Tokens, Gemini 3.1 Pro 2 $ / 12 $ | ca. 0,005 $ (Flash) bzw. 0,015 $ (Pro) pro Song, 1 bis 3 s |
 | Lyria 3.5, voller Song | 0,08 $ pro Song | ca. 2:50 Min. Musik, 34 bis 45 s Wartezeit |
 | Lyria Clip | 0,04 $ pro Clip | 30 s Musik, ca. 8 s Wartezeit |
 
