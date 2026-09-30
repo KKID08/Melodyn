@@ -1,0 +1,6 @@
+{
+  "functions": {
+    "api/understand.js": { "maxDuration": 60 },
+    "api/compose.js": { "maxDuration": 300 }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "melodyn",
+  "private": true,
+  "type": "module",
+  "description": "Melodyn live prototype: Gemini understands, Lyria composes."
+}

@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Melodyn</title>
+<link rel="stylesheet" href="app/fonts/fonts.css">
+<link rel="stylesheet" href="app/app.css">
+</head>
+<body class="live">
+
+<main id="appmode">
+  <div class="aura bgglow" data-p="self" data-seed="9"></div>
+  <aside class="panel">
+    <div class="wm"><svg><use href="#logo"/></svg>melodyn<small>Live-Prototyp</small></div>
+    <h1>Sag, wonach dir ist. <span class="serif">Echt diesmal.</span></h1>
+    <p class="lead">Gemini hört dir zu und versteht den Wunsch, Lyria komponiert den Song. Jeder neue Song kostet echtes Geld, darum siehst du hier jeden Cent.</p>
+    <div class="costbox" id="costbox"></div>
+    <h2>Unter der Haube</h2>
+    <ol class="calllog" id="calllog"><li class="muted">Noch keine Anfrage. Tippe auf die Kugel.</li></ol>
+  </aside>
+
+  <div class="stage">
+    <div class="device-wrap" id="phonewrap">
+      <div class="frame" id="phoneframe">
+        <div class="phone" id="phone">
+          <div class="sb"><span class="clock">9:41</span><div class="island"></div><span class="icons" id="sbicons"></span></div>
+
+          <!-- Home -->
+          <section class="scr tabscr on" id="s-home">
+            <div class="head">
+              <div><p id="greet">Guten Abend</p><div class="h-xl">Wonach ist dir?</div></div>
+              <button class="avatar press" id="avatar" aria-label="Kosten und Einstellungen"><div class="aura" style="inset:0" data-p="self" data-seed="2"></div></button>
+            </div>
+            <button class="orbwrap" id="orb" aria-label="Sprechen">
+              <div class="aura glow" data-p="self" data-seed="4" data-blur=".22"></div>
+              <div class="aura orb" data-p="self" data-seed="4" data-blur=".14" data-lines="11" data-la=".28"></div>
+            </button>
+            <div class="orb-label"><b>Tippen und einfach sagen</b><button class="typeinstead" id="typeinstead">oder schreiben</button></div>
+            <div class="sec">
+              <div class="sec-h"><div class="h-s">Weiter hören</div><button data-tab="lib">Alle</button></div>
+              <div class="hrow" id="recent"></div>
+            </div>
+          </section>
+
+          <!-- Library -->
+          <section class="scr tabscr" id="s-lib">
+            <div class="head"><div class="h-xl">Bibliothek</div><div class="acts"><button id="libplus" aria-label="Neuer Wunsch"><svg class="i"><use href="#plus"/></svg></button></div></div>
+            <div class="seg" id="libseg"><button class="on" data-seg="songs">Gespeichert</button><button data-seg="hist">Verlauf</button></div>
+            <div class="scroll" id="libbody"></div>
+          </section>
+
+          <!-- Taste -->
+          <section class="scr tabscr" id="s-taste">
+            <div class="head"><div class="h-xl">Dein Sound</div><button id="tastecost" aria-label="Kosten"><svg class="i"><use href="#tune"/></svg></button></div>
+            <div class="thero"><div class="aura" style="inset:0" data-p="self" data-seed="4" data-blur=".15" data-lines="14" data-la=".2"></div><div class="shade"></div>
+              <div class="txt"><p id="tastesum">Noch lernt Melodyn dich kennen. Like, skippe und speichere, dann entsteht hier dein Profil.</p><span id="learned"></span></div></div>
+            <div class="scroll">
+              <div class="blk"><div class="h-s">Was du magst <small>aus deinen Reaktionen</small></div><div id="genres"></div></div>
+              <div class="blk" id="nowblk"></div>
+              <div class="blk"><div class="h-s">Deine Regeln</div><div id="rules"></div></div>
+            </div>
+          </section>
+
+          <div class="mini" id="mini">
+            <div class="th" id="minith"></div>
+            <div style="min-width:0"><b id="minititle"></b><span id="ministation"></span></div>
+            <button class="c" id="miniplay" aria-label="Abspielen"><svg class="i f"><use href="#play"/></svg></button>
+            <button class="c" id="mininext" aria-label="Nächster Song"><svg class="i f"><use href="#next"/></svg></button>
+            <div class="prog" id="miniprog"></div>
+          </div>
+          <nav class="tabbar" id="tabbar">
+            <button class="on" data-tab="home"><svg class="i"><use href="#listen"/></svg>Hören</button>
+            <button data-tab="lib"><svg class="i"><use href="#lib"/></svg>Bibliothek</button>
+            <button data-tab="taste"><svg class="i"><use href="#user"/></svg>Dein Sound</button>
+          </nav>
+
+          <!-- Listening -->
+          <section class="scr" id="s-listen">
+            <div class="aura halo" id="halo"></div>
+            <div class="fade"></div>
+            <div class="top">
+              <button class="circle" id="listenclose" aria-label="Abbrechen"><svg class="i" style="width:18px;height:18px"><use href="#x"/></svg></button>
+              <span class="live" id="livelabel"><i></i>Melodyn hört zu</span>
+              <div style="width:36px"></div>
+            </div>
+            <p class="said" id="said"></p>
+            <div class="got" id="got"></div>
+            <div class="wave" id="wave"></div>
+            <button class="circle stopbtn" id="stopbtn" aria-label="Senden"><svg class="i f"><use href="#stop"/></svg></button>
+            <div class="hint" id="listenhint">Tippen zum Senden</div>
+          </section>
+
+          <!-- Player -->
+          <section class="scr" id="s-player">
+            <div class="aura bg" id="pbg"></div>
+            <div class="veil"></div>
+            <div class="ptop">
+              <button class="circle" id="pclose" aria-label="Schließen"><svg class="i" style="width:20px;height:20px"><use href="#chev"/></svg></button>
+              <div><b id="pstation"></b><span id="psub"></span></div>
+              <button class="circle" style="justify-self:end" id="plyrics" aria-label="Songtext"><svg class="i" style="width:20px;height:20px"><use href="#more"/></svg></button>
+            </div>
+            <div class="pcover" id="pcover"><div class="aura" style="inset:0" id="pcoverart"></div><div class="shim"></div><div class="waitclock" id="waitclock"></div></div>
+            <div class="pmeta">
+              <div style="min-width:0"><h1 id="ptitle"></h1><p id="pgenre"></p></div>
+              <button class="add" id="padd" aria-label="In Bibliothek speichern"><svg class="i"><use href="#add" id="paddicon"/></svg></button>
+            </div>
+            <div class="pprog"><div class="track" id="ptrack"><i id="pbar"></i></div><div class="times"><span id="pcur">0:00</span><span id="prem">−0:00</span></div></div>
+            <div class="pctrl">
+              <button class="circle side" id="pdown" aria-label="Nicht mein Ding"><svg class="i"><use href="#down"/></svg></button>
+              <button class="circle mid" id="pprev" aria-label="Vorheriger Song"><svg class="i f"><use href="#prev"/></svg></button>
+              <button class="circle play" id="pplay" aria-label="Abspielen"><svg class="i f"><use href="#play" class="playuse"/></svg></button>
+              <button class="circle mid" id="pnextbtn" aria-label="Nächster Song"><svg class="i f"><use href="#next"/></svg></button>
+              <button class="circle side" id="pup" aria-label="Gefällt mir"><svg class="i"><use href="#up"/></svg></button>
+            </div>
+            <div class="pnext" id="pnext"><span class="ld"><i></i><i></i><i></i></span><span id="pnexttxt"></span></div>
+            <button class="steer" id="steer"><span>„Etwas schneller“, „mehr Gitarren“ …</span><span class="circle"><svg class="i"><use href="#mic"/></svg></span></button>
+          </section>
+
+          <!-- Conversation -->
+          <section class="scr" id="s-talk">
+            <div class="aura tbg" id="tbg"></div>
+            <div class="dim" id="talkdim"></div>
+            <div class="tmini"><div class="art" id="tminiart"></div><div><b id="tminititle">Melodyn</b><span id="tminisub">Sag, wonach dir ist</span></div></div>
+            <div class="sheet">
+              <button class="grab" aria-label="Schließen"></button>
+              <div class="msgs" id="msgs"></div>
+              <div class="qchips" id="qchips"></div>
+              <form class="compose" id="compose" autocomplete="off">
+                <input id="composein" placeholder="Schreib Melodyn, wonach dir ist …" aria-label="Nachricht an Melodyn">
+                <button class="circle" type="submit" id="composebtn" aria-label="Sprechen oder senden"><svg class="i" id="composeicon"><use href="#mic"/></svg></button>
+              </form>
+            </div>
+          </section>
+
+          <!-- Lyrics / info sheet -->
+          <section class="scr" id="s-lyr">
+            <div class="dim" id="lyrdim"></div>
+            <div class="sheet lyrsheet">
+              <button class="grab" aria-label="Schließen"></button>
+              <div class="lyrbody" id="lyrbody"></div>
+            </div>
+          </section>
+
+          <!-- Costs & settings -->
+          <section class="scr" id="s-set">
+            <div class="dim" id="setdim"></div>
+            <div class="sheet setsheet">
+              <button class="grab" aria-label="Schließen"></button>
+              <div class="setbody">
+                <div class="h-xl" style="font-size:28px">Kosten &amp; Einstellungen</div>
+                <div class="costbox" id="costbox2"></div>
+                <div class="setrow"><div><b>Songlänge</b><span>Voll: ca. 3 Min., 0,08 $, ~45 s Wartezeit. Kurz: 30 s, 0,04 $, ~8 s.</span></div>
+                  <div class="seg2" id="lenseg"><button data-len="full">Voll</button><button data-len="clip">Kurz</button></div></div>
+                <div class="setrow"><div><b>Nächsten Song vorbereiten</b><span>Damit keine Pause entsteht. Kostet auch, wenn du ihn skippst.</span></div>
+                  <button class="toggle" id="pregen" role="switch" aria-checked="true"><i></i></button></div>
+                <div class="setrow"><div><b>Tageslimit</b><span>Danach fragt Melodyn nach, bevor neue Songs entstehen.</span></div>
+                  <div class="stepper"><button data-limit="-5" aria-label="Weniger">−</button><b id="limitv">25</b><button data-limit="5" aria-label="Mehr">+</button></div></div>
+                <div class="setrow"><div><b>Zugangscode</b><span id="codeinfo">Nur nötig, wenn auf Vercel ein APP_CODE gesetzt ist.</span></div>
+                  <button class="pillbtn" id="setcode">Ändern</button></div>
+                <button class="pillbtn wide" id="resetcost">Kostenzähler zurücksetzen</button>
+                <p class="finep">Preise: Lyria 3.5 0,08 $ pro Song, Lyria Clip 0,04 $, Gemini 2.5 Flash 0,30 $ je 1 Mio. Text-Tokens, 1,00 $ je 1 Mio. Audio-Tokens, 2,50 $ je 1 Mio. Antwort-Tokens. Stand Sept. 2026 laut öffentlichen Preislisten. Deine echte Rechnung siehst du in Google AI Studio.</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Access code -->
+          <section class="scr" id="s-code">
+            <div class="codebox">
+              <div class="wm" style="justify-content:center"><svg><use href="#logo"/></svg>melodyn</div>
+              <h2>Zugangscode</h2>
+              <p>Dieser Prototyp nutzt einen bezahlten Google-Zugang. Gib den Code ein, den du bei Vercel als APP_CODE hinterlegt hast.</p>
+              <form id="codeform" autocomplete="off"><input id="codein" type="password" placeholder="Code" aria-label="Zugangscode"><button class="btn-w" type="submit">Weiter</button></form>
+              <p class="err" id="codeerr"></p>
+            </div>
+          </section>
+
+          <div class="toast" id="toast"><svg class="i"><use href="#check"/></svg><span id="toasttxt"></span></div>
+          <div class="home-ind"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<audio id="audio" preload="auto" playsinline></audio>
+<script src="app/app.js"></script>
+</body>
+</html>

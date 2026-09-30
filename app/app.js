@@ -1,0 +1,1024 @@
+/* Melodyn live prototype.
+   Real microphone -> /api/understand (Gemini) -> Music-Spec -> /api/compose (Lyria) -> real MP3. */
+(() => {
+  'use strict';
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+  const usd = (v, d = 2) => (v < 0.01 && v > 0 && d === 2 ? '<0,01' : v.toFixed(d).replace('.', ',')) + ' $';
+  const REDUCED = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('melodyn.' + k); return v ? JSON.parse(v) : d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('melodyn.' + k, JSON.stringify(v)); } catch { /* private mode */ } },
+  };
+
+  const PRICE = { full: 0.08, clip: 0.04, gText: 0.30e-6, gAudio: 1.0e-6, gOut: 2.5e-6 };
+
+  // ------------------------------------------------------------ icons
+  document.body.insertAdjacentHTML('afterbegin', `<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11.5" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path d="M7 4.8v14.4a.8.8 0 0 0 1.2.7l11.4-7.2a.8.8 0 0 0 0-1.4L8.2 4.1A.8.8 0 0 0 7 4.8z"/></symbol>
+  <symbol id="pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="4.5" width="4" height="15" rx="1.2"/></symbol>
+  <symbol id="next" viewBox="0 0 24 24"><path d="M4 5.6v12.8a.7.7 0 0 0 1.1.6l9.2-6.4a.7.7 0 0 0 0-1.2L5.1 5A.7.7 0 0 0 4 5.6z"/><rect x="16.5" y="5" width="2.4" height="14" rx="1.1"/></symbol>
+  <symbol id="prev" viewBox="0 0 24 24"><g transform="translate(24 0) scale(-1 1)"><path d="M4 5.6v12.8a.7.7 0 0 0 1.1.6l9.2-6.4a.7.7 0 0 0 0-1.2L5.1 5A.7.7 0 0 0 4 5.6z"/><rect x="16.5" y="5" width="2.4" height="14" rx="1.1"/></g></symbol>
+  <symbol id="up" viewBox="0 0 24 24"><path d="M7 10.5V20H4.5A1.5 1.5 0 0 1 3 18.5V12a1.5 1.5 0 0 1 1.5-1.5H7zm0 0l3.6-6.6A1.9 1.9 0 0 1 14 5.3V9h4.9a2 2 0 0 1 2 2.4l-1.4 6.9a2 2 0 0 1-2 1.7H7"/></symbol>
+  <symbol id="down" viewBox="0 0 24 24"><g transform="rotate(180 12 12)"><path d="M7 10.5V20H4.5A1.5 1.5 0 0 1 3 18.5V12a1.5 1.5 0 0 1 1.5-1.5H7zm0 0l3.6-6.6A1.9 1.9 0 0 1 14 5.3V9h4.9a2 2 0 0 1 2 2.4l-1.4 6.9a2 2 0 0 1-2 1.7H7"/></g></symbol>
+  <symbol id="add" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></symbol>
+  <symbol id="added" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"/><path d="M8 12.3l2.7 2.7L16.2 9.5" stroke="#0a0a0c" stroke-width="2"/></symbol>
+  <symbol id="chev" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></symbol>
+  <symbol id="chevr" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+  <symbol id="more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.7" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+  <symbol id="lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3"/></symbol>
+  <symbol id="send" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></symbol>
+  <symbol id="listen" viewBox="0 0 24 24"><path d="M3.5 10.5v3M7.5 7v10M12 3.5v17M16.5 7.5v9M20.5 10v4"/></symbol>
+  <symbol id="lib" viewBox="0 0 24 24"><rect x="3" y="7.5" width="13.5" height="13.5" rx="3"/><path d="M7.5 3.5h9.5A3.5 3.5 0 0 1 20.5 7v9.5"/></symbol>
+  <symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7"/></symbol>
+  <symbol id="tune" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+  <symbol id="stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2.2"/></symbol>
+  <symbol id="logo" viewBox="0 0 32 32"><path d="M4 18.5c2.2 0 2.6-7 4.8-7s2.6 11 4.8 11 2.6-15 4.8-15 2.6 15 4.8 15 2.6-7.5 4.8-7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>`);
+  $('#sbicons').innerHTML = `<svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.8" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="17" height="9" rx="2.4" fill="currentColor"/></svg>`;
+
+  // ------------------------------------------------------------ auras
+  const PAL = {
+    night:   { bg: '#0b1236', c: ['#ff7a2f', '#e23d6d', '#2a47b8', '#0f6f8f', '#ffb56b', '#3b1f7a'] },
+    tunnel:  { bg: '#0a0f2a', c: ['#ff9a3d', '#1d3fb0', '#c2366b', '#0a5f80', '#ffd08a'] },
+    kitchen: { bg: '#3a1408', c: ['#ffb23f', '#e8472b', '#7a8f2e', '#ff8a5b', '#f6d38a'] },
+    brass:   { bg: '#24120a', c: ['#ffb347', '#d9480f', '#8f3b76', '#ffd8a8', '#e8590c'] },
+    focus:   { bg: '#0f2a2a', c: ['#8fc7b5', '#3f7f74', '#d7e6df', '#4e6e9e', '#a9c9d6'] },
+    dusk:    { bg: '#120f2e', c: ['#6d5bd0', '#e79bb5', '#2c3a8c', '#b06ab3', '#f2c4ce'] },
+    run:     { bg: '#1a0630', c: ['#ff3d71', '#5b2eff', '#00b3ff', '#ff8a00', '#c23bff'] },
+    morning: { bg: '#2b2210', c: ['#ffd36b', '#ff9e7a', '#9fd3e6', '#f7efd8', '#e8b04b'] },
+    rain:    { bg: '#101a24', c: ['#6f8fa8', '#c6d3dc', '#3d5a73', '#9bb3a6', '#e2e8ec'] },
+    self:    { bg: '#0d0f2a', c: ['#ff7a2f', '#ffb23f', '#2a47b8', '#e23d6d', '#8fc7b5', '#6d5bd0'] },
+  };
+  function rng(seed) {
+    let a = 0;
+    for (const ch of String(seed)) a = Math.imul(a ^ ch.charCodeAt(0), 2654435761) >>> 0;
+    return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  function drawRings(c, W, H, seed, n, alpha) {
+    const r = rng('rings' + seed);
+    const cx = W * (0.3 + r() * 0.4), cy = H * (0.3 + r() * 0.4);
+    const maxR = Math.hypot(W, H) * 0.62;
+    const f1 = 2 + Math.floor(r() * 3), f2 = 4 + Math.floor(r() * 4), p1 = r() * 6.28, p2 = r() * 6.28;
+    c.lineWidth = Math.max(0.6, W / 420);
+    for (let i = 0; i < n; i++) {
+      const base = maxR * Math.pow((i + 1) / (n + 1), 1.15), amp = base * 0.07;
+      c.beginPath();
+      for (let a = 0; a <= Math.PI * 2 + 0.02; a += Math.PI / 120) {
+        const rr = base + amp * Math.sin(a * f1 + p1 + i * 0.28) + amp * 0.45 * Math.sin(a * f2 + p2 - i * 0.2);
+        const x = cx + rr * Math.cos(a), y = cy + rr * Math.sin(a);
+        if (a === 0) c.moveTo(x, y); else c.lineTo(x, y);
+      }
+      c.closePath();
+      c.strokeStyle = `rgba(255,255,255,${alpha * (1 - i / n * 0.6)})`;
+      c.stroke();
+    }
+    return [cx / W, cy / H];
+  }
+  function paint(el, p, seed, o = {}) {
+    if (!el) return;
+    el.classList.add('aura');
+    const pal = PAL[p] || PAL.night;
+    const W = el.clientWidth || 300, H = el.clientHeight || 300, M = Math.max(W, H);
+    const r = rng(p + seed), blur = o.blur ?? 0.16, n = o.n ?? 4;
+    const lay = document.createElement('div');
+    lay.className = 'lay';
+    lay.style.background = pal.bg;
+    for (let k = 0; k < n; k++) {
+      const i = document.createElement('i'), s = M * (0.5 + r() * 0.5);
+      i.style.cssText = `width:${s}px;height:${s}px;left:${r() * W - s / 2}px;top:${r() * H - s / 2}px;background:${pal.c[k % pal.c.length]};filter:blur(${M * blur}px);opacity:${0.75 + r() * 0.25};--dx:${((r() - 0.5) * M * 0.3).toFixed(1)}px;--dy:${((r() - 0.5) * M * 0.3).toFixed(1)}px;--sc:${(0.85 + r() * 0.35).toFixed(2)};--d:${(9 + r() * 10).toFixed(1)}s;animation-delay:-${(r() * 10).toFixed(1)}s`;
+      lay.appendChild(i);
+    }
+    if (o.lines) {
+      const cv = document.createElement('canvas'), d = 2;
+      cv.width = Math.round(W * d); cv.height = Math.round(H * d);
+      const c = cv.getContext('2d'); c.scale(d, d);
+      const [ox, oy] = drawRings(c, W, H, p + seed, o.lines, o.la ?? 0.22);
+      cv.style.setProperty('--ox', ox * 100 + '%'); cv.style.setProperty('--oy', oy * 100 + '%');
+      lay.appendChild(cv);
+    }
+    const old = $$(':scope > .lay', el);
+    if (old.length && o.fade !== false && !REDUCED) {
+      lay.style.opacity = '0'; el.appendChild(lay);
+      requestAnimationFrame(() => requestAnimationFrame(() => { lay.style.opacity = '1'; }));
+      setTimeout(() => old.forEach(x => x.remove()), 1100);
+    } else { old.forEach(x => x.remove()); el.appendChild(lay); }
+  }
+  function paintStatic(root) {
+    $$('.aura[data-p]', root).forEach(el => {
+      if (el.dataset.done || !el.clientWidth) return;
+      el.dataset.done = '1';
+      paint(el, el.dataset.p, el.dataset.seed || '1', { blur: parseFloat(el.dataset.blur || '0.16'), lines: parseInt(el.dataset.lines || '0', 10), la: parseFloat(el.dataset.la || '0.22'), fade: false });
+    });
+  }
+  // Square artwork as an image, for the phone's own lock screen via Media Session
+  function coverDataURL(p, seed) {
+    const W = 512, cv = document.createElement('canvas'); cv.width = cv.height = W;
+    const c = cv.getContext('2d'), pal = PAL[p] || PAL.night, r = rng(p + seed);
+    c.fillStyle = pal.bg; c.fillRect(0, 0, W, W);
+    c.filter = 'blur(70px)';
+    for (let k = 0; k < 4; k++) { const s = W * (0.5 + r() * 0.5); c.fillStyle = pal.c[k % pal.c.length]; c.beginPath(); c.arc(r() * W, r() * W, s / 2, 0, Math.PI * 2); c.fill(); }
+    c.filter = 'none';
+    drawRings(c, W, W, p + seed, 14, 0.22);
+    try { return cv.toDataURL('image/jpeg', 0.85); } catch { return ''; }
+  }
+
+  // ------------------------------------------------------------ state
+  const S = {
+    cur: null, history: [], library: [], next: null, nextPromise: null, nextToken: 0, nextState: 'none',
+    composing: null, playing: false,
+    session: null, stations: store.get('stations', []),
+    chat: [], feedback: [],
+    taste: store.get('taste', {}), rules: store.get('rules', []), reactions: store.get('reactions', 0), liked: new Set(),
+    settings: Object.assign({ len: 'full', pregen: true, limit: 25, code: '' }, store.get('settings', {})),
+    total: store.get('costs', { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }),
+    sess: { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], audioSec: 0, genSec: 0 },
+    day: store.get('day', { date: '', count: 0 }),
+    tab: 'home', libseg: 'songs', talkMode: null, limitOk: false,
+  };
+  const audio = $('#audio');
+  const today = () => new Date().toISOString().slice(0, 10);
+  if (S.day.date !== today()) S.day = { date: today(), count: 0 };
+  const saveState = () => { store.set('taste', S.taste); store.set('rules', S.rules); store.set('reactions', S.reactions); store.set('settings', S.settings); store.set('costs', S.total); store.set('day', S.day); store.set('stations', S.stations.slice(0, 8)); };
+
+  // ------------------------------------------------------------ toast + log + costs
+  let toastT;
+  function toast(msg, ok = true) {
+    $('#toasttxt').textContent = msg;
+    $('#toast svg').style.display = ok ? '' : 'none';
+    $('#toast').classList.add('on');
+    clearTimeout(toastT); toastT = setTimeout(() => $('#toast').classList.remove('on'), 2800);
+  }
+  function log(html, detail, err) {
+    const ul = $('#calllog');
+    const m = $('.muted', ul); if (m) m.remove();
+    const li = document.createElement('li');
+    if (err) li.className = 'err';
+    li.innerHTML = `<span>${new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} · </span>${html}${detail ? `<details><summary>Details</summary><pre>${esc(detail)}</pre></details>` : ''}`;
+    ul.prepend(li);
+    while (ul.children.length > 30) ul.lastChild.remove();
+  }
+  function geminiCost(u) {
+    if (!u) return 0;
+    let text = 0, aud = 0;
+    for (const d of u.promptTokensDetails || []) { if (d.modality === 'AUDIO') aud += d.tokenCount; else text += d.tokenCount; }
+    if (!u.promptTokensDetails) text = u.promptTokenCount || 0;
+    return text * PRICE.gText + aud * PRICE.gAudio + ((u.candidatesTokenCount || 0) + (u.thoughtsTokenCount || 0)) * PRICE.gOut;
+  }
+  function renderCosts() {
+    const s = S.sess, t = S.total;
+    const sum = s.lyria + s.gemini, tsum = t.lyria + t.gemini;
+    const avg = s.genMs.length ? s.genMs.reduce((a, b) => a + b, 0) / s.genMs.length / 1000 : 0;
+    // Music cost per hour of freshly generated audio (skips not included), plus Gemini share
+    const perHour = s.genSec > 0 ? (s.lyria + s.gemini) / (s.genSec / 3600) : (S.settings.len === 'clip' ? PRICE.clip * 120 : PRICE.full * 20.3);
+    const html = `<div class="big"><b>${usd(sum)}</b><span>diese Sitzung<br>${usd(tsum)} insgesamt</span></div>
+      <dl>
+        <dt>Songs von Lyria</dt><dd>${s.songs + s.clips} · ${usd(s.lyria)}</dd>
+        <dt>Gemini (Zuhören, Prompt)</dt><dd>${s.calls} · ${usd(s.gemini, 4)}</dd>
+        <dt>Ø Wartezeit pro Song</dt><dd>${avg ? avg.toFixed(0) + ' s' : '–'}</dd>
+        <dt>Pro Stunde neue Musik${s.genSec ? '' : ' (geschätzt)'}</dt><dd>≈ ${usd(perHour)}</dd>
+        <dt>Erzeugte Musik</dt><dd>${fmt(s.genSec)} Min.</dd>
+        <dt>Heute erzeugt</dt><dd>${S.day.count} / ${S.settings.limit}</dd>
+      </dl>
+      <p class="note">Nach öffentlichen Preislisten gerechnet. Die echte Rechnung steht in Google AI Studio.</p>`;
+    $('#costbox').innerHTML = html;
+    $('#costbox2').innerHTML = html;
+  }
+  function addCost(kind, v, extra = {}) {
+    for (const o of [S.sess, S.total]) {
+      if (kind === 'gemini') { o.gemini += v; o.calls++; }
+      else { o.lyria += v; if (extra.clip) o.clips++; else o.songs++; }
+    }
+    if (kind === 'lyria') { S.sess.genMs.push(extra.ms); S.sess.genSec += extra.sec || 0; S.day.count++; }
+    saveState(); renderCosts();
+  }
+
+  // ------------------------------------------------------------ server calls
+  class ApiError extends Error { constructor(m, code) { super(m); this.code = code; } }
+  async function post(path, body) {
+    let r;
+    try {
+      r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-melodyn-code': S.settings.code || '' }, body: JSON.stringify(body) });
+    } catch { throw new ApiError('Keine Verbindung zum Server. Bist du online?', 'net'); }
+    if (r.ok) return r;
+    let e = {};
+    try { e = await r.json(); } catch { /* not json */ }
+    if (r.status === 401 || e.code === 'auth') { openCode(); throw new ApiError('Zugangscode nötig.', 'auth'); }
+    if (r.status === 413) throw new ApiError('Die Antwort war zu groß für den Server. Stell die Songlänge auf „Kurz“.', 'size');
+    if (e.code === 'rate') throw new ApiError('Google meldet zu viele Anfragen. Warte kurz und versuch es nochmal.', 'rate');
+    throw new ApiError(e.error || `Server-Fehler ${r.status}`, e.code);
+  }
+  function context() {
+    const taste = Object.entries(S.taste).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([g, v]) => ({ genre: g, score: v }));
+    const h = new Date().getHours();
+    return {
+      taste, rules: S.rules.filter(r => r.scope !== 'Aus'),
+      session: S.session ? { station: S.session.station, current_spec: S.session.spec, last_title: S.session.title } : null,
+      recent_feedback: S.feedback.slice(-8),
+      time_of_day: h < 6 ? 'nacht' : h < 11 ? 'morgen' : h < 17 ? 'tag' : h < 22 ? 'abend' : 'nacht',
+    };
+  }
+  async function understand(payload) {
+    const t0 = performance.now();
+    const r = await post('/api/understand', Object.assign({ history: S.chat.slice(-12), context: context() }, payload));
+    const d = await r.json();
+    const cost = geminiCost(d.usage);
+    addCost('gemini', cost);
+    const tok = d.usage ? d.usage.totalTokenCount : 0;
+    log(`<b>Gemini</b> ${payload.mode === 'next' ? 'plant den nächsten Song' : payload.audio ? 'hört zu und versteht' : 'versteht'} · ${((performance.now() - t0) / 1000).toFixed(1)} s · ${tok} Tokens · ${usd(cost, 4)}`, JSON.stringify(d.result, null, 2));
+    return d.result;
+  }
+  function lyriaPrompt(res) {
+    const s = res.spec, v = s.vocals;
+    const parts = [s.genre, `${s.tempo_bpm} BPM`, `${(s.mood || []).join(', ')} mood`];
+    if (s.instruments && s.instruments.length) parts.push('featuring ' + s.instruments.join(', '));
+    if (v === 'none') parts.push('Instrumental only, no vocals');
+    else parts.push(`${v === 'duet' ? 'Male and female duet' : v === 'female' ? 'Female' : 'Male'} vocals singing in ${s.lyrics_language === 'en' ? 'English' : 'German'}${s.lyrics_theme ? ' about ' + s.lyrics_theme : ''}`);
+    const avoid = [...new Set([...(s.avoid || []), ...S.rules.filter(r => r.scope !== 'Aus').map(r => r.text)])];
+    if (avoid.length) parts.push('Avoid: ' + avoid.join(', '));
+    return parts.join('. ') + '.';
+  }
+  // Plain fallback if Lyria refuses the detailed prompt (titles or themes can trip its filters)
+  function simplePrompt(res) {
+    const s = res.spec;
+    return `${s.genre}, ${s.tempo_bpm} BPM, ${(s.mood || []).slice(0, 2).join(' and ')}. ${s.vocals === 'none' ? 'Instrumental.' : `${s.vocals === 'female' ? 'Female' : 'Male'} vocals in ${s.lyrics_language === 'en' ? 'English' : 'German'}.`}`;
+  }
+  async function compose(res, retry = false) {
+    const len = S.settings.len, prompt = retry ? simplePrompt(res) : lyriaPrompt(res);
+    const t0 = performance.now();
+    let d;
+    try {
+      const r = await post('/api/compose', { prompt, length: len });
+      d = await r.json();
+    } catch (e) {
+      log(`<b>Lyria</b> Fehler: ${esc(e.message)}`, prompt, true);
+      throw e;
+    }
+    const ms = performance.now() - t0;
+    const parts = d.candidates?.[0]?.content?.parts || [];
+    const audioPart = parts.find(p => p.inlineData && /audio/.test(p.inlineData.mimeType));
+    const lyrics = parts.filter(p => p.text).map(p => p.text).join('\n').trim();
+    if (!audioPart) {
+      const why = d.candidates?.[0]?.finishReason || d.promptFeedback?.blockReason || 'kein Audio';
+      log(`<b>Lyria</b> hat keinen Song geliefert (${esc(why)})${retry ? '' : ', versuche es vereinfacht'}`, prompt + '\n\n' + lyrics, true);
+      if (!retry) return compose(res, true);
+      throw new ApiError(`Lyria hat keinen Song geliefert (${why}). Formuliere den Wunsch etwas anders.`);
+    }
+    const bin = atob(audioPart.inlineData.data), bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const blob = new Blob([bytes], { type: audioPart.inlineData.mimeType });
+    const cost = len === 'clip' ? PRICE.clip : PRICE.full;
+    addCost('lyria', cost, { clip: len === 'clip', ms, sec: blob.size * 8 / 192000 });
+    log(`<b>${len === 'clip' ? 'Lyria Clip' : 'Lyria 3.5'}</b> komponiert „${esc(res.title)}“ · ${(ms / 1000).toFixed(0)} s · ${(blob.size / 1e6).toFixed(1)} MB · ${usd(cost)}`, 'Prompt an Lyria:\n' + prompt);
+    const id = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    return {
+      id, title: res.title, station: res.station || (S.session && S.session.station) || 'Melodyn', palette: res.palette || 'self', seed: id,
+      spec: res.spec, lyrics, prompt, blob, url: URL.createObjectURL(blob), dur: 0, genMs: ms, len,
+    };
+  }
+
+  // ------------------------------------------------------------ screens
+  function isOn(id) { return $('#' + id).classList.contains('on'); }
+  function setOn(id, on) { $('#' + id).classList.toggle('on', on); syncChrome(); }
+  function syncChrome() {
+    const full = isOn('s-player') || isOn('s-listen') || isOn('s-code') || (isOn('s-talk') && $('#s-talk').classList.contains('solo'));
+    $('#mini').classList.toggle('on', !!(S.cur || S.composing) && !full && !isOn('s-talk') && !isOn('s-set') && !isOn('s-lyr'));
+    $('#tabbar').style.transform = full ? 'translateY(100%)' : '';
+  }
+  function showTab(t) {
+    S.tab = t;
+    $$('.tabscr').forEach(s => s.classList.toggle('on', s.id === 's-' + t));
+    $$('#tabbar button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+    if (t === 'lib') renderLib();
+    if (t === 'taste') renderTaste(true);
+    if (t === 'home') renderRecent();
+  }
+
+  // ------------------------------------------------------------ playback
+  // 0.1 s of silence as WAV, used to unlock playback inside the first tap (iOS)
+  const SILENT = (() => {
+    const n = 800, b = new DataView(new ArrayBuffer(44 + n * 2));
+    const w = (o, t) => { for (let i = 0; i < t.length; i++) b.setUint8(o + i, t.charCodeAt(i)); };
+    w(0, 'RIFF'); b.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); b.setUint32(16, 16, true); b.setUint16(20, 1, true); b.setUint16(22, 1, true);
+    b.setUint32(24, 8000, true); b.setUint32(28, 16000, true); b.setUint16(32, 2, true); b.setUint16(34, 16, true); w(36, 'data'); b.setUint32(40, n * 2, true);
+    let bin = ''; new Uint8Array(b.buffer).forEach(x => { bin += String.fromCharCode(x); });
+    return 'data:audio/wav;base64,' + btoa(bin);
+  })();
+  let unlocked = false;
+  function unlockAudio() {
+    if (unlocked || S.cur) return;
+    unlocked = true;
+    audio.src = SILENT;
+    const p = audio.play();
+    if (p && p.catch) p.then(() => audio.pause()).catch(() => { unlocked = false; });
+  }
+  function setPlaying(on) {
+    if (!S.cur) return;
+    if (on) { const p = audio.play(); if (p && p.catch) p.catch(() => toast('Tippe auf Play, um zu starten', false)); }
+    else audio.pause();
+  }
+  function syncPlayIcons() {
+    S.playing = !audio.paused && !!S.cur;
+    $$('.playuse').forEach(u => u.setAttribute('href', S.playing ? '#pause' : '#play'));
+    $('#miniplay use').setAttribute('href', S.playing ? '#pause' : '#play');
+    $('#pcover').classList.toggle('paused', !S.playing && !S.composing);
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = S.playing ? 'playing' : 'paused';
+  }
+  function setSong(song, { replay = false } = {}) {
+    if (S.cur && S.cur !== song && !S.cur.replay) S.history.push(S.cur);
+    S.cur = replay ? Object.assign({}, song, { replay: true }) : song;
+    S.composing = null;
+    audio.src = song.url;
+    audio.currentTime = 0;
+    setPlaying(true);
+    paintNow(S.cur);
+    renderNow();
+    mediaSession(S.cur);
+    if (!replay) { S.session && (S.session.title = song.title); prepareNext(); }
+    if (S.tab === 'lib') renderLib();
+  }
+  function mediaSession(s) {
+    if (!('mediaSession' in navigator) || !window.MediaMetadata) return;
+    const art = coverDataURL(s.palette, s.seed);
+    navigator.mediaSession.metadata = new MediaMetadata({ title: s.title, artist: 'Melodyn · ' + s.station, album: s.spec ? s.spec.genre_de : 'Melodyn', artwork: art ? [{ src: art, sizes: '512x512', type: 'image/jpeg' }] : [] });
+    const h = (a, f) => { try { navigator.mediaSession.setActionHandler(a, f); } catch { /* unsupported */ } };
+    h('play', () => setPlaying(true)); h('pause', () => setPlaying(false));
+    h('nexttrack', () => nextSong('skip')); h('previoustrack', prevSong);
+  }
+  function paintNow(s) {
+    paint($('#pbg'), s.palette, s.seed, { blur: 0.2 });
+    paint($('#pcoverart'), s.palette, s.seed, { blur: 0.1, lines: 16 });
+    paint($('#minith'), s.palette, s.seed, { blur: 0.14, fade: false });
+  }
+  let waitTimer;
+  function renderNow() {
+    const c = S.composing, s = c || S.cur;
+    if (!s) return;
+    $('#ptitle').innerHTML = c ? '<span class="dots">Wird komponiert</span>' : esc(s.title);
+    $('#pgenre').textContent = c ? (c.error ? c.error : `${c.spec.genre_de} · ${c.spec.tempo_bpm} BPM · „${c.title}“`) : `${s.spec.genre_de} · ${s.spec.tempo_bpm} BPM`;
+    $('#pstation').textContent = s.station;
+    $('#psub').textContent = c ? `${S.settings.len === 'clip' ? 'Lyria Clip' : 'Lyria 3.5'} schreibt Beat, Akkorde und Text` : s.replay ? 'Aus deiner Bibliothek · kostet nichts' : `für dich komponiert · ${(s.genMs / 1000).toFixed(0)} s Rechenzeit`;
+    const saved = S.cur && S.library.some(x => x.id === S.cur.id);
+    $('#paddicon').setAttribute('href', saved ? '#added' : '#add');
+    $('#pup').classList.toggle('on', !!(S.cur && S.liked.has(S.cur.id)) && !c);
+    $('#pcover').classList.toggle('composing', !!c && !c.error);
+    $('#pcoverart').classList.toggle('fast', !!c && !c.error);
+    $('#ptrack').classList.toggle('wait', !!c);
+    $('#minititle').textContent = c ? 'Wird komponiert …' : s.title;
+    $('#ministation').textContent = s.station;
+    clearInterval(waitTimer);
+    if (c && !c.error) {
+      const expect = S.settings.len === 'clip' ? 9 : 46;
+      const tick = () => {
+        const el = (performance.now() - c.t0) / 1000;
+        $('#waitclock').textContent = el < expect + 5 ? `noch ca. ${Math.max(1, Math.round(expect - el))} s` : `${Math.round(el)} s, gleich fertig`;
+        $('#pbar').style.width = Math.min(96, el / expect * 100) + '%';
+        $('#pcur').textContent = fmt(el); $('#prem').textContent = '~' + fmt(expect);
+      };
+      tick(); waitTimer = setInterval(tick, 250);
+    } else renderTime();
+    renderNext();
+    syncPlayIcons();
+  }
+  function renderTime() {
+    if (S.composing || !S.cur) return;
+    const d = audio.duration && isFinite(audio.duration) ? audio.duration : S.cur.dur || 0, t = audio.currentTime || 0;
+    const pct = d ? t / d * 100 : 0;
+    $('#pbar').style.width = pct + '%';
+    $('#pcur').textContent = fmt(t);
+    $('#prem').textContent = '−' + fmt(d - t);
+    $('#miniprog').style.width = pct + '%';
+  }
+  function renderNext() {
+    const el = $('#pnext'), t = $('#pnexttxt');
+    el.classList.remove('ready');
+    if (S.composing) { t.innerHTML = S.composing.error ? 'Tippe unten und versuch es nochmal' : 'Der erste Song braucht einen Moment'; return; }
+    if (!S.cur) { t.textContent = ''; return; }
+    if (S.cur.replay) { t.textContent = 'Wiederhören aus der Bibliothek · kostenlos'; el.classList.add('ready'); return; }
+    if (!S.settings.pregen) { t.textContent = 'Vorbereiten ist aus · nächster Song startet beim Skip'; return; }
+    if (S.nextState === 'working') t.innerHTML = `Als Nächstes: <b>${esc(S.nextTitle || 'neuer Song')}</b> · wird komponiert`;
+    else if (S.nextState === 'ready' && S.next) { t.innerHTML = `Als Nächstes: <b>${esc(S.next.title)}</b> · bereit`; el.classList.add('ready'); }
+    else if (S.nextState === 'error') t.textContent = 'Nächster Song kommt beim Skip';
+    else t.textContent = '';
+  }
+
+  // ------------------------------------------------------------ song flow
+  function applyResult(res) {
+    for (const r of res.new_rules || []) {
+      const ex = S.rules.find(x => x.text.toLowerCase() === r.text.toLowerCase());
+      if (ex) ex.scope = r.scope; else S.rules.push({ text: r.text, scope: r.scope });
+      toast(`Gemerkt: ${r.text} (${r.scope.toLowerCase()})`);
+    }
+    if (res.new_session || !S.session) {
+      S.session = { id: 'st' + Date.now().toString(36), station: res.station, palette: res.palette, spec: res.spec, title: res.title };
+    } else Object.assign(S.session, { spec: res.spec, palette: res.palette || S.session.palette });
+    const st = { station: S.session.station, palette: S.session.palette, spec: S.session.spec };
+    S.stations = [st, ...S.stations.filter(x => x.station !== st.station)].slice(0, 8);
+    saveState(); renderTaste(false);
+  }
+  function overLimit() {
+    if (S.day.count < S.settings.limit || S.limitOk) return false;
+    toast(`Tageslimit von ${S.settings.limit} Songs erreicht. In den Einstellungen erhöhen.`, false);
+    return true;
+  }
+  let composeToken = 0;
+  async function startSong(res) {
+    applyResult(res);
+    if (overLimit()) return;
+    const token = ++composeToken;
+    S.nextToken++; S.next = null; S.nextPromise = null; S.nextState = 'none';
+    S.composing = { title: res.title, station: S.session.station, palette: res.palette, seed: 'c' + token + res.title, spec: res.spec, t0: performance.now() };
+    if (S.cur) audio.pause();
+    paintNow(S.composing);
+    setOn('s-player', true);
+    renderNow();
+    try {
+      const song = await compose(res);
+      if (token !== composeToken) return;
+      setSong(song);
+    } catch (e) {
+      if (token !== composeToken) return;
+      S.composing.error = e.message;
+      renderNow();
+      toast(e.message, false);
+      addBotMsg('Das hat leider nicht geklappt: ' + e.message, true);
+    }
+  }
+  function prepareNext() {
+    S.nextToken++;
+    const token = S.nextToken;
+    S.next = null; S.nextTitle = '';
+    if (!S.settings.pregen || !S.session || S.day.count >= S.settings.limit) { S.nextState = 'none'; S.nextPromise = null; renderNext(); return; }
+    S.nextState = 'working';
+    renderNext();
+    S.nextPromise = (async () => {
+      const res = await understand({ mode: 'next' });
+      if (token !== S.nextToken) return null;
+      S.nextTitle = res.title; renderNext();
+      res.station = S.session ? S.session.station : res.station;
+      const song = await compose(res);
+      if (token !== S.nextToken) return null;
+      if (S.session) S.session.spec = res.spec;
+      S.next = song; S.nextState = 'ready'; renderNext();
+      return song;
+    })().catch(e => { if (token === S.nextToken) { S.nextState = 'error'; renderNext(); log(`<b>Nächster Song</b> nicht vorbereitet: ${esc(e.message)}`, '', true); } return null; });
+  }
+  async function nextSong(reason) {
+    if (S.composing && !S.composing.error) return;
+    if (!S.session) { if (S.cur) toast('Sag Melodyn zuerst, wonach dir ist', false); return; }
+    if (reason === 'skip' && S.cur && !S.cur.replay) feedback('skip');
+    if (S.next && S.nextState === 'ready') { setSong(S.next); return; }
+    if (overLimit()) return;
+    const token = ++composeToken;
+    const pending = S.nextState === 'working' && S.nextPromise;
+    S.composing = { title: S.nextTitle || 'Nächster Song', station: S.session.station, palette: S.session.palette, seed: 'n' + token, spec: S.session.spec, t0: performance.now() };
+    audio.pause();
+    paintNow(S.composing); renderNow();
+    try {
+      let song = pending ? await S.nextPromise : null;
+      if (!song) {
+        const res = await understand({ mode: 'next' });
+        res.station = S.session.station;
+        S.composing.title = res.title; renderNow();
+        song = await compose(res);
+        S.session.spec = res.spec;
+      }
+      if (token !== composeToken) return;
+      setSong(song);
+    } catch (e) {
+      if (token !== composeToken) return;
+      S.composing.error = e.message; renderNow(); toast(e.message, false);
+    }
+  }
+  function prevSong() {
+    if (!S.cur || S.composing) return;
+    if (audio.currentTime > 5 || !S.history.length) { audio.currentTime = 0; return; }
+    const p = S.history.pop();
+    const cur = S.cur; S.cur = null;
+    setSong(p, { replay: true });
+    S.history.push(cur);
+  }
+  function feedback(kind) {
+    const s = S.cur;
+    if (!s || !s.spec) return;
+    const g = s.spec.genre_de;
+    const d = { like: 4, save: 5, dislike: -5, skip: audio.currentTime < 30 ? -1 : 0, complete: 1 }[kind] || 0;
+    if (d) { S.taste[g] = clamp((S.taste[g] ?? 50) + d, 5, 99); S.bumped = g; }
+    S.reactions++;
+    S.feedback.push({ title: s.title, genre: g, bpm: s.spec.tempo_bpm, action: kind, at_second: Math.round(audio.currentTime) });
+    saveState(); renderTaste(false);
+  }
+  function like() {
+    const s = S.cur; if (!s || S.composing) return;
+    if (S.liked.has(s.id)) { S.liked.delete(s.id); toast('Like entfernt'); }
+    else { S.liked.add(s.id); feedback('like'); toast(`Mehr davon. Gemerkt für ${s.station}`); }
+    pop('#pup'); renderNow();
+  }
+  function dislike() {
+    if (!S.cur || S.composing) return;
+    feedback('dislike'); toast('Weniger davon. Nächster Song kommt');
+    nextSong('dislike');
+  }
+  async function save() {
+    const s = S.cur; if (!s || S.composing) return;
+    const i = S.library.findIndex(x => x.id === s.id);
+    if (i >= 0) { S.library.splice(i, 1); await DB.del(s.id); toast('Aus Bibliothek entfernt'); }
+    else {
+      const rec = { id: s.id, title: s.title, station: s.station, palette: s.palette, seed: s.seed, spec: s.spec, lyrics: s.lyrics, blob: s.blob, dur: audio.duration || 0, created: Date.now(), url: s.url };
+      S.library.unshift(rec); feedback('save');
+      const ok = await DB.put(rec);
+      toast(ok ? 'In Bibliothek gespeichert' : 'Gespeichert, bleibt aber nur bis zum Neuladen');
+    }
+    pop('#padd'); renderNow();
+  }
+  function pop(sel) { const b = $(sel); b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
+
+  // ------------------------------------------------------------ library (IndexedDB)
+  const DB = {
+    db: null,
+    open() {
+      return new Promise(res => {
+        try {
+          const r = indexedDB.open('melodyn', 1);
+          r.onupgradeneeded = () => r.result.createObjectStore('songs', { keyPath: 'id' });
+          r.onsuccess = () => { this.db = r.result; res(true); };
+          r.onerror = () => res(false);
+        } catch { res(false); }
+      });
+    },
+    tx(mode, fn) {
+      return new Promise(res => {
+        if (!this.db) return res(null);
+        try { const t = this.db.transaction('songs', mode); const q = fn(t.objectStore('songs')); t.oncomplete = () => res(q && q.result !== undefined ? q.result : true); t.onerror = () => res(null); } catch { res(null); }
+      });
+    },
+    all() { return this.tx('readonly', s => s.getAll()); },
+    put(rec) { const { url, ...plain } = rec; return this.tx('readwrite', s => s.put(plain)); },
+    del(id) { return this.tx('readwrite', s => s.delete(id)); },
+  };
+  function renderLib() {
+    $$('#libseg button').forEach(b => b.classList.toggle('on', b.dataset.seg === S.libseg));
+    const list = S.libseg === 'songs' ? S.library : [...(S.cur ? [S.cur] : []), ...S.history.slice().reverse()];
+    const body = $('#libbody');
+    body._list = list;
+    if (!list.length) {
+      body.innerHTML = `<p class="empty">${S.libseg === 'songs' ? 'Noch nichts gespeichert. Tippe im Player auf ⊕, dann liegt der Song hier und kostet beim Wiederhören nichts.' : 'Noch kein Verlauf. Tippe auf der Startseite auf die Kugel.'}</p>`;
+      return;
+    }
+    body.innerHTML = list.map((s, i) => `<button class="item${S.cur && S.cur.id === s.id ? ' playing' : ''}" data-song="${i}"><div class="art" id="la${i}"></div><div style="min-width:0"><b>${esc(s.title)}</b><span>${esc(s.spec ? s.spec.genre_de : '')} · ${esc(s.station)}</span></div><span class="d">${S.cur && S.cur.id === s.id ? `<span class="eq${S.playing ? '' : ' paused'}"><i></i><i></i><i></i></span>` : fmt(s.dur)}</span></button>`).join('');
+    list.forEach((s, i) => paint($('#la' + i), s.palette, s.seed, { blur: 0.12, fade: false }));
+  }
+  function renderRecent() {
+    const row = $('#recent');
+    if (!S.stations.length) {
+      row.innerHTML = '<p class="empty" style="text-align:left;padding:18px 24px 0 0">Hier erscheinen deine Momente, sobald Melodyn den ersten Song für dich gemacht hat.</p>';
+      return;
+    }
+    row.innerHTML = S.stations.slice(0, 6).map((st, i) => `<button class="card" data-station="${i}"><div class="art" id="rc${i}"></div><b>${esc(st.station)}</b><span>${esc(S.session && S.session.station === st.station ? 'Läuft gerade' : st.spec.genre_de)}</span></button>`).join('');
+    S.stations.slice(0, 6).forEach((st, i) => paint($('#rc' + i), st.palette, st.station, { blur: 0.12, lines: 9, fade: false }));
+  }
+  function renderTaste(animate) {
+    const rows = Object.entries(S.taste).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    $('#genres').innerHTML = rows.length ? rows.map(([g, v]) => `<div class="g${S.bumped === g ? ' bump' : ''}"><span>${esc(g)}</span><div class="ln"><i style="width:${animate ? 0 : v}%" data-w="${v}"></i></div><span class="v">${v}</span></div>`).join('') : '<p class="empty" style="text-align:left;padding:6px 0">Noch keine Reaktionen.</p>';
+    if (animate) requestAnimationFrame(() => requestAnimationFrame(() => $$('#genres .ln i').forEach(i => { i.style.width = i.dataset.w + '%'; })));
+    if (rows.length) {
+      const top = rows.slice(0, 2).map(r => r[0]);
+      const likes = S.feedback.filter(f => f.action === 'like' || f.action === 'save');
+      const bpm = likes.length ? Math.round(likes.reduce((a, f) => a + f.bpm, 0) / likes.length) : null;
+      $('#tastesum').textContent = `Am liebsten ${top.join(' und ')}${bpm ? `, meist um ${bpm} BPM` : ''}.`;
+    }
+    $('#learned').textContent = S.reactions ? `Gelernt aus ${S.reactions} Reaktionen` : '';
+    $('#nowblk').innerHTML = S.session
+      ? `<div class="nowcard"><b>Gerade: ${esc(S.session.station)}</b><span>Bleibt nur für diese Session</span><button class="forget" id="forget">Vergessen</button></div>`
+      : '<div class="nowcard gone"><b>Keine aktive Session</b><span>Sag Melodyn, wonach dir ist</span></div>';
+    $('#rules').innerHTML = S.rules.length ? S.rules.map((r, i) => `<button class="rule${r.scope === 'Aus' ? ' off' : ''}" data-rule="${i}"><b>${esc(r.text)}</b><span>${r.scope}<svg class="i" style="width:16px;height:16px"><use href="#chevr"/></svg></span></button>`).join('') : '<p class="empty" style="text-align:left;padding:6px 0">Sag zum Beispiel „nie wieder Autotune“.</p>';
+  }
+
+  // ------------------------------------------------------------ microphone
+  const Rec = {
+    async start() {
+      this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 } });
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AC();
+      await this.ctx.resume();
+      this.src = this.ctx.createMediaStreamSource(this.stream);
+      this.an = this.ctx.createAnalyser(); this.an.fftSize = 1024;
+      this.proc = this.ctx.createScriptProcessor(4096, 1, 1);
+      this.chunks = [];
+      this.proc.onaudioprocess = e => this.chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+      this.src.connect(this.an); this.src.connect(this.proc); this.proc.connect(this.ctx.destination);
+      this.buf = new Uint8Array(this.an.fftSize);
+      this.on = true;
+    },
+    level() {
+      if (!this.on) return 0;
+      this.an.getByteTimeDomainData(this.buf);
+      let s = 0; for (const v of this.buf) { const x = (v - 128) / 128; s += x * x; }
+      return Math.sqrt(s / this.buf.length);
+    },
+    async stop() {
+      if (!this.on) return null;
+      this.on = false;
+      try { this.proc.disconnect(); this.src.disconnect(); } catch { /* already gone */ }
+      this.stream.getTracks().forEach(t => t.stop());
+      const sr = this.ctx.sampleRate;
+      await this.ctx.close().catch(() => {});
+      const total = this.chunks.reduce((a, c) => a + c.length, 0);
+      if (total < sr * 0.4) return null;
+      const all = new Float32Array(total); let o = 0;
+      for (const c of this.chunks) { all.set(c, o); o += c.length; }
+      const target = 16000, ratio = sr / target, n = Math.floor(total / ratio);
+      const pcm = new Int16Array(n);
+      for (let i = 0; i < n; i++) {
+        const a = Math.floor(i * ratio), b = Math.min(total, Math.floor((i + 1) * ratio));
+        let s = 0; for (let j = a; j < b; j++) s += all[j];
+        const v = clamp(s / Math.max(1, b - a), -1, 1);
+        pcm[i] = v < 0 ? v * 0x8000 : v * 0x7fff;
+      }
+      const wav = new DataView(new ArrayBuffer(44 + pcm.length * 2));
+      const w = (off, str) => { for (let i = 0; i < str.length; i++) wav.setUint8(off + i, str.charCodeAt(i)); };
+      w(0, 'RIFF'); wav.setUint32(4, 36 + pcm.length * 2, true); w(8, 'WAVE'); w(12, 'fmt ');
+      wav.setUint32(16, 16, true); wav.setUint16(20, 1, true); wav.setUint16(22, 1, true); wav.setUint32(24, target, true);
+      wav.setUint32(28, target * 2, true); wav.setUint16(32, 2, true); wav.setUint16(34, 16, true); w(36, 'data'); wav.setUint32(40, pcm.length * 2, true);
+      for (let i = 0; i < pcm.length; i++) wav.setInt16(44 + i * 2, pcm[i], true);
+      const bytes = new Uint8Array(wav.buffer);
+      let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      return { data: btoa(bin), mime: 'audio/wav', seconds: n / target };
+    },
+    cancel() { if (this.on) { this.on = false; try { this.stream.getTracks().forEach(t => t.stop()); this.ctx.close(); } catch { /* ignore */ } } },
+  };
+  async function micStart() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Dieser Browser erlaubt kein Mikrofon. Schreib stattdessen.');
+    try { await Rec.start(); }
+    catch (e) { throw new Error(e && e.name === 'NotAllowedError' ? 'Mikrofon nicht erlaubt. Erlaube es in den Browser-Einstellungen oder schreib stattdessen.' : 'Mikrofon konnte nicht starten. Schreib stattdessen.'); }
+  }
+
+  // ------------------------------------------------------------ listening screen
+  let listenId = 0, sendNow = null;
+  function buildWave() { $('#wave').innerHTML = '<i></i>'.repeat(46); }
+  async function listen() {
+    const id = ++listenId;
+    unlockAudio();
+    try { await micStart(); }
+    catch (e) { toast(e.message, false); openTalk('solo'); return; }
+    paint($('#halo'), 'self', 'halo' + id, { blur: 0.18, fade: false });
+    $('#halo').style.transform = '';
+    $('#said').innerHTML = '<span class="w in" style="color:var(--text-3)">Sprich jetzt …</span>';
+    $('#got').innerHTML = '';
+    $('#livelabel').innerHTML = '<i></i>Melodyn hört zu';
+    $('#listenhint').textContent = 'Tippen zum Senden';
+    $('#stopbtn').style.visibility = '';
+    setOn('s-listen', true);
+    const bars = $$('#wave i'), levels = new Array(bars.length).fill(0);
+    let spoke = false, quietSince = 0;
+    const t0 = performance.now();
+    await new Promise(resolve => {
+      sendNow = resolve;
+      const loop = () => {
+        if (id !== listenId || !Rec.on) return resolve();
+        const l = Rec.level();
+        levels.push(l); levels.shift();
+        bars.forEach((b, k) => { const env = Math.sin(Math.PI * k / (bars.length - 1)); b.style.height = (5 + Math.min(1, levels[k] * 9) * 54 * (0.4 + 0.6 * env)).toFixed(1) + 'px'; b.style.opacity = (0.4 + env * 0.6).toFixed(2); });
+        const now = performance.now();
+        if (l > 0.03) { spoke = true; quietSince = now; }
+        if (spoke && now - quietSince > 1600) return resolve();
+        if (now - t0 > 20000) return resolve();
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+    });
+    if (id !== listenId) return;
+    const clip = await Rec.stop();
+    bars.forEach(b => { b.style.height = '4px'; });
+    if (!clip) { setOn('s-listen', false); toast('Ich habe nichts gehört. Nochmal?', false); return; }
+    $('#livelabel').innerHTML = 'Melodyn versteht …';
+    $('#listenhint').textContent = 'Gemini hört sich deine Aufnahme an';
+    $('#stopbtn').style.visibility = 'hidden';
+    $('#said').innerHTML = '<span class="w in" style="color:var(--text-3)"><span class="dots">Einen Moment</span></span>';
+    let res;
+    try { res = await understand({ mode: 'request', audio: { mime: clip.mime, data: clip.data } }); }
+    catch (e) {
+      if (id !== listenId) return;
+      $('#said').innerHTML = `<span class="w in" style="font-size:22px">${esc(e.message)}</span>`;
+      $('#livelabel').textContent = 'Hat nicht geklappt';
+      $('#listenhint').textContent = 'Schließen mit ✕ oben links';
+      return;
+    }
+    if (id !== listenId) return;
+    if (!String(res.transcript || '').trim()) {
+      $('#said').innerHTML = '<span class="w in" style="font-size:24px">Ich habe dich nicht richtig verstanden. Magst du es nochmal sagen?</span>';
+      $('#livelabel').textContent = 'Nicht verstanden';
+      $('#listenhint').textContent = 'Schließen mit ✕ und nochmal auf die Kugel tippen';
+      return;
+    }
+    S.chat.push({ role: 'user', text: res.transcript || '(gesprochen)' });
+    S.chat.push({ role: 'model', text: res.reply || '' });
+    $('#livelabel').textContent = 'Verstanden';
+    paint($('#halo'), res.palette || 'self', 'h' + id, { blur: 0.18 });
+    const said = $('#said'); said.innerHTML = '';
+    for (const word of String(res.transcript || '').split(/\s+/).filter(Boolean)) {
+      const w = document.createElement('span'); w.className = 'w'; w.textContent = word;
+      said.append(w, ' ');
+      requestAnimationFrame(() => w.classList.add('in'));
+      await sleep(REDUCED ? 0 : 70);
+    }
+    $('#got').innerHTML = '<div class="lab in">Verstanden</div>' + (res.understood || []).slice(0, 4).map(g => `<div class="row"><span>${esc(g.label)}</span><b>${esc(g.value)}</b></div>`).join('');
+    for (const row of $$('#got .row')) { await sleep(REDUCED ? 0 : 220); row.classList.add('in'); }
+    $('#listenhint').textContent = res.ask ? 'Melodyn hat eine Frage' : 'Lyria komponiert jetzt deinen Song';
+    await sleep(REDUCED ? 200 : 1100);
+    if (id !== listenId) return;
+    $('#halo').style.transform = 'translateY(-160px) scale(1.2)';
+    await sleep(300);
+    if (res.ask) {
+      setOn('s-listen', false);
+      openTalk('solo', { silent: true });
+      addMeMsg(res.transcript || '…', true);
+      await showQuestion(res);
+    } else {
+      addMeMsg(res.transcript || '…', true, true);
+      addBotMsg(res.reply, false, true);
+      startSong(res);
+      await sleep(250);
+      setOn('s-listen', false);
+    }
+  }
+  function cancelListen() { listenId++; Rec.cancel(); if (sendNow) sendNow(); setOn('s-listen', false); }
+
+  // ------------------------------------------------------------ conversation sheet
+  function scrollMsgs() { const m = $('#msgs'); m.scrollTop = m.scrollHeight; }
+  function addMeMsg(text, spoken, quiet) {
+    $('#msgs').insertAdjacentHTML('beforeend', `<div class="me">${esc(text)}</div>${spoken ? '<div class="me-meta"><svg class="i" style="width:12px;height:12px"><use href="#mic"/></svg>Gesprochen</div>' : ''}`);
+    if (!quiet) scrollMsgs();
+  }
+  function botShell() {
+    const t = document.createElement('div');
+    t.className = 'bot';
+    t.innerHTML = '<div class="dot"></div><div class="typing"><i></i><i></i><i></i></div>';
+    $('#msgs').appendChild(t);
+    paint($('.dot', t), 'self', '4', { blur: 0.2, fade: false });
+    scrollMsgs();
+    return t;
+  }
+  function addBotMsg(text, err, quiet) {
+    if (!text) return;
+    const t = document.createElement('div');
+    t.className = 'bot' + (err ? ' msg-err' : '');
+    t.innerHTML = `<div class="dot"></div><p>${esc(text)}</p>`;
+    $('#msgs').appendChild(t);
+    paint($('.dot', t), 'self', '4', { blur: 0.2, fade: false });
+    if (!quiet) scrollMsgs();
+  }
+  function setChips() {
+    const list = S.session ? ['Etwas schneller', 'Ruhiger', 'Mehr Gitarren', 'Instrumental', 'Nochmal sowas', 'Nie wieder Autotune'] : ['Nachtfahrt nach Hause', '90er Hip-Hop, entspannt', 'Ich muss mich konzentrieren', 'Ich koche für Freunde', 'Ich bin gerade traurig'];
+    $('#qchips').innerHTML = list.map(c => `<button data-chip="${esc(c)}">${esc(c)}</button>`).join('');
+  }
+  function openTalk(mode, { silent } = {}) {
+    S.talkMode = mode;
+    const s = $('#s-talk');
+    s.classList.toggle('solo', mode === 'solo');
+    if (mode === 'solo') {
+      paint($('#tbg'), S.session ? S.session.palette : 'self', 'talk', { blur: 0.2, fade: false });
+      const cur = S.cur;
+      paint($('#tminiart'), cur ? cur.palette : 'self', cur ? cur.seed : 'm', { blur: 0.12, fade: false });
+      $('#tminititle').textContent = cur ? cur.title : 'Melodyn';
+      $('#tminisub').textContent = cur ? (S.playing ? 'Läuft' : 'Pausiert') + ' · ' + cur.station : 'Sag oder schreib, wonach dir ist';
+    }
+    setChips();
+    setOn('s-talk', true);
+    if (!silent && !$('#msgs').children.length) addBotMsg(S.session ? 'Was soll anders klingen? Ich passe den nächsten Song sofort an.' : 'Wonach ist dir? Beschreib eine Situation, ein Gefühl oder ein Genre.');
+    else scrollMsgs();
+  }
+  async function showQuestion(res) {
+    const t = botShell();
+    await sleep(REDUCED ? 0 : 500);
+    t.lastElementChild.outerHTML = `<p>${esc(res.question || res.reply)}</p>`;
+    const opts = (res.options || []).slice(0, 2);
+    if (opts.length) {
+      $('#msgs').insertAdjacentHTML('beforeend', `<div class="choices">${opts.map((o, i) => `<button class="choice" data-opt="${i}"><div class="sw" id="opt${i}"></div><div><b>${esc(o.label)}</b><span>${esc(o.description)}</span></div><svg class="i"><use href="#chevr"/></svg></button>`).join('')}</div><p class="priv"><svg class="i"><use href="#lock"/></svg>Deine Stimmung bleibt in dieser Session. Sie fließt nicht in dein Musikprofil ein.</p>`);
+      opts.forEach((o, i) => paint($('#opt' + i), o.palette || 'dusk', o.label, { blur: 0.14, lines: 6, fade: false }));
+      $('#msgs')._opts = opts;
+    }
+    $('#qchips').innerHTML = '';
+    scrollMsgs();
+  }
+  let talkBusy = false;
+  async function talk({ text, audioClip }) {
+    if (talkBusy) return;
+    talkBusy = true;
+    unlockAudio();
+    $$('.choice').forEach(c => { c.disabled = true; });
+    if (text) addMeMsg(text, false);
+    const t = botShell();
+    $('#qchips').innerHTML = '';
+    let res;
+    try {
+      res = await understand(audioClip ? { mode: 'request', audio: audioClip } : { mode: 'request', text });
+    } catch (e) {
+      t.remove(); addBotMsg(e.message, true); talkBusy = false; setChips(); return;
+    }
+    if (audioClip && !String(res.transcript || '').trim()) { t.remove(); addBotMsg('Ich habe dich nicht richtig verstanden. Sag es nochmal oder schreib es.'); talkBusy = false; setChips(); return; }
+    if (audioClip) { t.insertAdjacentHTML('beforebegin', `<div class="me">${esc(res.transcript || '…')}</div><div class="me-meta"><svg class="i" style="width:12px;height:12px"><use href="#mic"/></svg>Gesprochen</div>`); }
+    S.chat.push({ role: 'user', text: res.transcript || text || '' });
+    S.chat.push({ role: 'model', text: [res.reply, res.question].filter(Boolean).join(' ') });
+    if (res.ask) { t.remove(); await showQuestion(res); talkBusy = false; return; }
+    t.lastElementChild.outerHTML = `<p>${esc(res.reply || 'Okay, kommt sofort.')}</p>`;
+    scrollMsgs();
+    await sleep(REDUCED ? 100 : 1000);
+    talkBusy = false;
+    setOn('s-talk', false);
+    startSong(res);
+  }
+  let talkRec = false;
+  async function composeMic() {
+    const form = $('#compose'), inp = $('#composein');
+    if (inp.value.trim()) { const v = inp.value; inp.value = ''; updateComposeIcon(); talk({ text: v }); return; }
+    if (!talkRec) {
+      unlockAudio();
+      try { await micStart(); } catch (e) { toast(e.message, false); inp.focus(); return; }
+      talkRec = true; form.classList.add('recording');
+      inp.placeholder = 'Aufnahme läuft … zum Senden tippen';
+      $('#composeicon use').setAttribute('href', '#stop');
+      const t0 = performance.now();
+      const auto = () => { if (talkRec && performance.now() - t0 > 20000) composeMic(); else if (talkRec) setTimeout(auto, 500); };
+      auto();
+      return;
+    }
+    talkRec = false; form.classList.remove('recording');
+    inp.placeholder = 'Schreib Melodyn, wonach dir ist …';
+    updateComposeIcon();
+    const clip = await Rec.stop();
+    if (!clip) { toast('Ich habe nichts gehört', false); return; }
+    talk({ audioClip: { mime: clip.mime, data: clip.data } });
+  }
+  function updateComposeIcon() { $('#composeicon use').setAttribute('href', $('#composein').value.trim() ? '#send' : '#mic'); }
+
+  // ------------------------------------------------------------ lyrics sheet
+  function openLyrics() {
+    const s = S.cur || S.composing;
+    if (!s) return;
+    let html = `<h3>${esc(s.title)}</h3><p class="meta">${esc(s.spec ? `${s.spec.genre_de} · ${s.spec.tempo_bpm} BPM` : '')} · ${esc(s.station)}</p>`;
+    const lyr = String(s.lyrics || '').replace(/<instrumental>/i, '').trim();
+    if (lyr) {
+      const blocks = lyr.split(/\[\[[A-Z]\d+\]\]/).map(b => b.trim()).filter(Boolean);
+      html += blocks.map(b => `<div class="part">${b.split('\n').map(l => l.replace(/^\[:\]\s*/, '').trim()).filter(Boolean).map(l => `<p>${esc(l)}</p>`).join('')}</div>`).join('');
+    } else html += '<div class="part"><p>Instrumental, ohne Text.</p></div>';
+    if (s.prompt) html += `<div class="h-s">So hat Melodyn den Song bei Lyria bestellt</div><pre>${esc(s.prompt)}</pre>`;
+    $('#lyrbody').innerHTML = html;
+    setOn('s-lyr', true);
+  }
+
+  // ------------------------------------------------------------ access code
+  function openCode() {
+    $('#codein').value = S.settings.code || '';
+    $('#codeerr').textContent = S.settings.code ? 'Dieser Code wurde nicht akzeptiert.' : '';
+    setOn('s-code', true);
+    setTimeout(() => $('#codein').focus(), 300);
+  }
+
+  // ------------------------------------------------------------ layout
+  function fit() {
+    const pw = $('#phonewrap'), ph = $('#phoneframe');
+    let s;
+    if (window.innerWidth <= 600) s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    else s = Math.min(1, (window.innerHeight - 60) / 868, (window.innerWidth - 452) / 414);
+    ph.style.transform = `scale(${s})`;
+    pw.style.width = 390 * s + 'px'; pw.style.height = 844 * s + 'px';
+  }
+  function clockTick() {
+    const d = new Date();
+    $$('.clock').forEach(c => { c.textContent = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); });
+    const h = d.getHours();
+    $('#greet').textContent = h < 11 ? 'Guten Morgen' : h < 18 ? 'Guten Tag' : 'Guten Abend';
+  }
+  function renderSettings() {
+    $$('#lenseg button').forEach(b => b.classList.toggle('on', b.dataset.len === S.settings.len));
+    $('#pregen').setAttribute('aria-checked', String(!!S.settings.pregen));
+    $('#limitv').textContent = S.settings.limit;
+    $('#codeinfo').textContent = S.settings.code ? 'Ein Code ist gespeichert.' : 'Nur nötig, wenn auf Vercel ein APP_CODE gesetzt ist.';
+    renderCosts();
+  }
+
+  // ------------------------------------------------------------ events
+  function bind() {
+    document.addEventListener('click', e => {
+      const t = e.target.closest('button');
+      if (!t) return;
+      const d = t.dataset;
+      if (d.tab) { showTab(d.tab); return; }
+      if (d.seg) { S.libseg = d.seg; renderLib(); return; }
+      if (d.song !== undefined) {
+        const s = $('#libbody')._list[+d.song];
+        if (!s) return;
+        unlockAudio();
+        if (S.cur && S.cur.id === s.id) { setOn('s-player', true); return; }
+        if (!s.url && s.blob) s.url = URL.createObjectURL(s.blob);
+        setSong(s, { replay: true }); setOn('s-player', true); toast('Wiederhören · kostet nichts');
+        return;
+      }
+      if (d.station !== undefined) {
+        const st = S.stations[+d.station];
+        if (!st) return;
+        unlockAudio();
+        if (S.session && S.session.station === st.station && S.cur && !S.cur.replay) { setOn('s-player', true); return; }
+        S.session = { id: 'st' + Date.now().toString(36), station: st.station, palette: st.palette, spec: st.spec, title: '' };
+        S.nextState = 'none'; S.next = null;
+        setOn('s-player', true);
+        nextSong('station');
+        return;
+      }
+      if (d.rule !== undefined) {
+        const r = S.rules[+d.rule];
+        r.scope = r.scope === 'Immer' ? 'Nur heute' : r.scope === 'Nur heute' ? 'Aus' : 'Immer';
+        saveState(); renderTaste(false);
+        toast(r.scope === 'Aus' ? `„${r.text}“ ist aus` : `„${r.text}“ gilt: ${r.scope.toLowerCase()}`);
+        return;
+      }
+      if (d.chip) { talk({ text: d.chip }); return; }
+      if (d.opt !== undefined) {
+        const o = ($('#msgs')._opts || [])[+d.opt];
+        if (o) talk({ text: `${o.label}: ${o.description}` });
+        return;
+      }
+      if (d.len) { S.settings.len = d.len; saveState(); renderSettings(); toast(d.len === 'clip' ? 'Kurze Songs: 30 s, schneller und günstiger' : 'Volle Songs: ca. 3 Minuten'); if (S.nextState !== 'none') prepareNext(); return; }
+      if (d.limit) { S.settings.limit = clamp(S.settings.limit + +d.limit, 5, 200); S.limitOk = false; saveState(); renderSettings(); return; }
+      if (t.id === 'forget') {
+        S.session = null; S.chat = []; S.nextToken++; S.next = null; S.nextState = 'none';
+        $('#msgs').innerHTML = '';
+        renderTaste(false); renderNext(); toast('Session vergessen');
+      }
+    });
+    $('#orb').addEventListener('click', listen);
+    $('#typeinstead').addEventListener('click', () => { unlockAudio(); openTalk('solo'); setTimeout(() => $('#composein').focus(), 350); });
+    $('#libplus').addEventListener('click', () => { showTab('home'); listen(); });
+    $('#listenclose').addEventListener('click', cancelListen);
+    $('#stopbtn').addEventListener('click', () => { if (sendNow) sendNow(); });
+    $('#pclose').addEventListener('click', () => setOn('s-player', false));
+    $('#plyrics').addEventListener('click', openLyrics);
+    $('#pplay').addEventListener('click', () => { if (S.composing && S.composing.error) { openTalk('steer'); return; } setPlaying(audio.paused); });
+    $('#pnextbtn').addEventListener('click', () => nextSong('skip'));
+    $('#pprev').addEventListener('click', prevSong);
+    $('#pup').addEventListener('click', like);
+    $('#pdown').addEventListener('click', dislike);
+    $('#padd').addEventListener('click', save);
+    $('#steer').addEventListener('click', () => openTalk(S.cur || S.composing ? 'steer' : 'solo'));
+    $('#ptrack').addEventListener('click', e => {
+      if (!S.cur || S.composing || !audio.duration) return;
+      const r = e.currentTarget.getBoundingClientRect();
+      audio.currentTime = clamp((e.clientX - r.left) / r.width, 0, 0.99) * audio.duration;
+    });
+    $('#mini').addEventListener('click', e => {
+      if (e.target.closest('#miniplay')) { setPlaying(audio.paused); return; }
+      if (e.target.closest('#mininext')) { nextSong('skip'); return; }
+      setOn('s-player', true);
+    });
+    $('#talkdim').addEventListener('click', () => { if (S.talkMode === 'steer') setOn('s-talk', false); });
+    $$('.grab').forEach(g => g.addEventListener('click', () => { setOn('s-talk', false); setOn('s-lyr', false); setOn('s-set', false); }));
+    $('#lyrdim').addEventListener('click', () => setOn('s-lyr', false));
+    $('#setdim').addEventListener('click', () => setOn('s-set', false));
+    $('#avatar').addEventListener('click', () => { renderSettings(); setOn('s-set', true); });
+    $('#tastecost').addEventListener('click', () => { renderSettings(); setOn('s-set', true); });
+    $('#pregen').addEventListener('click', () => { S.settings.pregen = !S.settings.pregen; saveState(); renderSettings(); if (!S.settings.pregen) { S.nextToken++; S.next = null; S.nextState = 'none'; renderNext(); } else if (S.cur) prepareNext(); });
+    $('#setcode').addEventListener('click', () => { setOn('s-set', false); openCode(); });
+    $('#resetcost').addEventListener('click', () => { S.total = { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }; S.sess = { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], audioSec: 0, genSec: 0 }; saveState(); renderSettings(); toast('Kostenzähler zurückgesetzt'); });
+    $('#codeform').addEventListener('submit', e => { e.preventDefault(); S.settings.code = $('#codein').value.trim(); saveState(); setOn('s-code', false); toast('Code gespeichert. Versuch es nochmal.'); });
+    const ci = $('#composein');
+    ci.addEventListener('input', updateComposeIcon);
+    $('#compose').addEventListener('submit', e => { e.preventDefault(); composeMic(); });
+
+    audio.addEventListener('timeupdate', renderTime);
+    audio.addEventListener('play', syncPlayIcons);
+    audio.addEventListener('pause', syncPlayIcons);
+    audio.addEventListener('loadedmetadata', () => { if (S.cur && audio.src === S.cur.url) { S.cur.dur = audio.duration; renderTime(); } });
+    let lastT = 0;
+    audio.addEventListener('timeupdate', () => { const t = audio.currentTime; if (S.cur && !S.cur.replay && t > lastT && t - lastT < 2) S.sess.audioSec += t - lastT; lastT = t; });
+    audio.addEventListener('ended', () => { if (!S.cur || audio.src === SILENT) return; feedback('complete'); nextSong('end'); });
+    window.addEventListener('resize', fit);
+    setInterval(clockTick, 15000);
+    setInterval(renderCosts, 5000);
+  }
+
+  // ------------------------------------------------------------ boot
+  async function boot() {
+    buildWave();
+    clockTick();
+    fit();
+    bind();
+    requestAnimationFrame(() => paintStatic(document));
+    renderRecent(); renderTaste(false); renderSettings(); syncChrome();
+    if (await DB.open()) {
+      const rows = (await DB.all()) || [];
+      S.library = rows.sort((a, b) => b.created - a.created).map(r => Object.assign(r, { url: URL.createObjectURL(r.blob) }));
+    }
+    document.documentElement.dataset.ready = '1';
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})();
