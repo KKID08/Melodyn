@@ -290,8 +290,36 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
   // The producer: a second model writes the actual Lyria prompt from the spec and the listener's own words.
   // Falls back along the chain if a model is unavailable, and to the built-in prompt if all fail.
   const deadModels = new Set();
+  async function producerCall(model, input) {
+    const t0 = performance.now();
+    let r, usage;
+    try {
+      if (DIRECT()) { const raw = await google(model, producerBody(input, model)); r = readProducer(raw); usage = raw.usageMetadata; }
+      else { const d = await (await post('/api/produce', { model, input })).json(); r = d.result; usage = d.usage; }
+    } catch (e) {
+      // Unknown model or unsupported option: don't try this one again in this session
+      if (e.status === 400 || e.status === 403 || e.status === 404) deadModels.add(model);
+      throw e;
+    }
+    const cost = geminiCost(usage, model);
+    addCost('gemini', cost);
+    r.model = model; r.ms = performance.now() - t0; r.cost = cost;
+    return r;
+  }
+  async function producerChain(models, input) {
+    for (const model of models.filter(m => !deadModels.has(m))) {
+      try { return await producerCall(model, input); }
+      catch (e) {
+        if (e.code === 'nokey' || e.code === 'key') throw e;
+        log(`<b>Produzent</b> ${model} nicht verfügbar`, e.message, true);
+      }
+    }
+    return null;
+  }
+  // The producer: a second model writes the actual Lyria prompt from the spec and the listener's own words.
+  // Prepared songs always get the thorough model. For a new wish both run side by side: the thorough answer
+  // is used if it arrives within a few seconds, otherwise the fast one, so nobody waits long for quality.
   async function produce(res, { deep = false, previous = null } = {}) {
-    const chain = [...(deep && S.settings.deep ? [PRODUCER_DEEP] : []), PRODUCER_FAST, GEMINI_MODEL].filter(m => !deadModels.has(m));
     const input = {
       mode: res._next ? 'next' : 'first',
       words: (S.session && S.session.words) || [],
@@ -299,25 +327,22 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       rules: S.rules.filter(r => r.scope !== 'Aus').map(r => r.text),
       previous,
     };
-    for (const model of chain) {
+    const useDeep = S.settings.deep && !deadModels.has(PRODUCER_DEEP);
+    let r = null;
+    if (useDeep && deep) r = await producerChain([PRODUCER_DEEP, PRODUCER_FAST, GEMINI_MODEL], input);
+    else if (useDeep) {
       const t0 = performance.now();
-      try {
-        let r, usage;
-        if (DIRECT()) { const raw = await google(model, producerBody(input, model)); r = readProducer(raw); usage = raw.usageMetadata; }
-        else { const d = await (await post('/api/produce', { model, input })).json(); r = d.result; usage = d.usage; }
-        const cost = geminiCost(usage, model);
-        addCost('gemini', cost);
-        log(`<b>Produzent</b> schreibt den Lyria-Prompt · ${esc(r.target || '')} · ${model} · ${((performance.now() - t0) / 1000).toFixed(1)} s · ${usd(cost, 4)}`, `${r.core}\n\n${r.structure}\n\nAvoid: ${(r.avoid || []).join(', ')}`);
-        res.lyria = r;
-        return r;
-      } catch (e) {
-        if (e.code === 'nokey' || e.code === 'key') throw e;
-        // Unknown model or unsupported option: don't try this one again in this session
-        if (e.status === 400 || e.status === 403 || e.status === 404) deadModels.add(model);
-        log(`<b>Produzent</b> ${model} nicht verfügbar${chain[chain.length - 1] === model ? ', nutze einfachen Prompt' : ', nächstes Modell'}`, e.message, true);
-      }
-    }
-    return null;
+      const deepP = producerCall(PRODUCER_DEEP, input).catch(e => { if (e.code === 'nokey' || e.code === 'key') throw e; log(`<b>Produzent</b> ${PRODUCER_DEEP} nicht verfügbar`, e.message, true); return null; });
+      const fastP = producerChain([PRODUCER_FAST, GEMINI_MODEL], input);
+      const fast = await fastP;
+      const wait = Math.max(0, 7000 - (performance.now() - t0));
+      r = await Promise.race([deepP, sleep(fast ? wait : 20000).then(() => null)]) || fast;
+    } else r = await producerChain([PRODUCER_FAST, GEMINI_MODEL], input);
+    if (!r) { log('<b>Produzent</b> nicht erreichbar, nutze einfachen Prompt', '', true); return null; }
+    log(`<b>Produzent</b> schreibt den Lyria-Prompt · ${esc(r.target || '')} · ${r.model} · ${(r.ms / 1000).toFixed(1)} s · ${usd(r.cost, 4)}`,
+      `Verstanden: ${r.listener_intent || ''}\nReferenz: ${r.reference_translation || ''}\nVibe: ${r.vibe || ''}\nGesang: ${r.vocal_delivery || ''}\n\n${r.core}\n\n${r.structure}\n\nAvoid: ${(r.avoid || []).join(', ')}`);
+    res.lyria = r;
+    return r;
   }
   function lyriaPrompt(res) {
     const s = res.spec, v = s.vocals;
@@ -339,7 +364,13 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const body = len === 'clip'
       ? `${L.core}\n30-second excerpt: start directly in the main hook with the full arrangement, so the style is unmistakable from the first second.`
       : `${L.core}\nStructure:\n${L.structure}`;
-    return body + (avoid.length ? `\nAvoid: ${avoid.join(', ')}.` : '');
+    return scrubNames(body + (avoid.length ? `\nAvoid: ${avoid.join(', ')}.` : ''), res.spec.references);
+  }
+  // Lyria refuses prompts with artist or song names; the producer is told so, this is the safety net
+  function scrubNames(text, refs) {
+    const names = String(refs || '').split(/[,;/&]|\bund\b|\band\b|\bwie\b|\blike\b/i).map(x => x.trim()).filter(x => x.length >= 3);
+    for (const n of names) text = text.replace(new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), '');
+    return text.replace(/ {2,}/g, ' ').replace(/ ([,.])/g, '$1');
   }
   // Plain fallback if Lyria refuses the detailed prompt (titles or themes can trip its filters)
   function simplePrompt(res) {
@@ -376,7 +407,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const id = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     return {
       id, title: res.title, station: res.station || (S.session && S.session.station) || 'Melodyn', palette: res.palette || 'self', seed: id,
-      spec: res.spec, target: res.lyria ? res.lyria.target : '', lyrics, prompt, blob, url: URL.createObjectURL(blob), dur: 0, genMs: ms, len,
+      spec: res.spec, target: res.lyria ? res.lyria.target : '', intent: res.lyria ? res.lyria.listener_intent : '', lyrics, prompt, blob, url: URL.createObjectURL(blob), dur: 0, genMs: ms, len,
     };
   }
 
@@ -1313,7 +1344,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       const blocks = lyr.split(/\[\[[A-Z]\d+\]\]/).map(b => b.trim()).filter(Boolean);
       html += blocks.map(b => `<div class="part">${b.split('\n').map(l => l.replace(/^\[:\]\s*/, '').trim()).filter(Boolean).map(l => `<p>${esc(l)}</p>`).join('')}</div>`).join('');
     } else html += '<div class="part"><p>Instrumental, ohne Text.</p></div>';
-    if (s.prompt) html += `<div class="h-s">So hat Melodyn den Song bei Lyria bestellt</div>${s.target ? `<p class="meta">Ziel: ${esc(s.target)}</p>` : ''}<pre>${esc(s.prompt)}</pre>`;
+    if (s.prompt) html += `<div class="h-s">So hat Melodyn den Song bei Lyria bestellt</div>${s.intent ? `<p class="meta">Verstanden: ${esc(s.intent)}</p>` : ''}${s.target ? `<p class="meta">Ziel: ${esc(s.target)}</p>` : ''}<pre>${esc(s.prompt)}</pre>`;
     $('#lyrbody').innerHTML = html;
     setOn('s-lyr', true);
   }
