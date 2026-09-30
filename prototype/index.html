@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Melodyn</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Instrument+Serif:ital@0;1&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="proto.css">
+</head>
+<body>
+
+<!-- ============ APP ============ -->
+<main id="appmode">
+  <div class="aura bgglow" id="bgglow" data-p="self" data-seed="9"></div>
+  <aside class="panel">
+    <div class="wm"><svg><use href="#logo"/></svg>melodyn<small>Prototyp</small></div>
+    <h1>Tippe auf die Kugel. <span class="serif">Und sag, wonach dir ist.</span></h1>
+    <p class="lead">Alles ist klickbar: Songs erzeugen, skippen, liken, speichern, mit Melodyn reden. Der Sound ist ein Demo-Synth im Browser.</p>
+    <h2>Szene starten</h2>
+    <div class="scenes" id="scenes"></div>
+    <h2>Gerät</h2>
+    <div class="devices" id="devices">
+      <button data-device="phone" aria-pressed="true">iPhone</button>
+      <button data-device="lock" aria-pressed="false">Sperrbildschirm</button>
+      <button data-device="car" aria-pressed="false">CarPlay</button>
+    </div>
+  </aside>
+
+  <div class="stage" id="stage">
+    <!-- iPhone -->
+    <div class="device-wrap" id="phonewrap">
+      <div class="frame" id="phoneframe">
+        <div class="phone" id="phone">
+          <div class="sb"><span class="clock">21:47</span><div class="island"></div><span class="icons" id="sbicons"></span></div>
+
+          <!-- Home -->
+          <section class="scr tabscr on" id="s-home">
+            <div class="head">
+              <div><p id="greet">Guten Abend, Elias</p><div class="h-xl">Wonach ist dir?</div></div>
+              <button class="avatar press" id="avatar" aria-label="Abo"><div class="aura" style="inset:0" data-p="self" data-seed="2"></div></button>
+            </div>
+            <button class="orbwrap" id="orb" aria-label="Sprechen">
+              <div class="aura glow" data-p="self" data-seed="4" data-blur=".22"></div>
+              <div class="aura orb" data-p="self" data-seed="4" data-blur=".14" data-lines="11" data-la=".28"></div>
+            </button>
+            <div class="orb-label"><b>Tippen und einfach sagen</b><span id="orbhint">„Was Ruhiges für die Heimfahrt“</span></div>
+            <div class="sec">
+              <div class="sec-h"><div class="h-s">Weiter hören</div><button data-tab="lib">Alle</button></div>
+              <div class="hrow" id="recent"></div>
+            </div>
+          </section>
+
+          <!-- Library -->
+          <section class="scr tabscr" id="s-lib">
+            <div class="head"><div class="h-xl">Bibliothek</div><div class="acts"><svg class="i"><use href="#search"/></svg><button id="libplus" aria-label="Neue Station"><svg class="i"><use href="#plus"/></svg></button></div></div>
+            <div class="seg" id="libseg"><button class="on" data-seg="st">Stationen</button><button data-seg="songs">Songs</button><button data-seg="hist">Verlauf</button></div>
+            <div class="scroll" id="libbody"></div>
+          </section>
+
+          <!-- Taste -->
+          <section class="scr tabscr" id="s-taste">
+            <div class="head"><div class="h-xl">Dein Sound</div><button id="tastepay" aria-label="Abo"><svg class="i"><use href="#tune"/></svg></button></div>
+            <div class="thero"><div class="aura" style="inset:0" data-p="self" data-seed="4" data-blur=".15" data-lines="14" data-la=".2"></div><div class="shade"></div>
+              <div class="txt"><p>Nächtlich und warm, meist 90 bis 105 BPM, gern mit männlicher Stimme.</p><span id="learned">Gelernt aus 214 Reaktionen in 5 Wochen</span></div></div>
+            <div class="scroll">
+              <div class="blk"><div class="h-s">Was du magst <small id="tastenote">Diese Woche +2 neue</small></div><div id="genres"></div></div>
+              <div class="blk" id="nowblk"></div>
+              <div class="blk"><div class="h-s">Deine Regeln</div><div id="rules"></div></div>
+            </div>
+          </section>
+
+          <!-- Mini player + tab bar -->
+          <div class="mini" id="mini">
+            <div class="th" id="minith"></div>
+            <div style="min-width:0"><b id="minititle"></b><span id="ministation"></span></div>
+            <button class="c" id="miniplay" aria-label="Abspielen"><svg class="i f"><use href="#play"/></svg></button>
+            <button class="c" id="mininext" aria-label="Nächster Song"><svg class="i f"><use href="#next"/></svg></button>
+            <div class="prog" id="miniprog"></div>
+          </div>
+          <nav class="tabbar" id="tabbar">
+            <button class="on" data-tab="home"><svg class="i"><use href="#listen"/></svg>Hören</button>
+            <button data-tab="lib"><svg class="i"><use href="#lib"/></svg>Bibliothek</button>
+            <button data-tab="taste"><svg class="i"><use href="#user"/></svg>Dein Sound</button>
+          </nav>
+
+          <!-- Listening -->
+          <section class="scr" id="s-listen">
+            <div class="aura halo" id="halo" data-p="night" data-seed="11" data-blur=".18"></div>
+            <div class="fade"></div>
+            <div class="top">
+              <button class="circle" id="listenclose" aria-label="Abbrechen"><svg class="i" style="width:18px;height:18px"><use href="#x"/></svg></button>
+              <span class="live" id="livelabel"><i></i>Melodyn hört zu</span>
+              <div style="width:36px"></div>
+            </div>
+            <p class="said" id="said"></p>
+            <div class="got" id="got"></div>
+            <div class="wave" id="wave"></div>
+            <button class="circle stopbtn" id="stopbtn" aria-label="Senden"><svg class="i f"><use href="#stop"/></svg></button>
+            <div class="hint" id="listenhint">Tippen zum Senden</div>
+          </section>
+
+          <!-- Player -->
+          <section class="scr" id="s-player">
+            <div class="aura bg" id="pbg"></div>
+            <div class="veil"></div>
+            <div class="ptop">
+              <button class="circle" id="pclose" aria-label="Schließen"><svg class="i" style="width:20px;height:20px"><use href="#chev"/></svg></button>
+              <div><b id="pstation"></b><span id="psub"></span></div>
+              <button class="circle" style="justify-self:end" id="pmore" aria-label="Mehr"><svg class="i" style="width:20px;height:20px"><use href="#more"/></svg></button>
+            </div>
+            <div class="pcover" id="pcover"><div class="aura" style="inset:0" id="pcoverart"></div><div class="shim"></div></div>
+            <div class="pmeta">
+              <div style="min-width:0"><h1 id="ptitle"></h1><p id="pgenre"></p></div>
+              <button class="add" id="padd" aria-label="In Bibliothek speichern"><svg class="i"><use href="#add" id="paddicon"/></svg></button>
+            </div>
+            <div class="pprog"><div class="track" id="ptrack"><i id="pbar"></i></div><div class="times"><span id="pcur">0:00</span><span id="prem">−3:00</span></div></div>
+            <div class="pctrl">
+              <button class="circle side" id="pdown" aria-label="Nicht mein Ding"><svg class="i"><use href="#down"/></svg></button>
+              <button class="circle mid" id="pprev" aria-label="Vorheriger Song"><svg class="i f"><use href="#prev"/></svg></button>
+              <button class="circle play" id="pplay" aria-label="Abspielen"><svg class="i f"><use href="#play" class="playuse"/></svg></button>
+              <button class="circle mid" id="pnextbtn" aria-label="Nächster Song"><svg class="i f"><use href="#next"/></svg></button>
+              <button class="circle side" id="pup" aria-label="Gefällt mir"><svg class="i"><use href="#up"/></svg></button>
+            </div>
+            <div class="pnext" id="pnext"><span class="ld"><i></i><i></i><i></i></span><span id="pnexttxt"></span></div>
+            <button class="steer" id="steer"><span>„Etwas schneller“, „mehr Gitarren“ …</span><span class="circle"><svg class="i"><use href="#mic"/></svg></span></button>
+          </section>
+
+          <!-- Conversation -->
+          <section class="scr" id="s-talk">
+            <div class="aura tbg" id="tbg" data-p="dusk" data-seed="2" data-blur=".2"></div>
+            <div class="dim" id="talkdim"></div>
+            <div class="tmini"><div class="art" id="tminiart"></div><div><b id="tminititle">Grey Harbor</b><span id="tminisub">Heute Abend · pausiert</span></div></div>
+            <div class="sheet">
+              <div class="grab"></div>
+              <div class="msgs" id="msgs"></div>
+              <div class="qchips" id="qchips"></div>
+              <form class="compose" id="compose" autocomplete="off">
+                <input id="composein" placeholder="Sag Melodyn, was anders sein soll …" aria-label="Nachricht an Melodyn">
+                <button class="circle" type="submit" aria-label="Senden"><svg class="i" id="composeicon"><use href="#mic"/></svg></button>
+              </form>
+            </div>
+          </section>
+
+          <!-- Paywall -->
+          <section class="scr" id="s-pay">
+            <div class="aura top-art" data-p="morning" data-seed="6" data-blur=".17" data-lines="15" data-la=".24"></div>
+            <div class="top-fade"></div>
+            <div class="wm"><svg><use href="#logo"/></svg>melodyn</div>
+            <button class="circle close" id="payclose" aria-label="Schließen"><svg class="i" style="width:18px;height:18px"><use href="#x"/></svg></button>
+            <div class="copy"><h1>Musik, die es vorher nicht gab.</h1><p>Jeden Tag neue Songs für deinen Moment. Deine Favoriten hörst du so oft du willst.</p></div>
+            <div class="plans" id="plans">
+              <button class="plan" data-plan="Start" data-price="7,99"><div class="radio"></div><div><b>Start</b><span>150 neue Songs im Monat</span></div><div class="p">7,99 €<small>pro Monat</small></div></button>
+              <button class="plan on" data-plan="Plus" data-price="14,99"><div class="radio"></div><div><b>Plus <em>Beliebt</em></b><span>400 neue Songs im Monat</span></div><div class="p">14,99 €<small>pro Monat</small></div></button>
+              <button class="plan" data-plan="Pro" data-price="24,99"><div class="radio"></div><div><b>Pro</b><span>1.000 neue Songs im Monat</span></div><div class="p">24,99 €<small>pro Monat</small></div></button>
+            </div>
+            <div class="feat">
+              <div><svg class="i"><use href="#check"/></svg>Favoriten und Stationen unbegrenzt hören</div>
+              <div><svg class="i"><use href="#check"/></svg>Steuerung per Sprache, auch im Auto</div>
+            </div>
+            <button class="btn-w cta" id="paycta">7 Tage kostenlos testen</button>
+            <div class="fine" id="payfine">Danach 14,99 € pro Monat. Jederzeit kündbar.</div>
+            <div class="success" id="paysuccess"><div class="ck"><svg class="i"><use href="#check"/></svg></div><h2 id="paytitle">Willkommen bei Plus</h2><p>Deine 7 Testtage laufen. Viel Spaß mit neuer Musik.</p></div>
+          </section>
+
+          <!-- Lockscreen -->
+          <section class="scr" id="s-lock">
+            <div class="aura wall" id="lockwall" data-p="tunnel" data-seed="5" data-blur=".2" data-lines="18" data-la=".12"></div>
+            <svg class="i lk-lock"><use href="#lock"/></svg>
+            <div class="lk-date" id="lkdate"></div>
+            <div class="lk-time" id="lktime"></div>
+            <div class="np">
+              <div class="row1"><div class="art" id="lkart"></div><div style="min-width:0"><b id="lktitle"></b><span id="lksub"></span></div><svg class="i"><use href="#airplay"/></svg></div>
+              <div class="bar"><span id="lkcur">0:00</span><div class="t"><i id="lkbar"></i></div><span id="lkrem"></span></div>
+              <div class="ctl">
+                <button id="lkdown" aria-label="Nicht mein Ding"><svg class="i"><use href="#down"/></svg></button>
+                <button id="lkprev" aria-label="Vorheriger Song"><svg class="i f"><use href="#prev"/></svg></button>
+                <button class="big" id="lkplay" aria-label="Abspielen"><svg class="i f"><use href="#play" class="playuse"/></svg></button>
+                <button id="lknext" aria-label="Nächster Song"><svg class="i f"><use href="#next"/></svg></button>
+                <button id="lkup" aria-label="Gefällt mir"><svg class="i"><use href="#up"/></svg></button>
+              </div>
+              <div class="note"><span id="lknote">Nächster Song ist fertig</span><button class="pill" id="lksay"><svg class="i"><use href="#mic"/></svg>Sag was</button></div>
+            </div>
+            <div class="qa" style="left:46px"><svg class="i"><use href="#flash"/></svg></div>
+            <div class="qa" style="right:46px"><svg class="i"><use href="#cam"/></svg></div>
+            <div class="lk-hint">Zum Entsperren hier tippen</div>
+            <button class="unlock" id="unlock" aria-label="Entsperren"></button>
+          </section>
+
+          <div class="toast" id="toast"><svg class="i"><use href="#check"/></svg><span id="toasttxt"></span></div>
+          <div class="home-ind"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CarPlay -->
+    <div class="device-wrap" id="carwrap" hidden>
+      <div class="carframe" id="carframe">
+        <div class="car">
+          <div class="dock">
+            <div class="t clock">21:52</div><div class="sig">5G</div>
+            <div class="app" style="background:linear-gradient(160deg,#5ac8fa,#2a7df0)"><svg class="i"><use href="#car"/></svg></div>
+            <div class="app"><div class="aura" style="inset:0" data-p="self" data-seed="4" data-blur=".2"></div><svg class="i"><use href="#logo"/></svg></div>
+            <div class="app" style="background:linear-gradient(160deg,#5fe07a,#27b14a)"><svg class="i f"><use href="#phoneic"/></svg></div>
+            <div class="grid"><i></i><i></i><i></i><i></i></div>
+          </div>
+          <div class="cmain">
+            <div class="aura cbg" id="cbg"></div>
+            <div class="veil"></div>
+            <div class="chdr"><span style="color:var(--text);font-size:16px;font-weight:600" id="cstation"></span><span id="cplan">noch ca. 1 Std. 36 Min. Musik geplant</span></div>
+            <div class="ccover" id="ccover"></div>
+            <div class="cinfo"><h1 id="ctitle"></h1><p id="cgenre"></p><div class="track" id="ctrack"><i id="cbar"></i></div><div class="tm"><span id="ccur"></span><span id="crem"></span></div></div>
+            <div class="cctl">
+              <button class="side" id="cdown" aria-label="Nicht mein Ding"><svg class="i"><use href="#down"/></svg></button>
+              <button id="cprev" aria-label="Vorheriger Song"><svg class="i f"><use href="#prev"/></svg></button>
+              <button class="circle play" id="cplay" aria-label="Abspielen"><svg class="i f"><use href="#play" class="playuse"/></svg></button>
+              <button id="cnext" aria-label="Nächster Song"><svg class="i f"><use href="#next"/></svg></button>
+              <button class="side" id="cup" aria-label="Gefällt mir"><svg class="i"><use href="#up"/></svg></button>
+            </div>
+            <button class="talk" id="ctalk"><p id="ctalktxt">Sag einfach <b>„Hey Melodyn, etwas wacher“</b></p><span class="circle"><svg class="i"><use href="#mic"/></svg></span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ============ WEBSITE ============ -->
+<div id="webmode" hidden>
+  <header class="w-nav" id="wnav">
+    <div class="w-wrap">
+      <button class="w-wm" data-go="w-top"><svg><use href="#logo"/></svg>melodyn</button>
+      <nav class="w-links"><button data-go="w-moments">So funktioniert’s</button><button data-go="w-car">Im Auto</button><button data-go="w-pricing">Preise</button><button data-soon>Für Artists</button></nav>
+      <div class="w-r"><button data-soon>Anmelden</button><button class="btn-w" data-go="w-end">Warteliste</button></div>
+    </div>
+  </header>
+
+  <section class="hero" id="w-top">
+    <div class="aura glow" data-p="tunnel" data-seed="3" data-blur=".17" data-lines="22" data-la=".14"></div>
+    <div class="glow-fade"></div>
+    <div class="w-wrap">
+      <div>
+        <h1>Musik, die es noch nicht gab.<span class="serif">Bis du gefragt hast.</span></h1>
+        <p class="sub">Sag Melodyn, wo du bist und wie es dir geht. Melodyn komponiert den passenden Song, spielt ihn sofort und lernt mit jedem Skip dazu.</p>
+        <div class="wlist">
+          <form class="wform" novalidate><input type="email" placeholder="deine@email.de" aria-label="E-Mail-Adresse" id="wmail1"><button class="btn-w" type="submit">Auf die Warteliste</button></form>
+          <p class="wmsg"></p>
+        </div>
+        <div class="small"><span><b>Beta ab Winter 2026</b></span><span>iPhone und Android</span><span>Deutsch und Englisch</span></div>
+        <button class="tryapp" data-mode="app">App-Prototyp ausprobieren <svg class="i" style="width:16px;height:16px"><use href="#chevr"/></svg></button>
+      </div>
+      <div class="phones">
+        <div class="ph p1" data-mode="app"><img src="img/listening.jpg" alt="Melodyn hört zu"></div>
+        <div class="ph p2" data-mode="app"><img src="img/player.jpg" alt="Melodyn Player"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="w-sec" id="w-moments">
+    <div class="w-wrap">
+      <div class="w-top reveal">
+        <h2 class="w-h2">Kein Suchen. <span class="serif">Ein Satz reicht.</span></h2>
+        <p class="w-p">Ein Genre, eine Situation oder ein Gefühl. Melodyn macht daraus Tempo, Stimmung und Klang und spielt nach wenigen Sekunden.</p>
+      </div>
+      <div class="mcols" id="mcols"></div>
+    </div>
+  </section>
+
+  <section class="w-sec">
+    <div class="w-wrap learn">
+      <div class="lpanel reveal"><div class="aura" style="inset:0" data-p="self" data-seed="12" data-blur=".17" data-lines="20" data-la=".14"></div><div class="ph"><img src="img/taste.jpg" alt="Dein Sound"></div></div>
+      <div class="reveal">
+        <span class="eyebrow">Dein Sound</span>
+        <h2 class="w-h2" style="margin-top:14px">Lernt dich kennen. <span class="serif">Vergisst, was nur heute zählt.</span></h2>
+        <p class="w-p" style="margin-top:22px;max-width:520px">Ein trauriger Abend macht dich nicht zum Balladen-Hörer. Melodyn trennt deinen Geschmack von deiner Stimmung, und du siehst jederzeit, was es gelernt hat.</p>
+        <div class="rows">
+          <div class="lrow"><div class="mk"><i class="dotm" style="background:var(--text)"></i></div><div><b>Dein Profil wächst mit</b><span>Likes, Skips und Favoriten formen über Wochen, was du wirklich magst.</span></div></div>
+          <div class="lrow"><div class="mk"><i class="dotm" style="border:1.5px dashed var(--text)"></i></div><div><b>Stimmungen bleiben in der Session</b><span>Nachtfahrt, Liebeskummer, Training: gilt für jetzt und wird danach vergessen.</span></div></div>
+          <div class="lrow"><div class="mk"><svg class="i" style="width:20px;height:20px"><use href="#tune"/></svg></div><div><b>Deine Regeln gelten</b><span>„Nie wieder Autotune“ sagst du einmal. Melodyn hält sich daran.</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="w-sec carsec" id="w-car">
+    <div class="aura glow" data-p="night" data-seed="7" data-blur=".18"></div>
+    <div class="fade"></div>
+    <div class="w-wrap">
+      <div class="reveal">
+        <span class="eyebrow">Im Auto</span>
+        <h2 class="w-h2" style="margin-top:14px">Hände ans Lenkrad. <span class="serif">Musik im Kopf.</span></h2>
+        <p class="w-p" style="margin-top:22px">Sag, wohin du fährst. Melodyn plant Musik für die ganze Strecke und reagiert auf „etwas wacher“ oder „ruhiger“, ohne dass du aufs Display schaust.</p>
+        <ul>
+          <li><svg class="i"><use href="#check"/></svg>Steuerung komplett per Sprache</li>
+          <li><svg class="i"><use href="#check"/></svg>Musik passend zur Fahrzeit geplant</li>
+          <li><svg class="i"><use href="#check"/></svg>CarPlay und Android Auto</li>
+        </ul>
+      </div>
+      <div class="dash reveal" data-mode="app" data-device-go="car"><img src="img/carplay.jpg" alt="Melodyn in CarPlay"></div>
+    </div>
+  </section>
+
+  <section class="w-sec pricing" id="w-pricing">
+    <div class="w-wrap">
+      <div class="head reveal">
+        <h2 class="w-h2">Zahl für neue Musik. <span class="serif">Nicht fürs Wiederhören.</span></h2>
+        <p>Jeder Tarif enthält neue Songs pro Monat. Deine Favoriten hörst du immer so oft du willst.</p>
+        <div class="ptoggle" id="ptoggle"><button aria-pressed="true" data-bill="m">Monatlich</button><button aria-pressed="false" data-bill="y">Jährlich<em>2 Monate gratis</em></button></div>
+      </div>
+      <div class="wplans">
+        <div class="wplan reveal"><h3>Start</h3><p class="who">Zum Reinhören</p><div class="price" data-m="7.99">7,99 €<small>/ Monat</small></div><p class="yr"></p><div class="big">150 neue Songs im Monat</div>
+          <ul><li><svg class="i"><use href="#check"/></svg>Favoriten unbegrenzt</li><li><svg class="i"><use href="#check"/></svg>Steuerung per Sprache</li><li><svg class="i"><use href="#check"/></svg>3 Stationen</li></ul><button class="btn" data-go="w-end">Start wählen</button></div>
+        <div class="wplan hot reveal"><div class="aura strip" data-p="tunnel" data-seed="3" data-blur=".2"></div><span class="tag">Beliebt</span><h3>Plus</h3><p class="who">Für den Alltag und jeden Arbeitsweg</p><div class="price" data-m="14.99">14,99 €<small>/ Monat</small></div><p class="yr"></p><div class="big">400 neue Songs im Monat</div>
+          <ul><li><svg class="i"><use href="#check"/></svg>Alles aus Start</li><li><svg class="i"><use href="#check"/></svg>Unbegrenzt Stationen</li><li><svg class="i"><use href="#check"/></svg>CarPlay und Android Auto</li></ul><button class="btn" data-go="w-end">7 Tage kostenlos testen</button></div>
+        <div class="wplan reveal"><h3>Pro</h3><p class="who">Für alle, bei denen immer Musik läuft</p><div class="price" data-m="24.99">24,99 €<small>/ Monat</small></div><p class="yr"></p><div class="big">1.000 neue Songs im Monat</div>
+          <ul><li><svg class="i"><use href="#check"/></svg>Alles aus Plus</li><li><svg class="i"><use href="#check"/></svg>Längere Songs bis 5 Minuten</li><li><svg class="i"><use href="#check"/></svg>Songs als Datei behalten</li></ul><button class="btn" data-go="w-end">Pro wählen</button></div>
+      </div>
+      <p class="pnote"><b>Was zählt als neuer Song?</b> Jeder Song, den Melodyn frisch für dich komponiert. Gespeicherte Songs und Stationen nochmal hören kostet nichts.</p>
+    </div>
+  </section>
+
+  <section style="padding-top:40px" id="w-end">
+    <div class="w-wrap">
+      <div class="band reveal">
+        <div class="aura" style="inset:0" data-p="tunnel" data-seed="3" data-blur=".16" data-lines="22" data-la=".16"></div>
+        <div class="shade"></div>
+        <div class="in">
+          <h2>Sag, wonach dir ist. <span class="serif">Den Rest macht Melodyn.</span></h2>
+          <div class="wlist">
+            <form class="wform" novalidate><input type="email" placeholder="deine@email.de" aria-label="E-Mail-Adresse" id="wmail2"><button class="btn-w" type="submit">Auf die Warteliste</button></form>
+            <p class="wmsg"></p>
+          </div>
+        </div>
+      </div>
+      <div class="foot">
+        <div><div class="w-wm"><svg><use href="#logo"/></svg>melodyn</div><p>Musik, die für deinen Moment entsteht und mit dir wächst.</p></div>
+        <div><h4>Produkt</h4><ul><li>So funktioniert’s</li><li>Im Auto</li><li>Preise</li></ul></div>
+        <div><h4>Unternehmen</h4><ul><li>Über uns</li><li>Für Artists</li><li>Presse</li></ul></div>
+        <div><h4>Rechtliches</h4><ul><li>Datenschutz</li><li>AGB</li><li>Impressum</li></ul></div>
+      </div>
+      <div class="legal"><span>© 2026 Melodyn</span><span>Deutsch · English</span></div>
+    </div>
+  </section>
+  <div class="wtoast" id="wtoast"></div>
+</div>
+
+<div class="switch" role="group" aria-label="Ansicht">
+  <button data-mode="app" aria-pressed="true">App</button>
+  <button data-mode="web" aria-pressed="false">Website</button>
+</div>
+
+<script src="proto.js"></script>
+</body>
+</html>
