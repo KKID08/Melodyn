@@ -1,10 +1,10 @@
 // Shared helpers for the Melodyn serverless functions.
 // Files starting with "_" are not exposed as routes by Vercel.
 
-export const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-export const LYRIA_FULL = process.env.LYRIA_MODEL || 'lyria-3.5';
-export const LYRIA_CLIP = 'lyria-3-clip-preview';
-export const API = 'https://generativelanguage.googleapis.com/v1beta/models';
+import { API, LYRIA_CLIP, LYRIA_FULL as DEFAULT_FULL } from '../app/prompt.js';
+
+export { API, LYRIA_CLIP };
+export const LYRIA_FULL = process.env.LYRIA_MODEL || DEFAULT_FULL;
 
 export function json(obj, status = 200) {
   return new Response(JSON.stringify(obj), {

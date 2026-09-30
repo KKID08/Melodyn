@@ -1,5 +1,9 @@
 /* Melodyn live prototype.
-   Real microphone -> /api/understand (Gemini) -> Music-Spec -> /api/compose (Lyria) -> real MP3. */
+   Real microphone -> Gemini (understands) -> Music-Spec -> Lyria (composes) -> real MP3.
+   On GitHub Pages the browser talks to Google directly with the user's own key (kept in localStorage).
+   On Vercel it goes through /api/* so the key stays on the server. */
+import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBody } from './prompt.js';
+
 (() => {
   'use strict';
 
@@ -139,7 +143,7 @@
     session: null, stations: store.get('stations', []),
     chat: [], feedback: [],
     taste: store.get('taste', {}), rules: store.get('rules', []), reactions: store.get('reactions', 0), liked: new Set(),
-    settings: Object.assign({ len: 'full', pregen: true, limit: 25, code: '' }, store.get('settings', {})),
+    settings: Object.assign({ len: 'full', pregen: true, limit: 25, code: '', key: '' }, store.get('settings', {})),
     total: store.get('costs', { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }),
     sess: { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], audioSec: 0, genSec: 0 },
     day: store.get('day', { date: '', count: 0 }),
@@ -217,6 +221,21 @@
     if (e.code === 'rate') throw new ApiError('Google meldet zu viele Anfragen. Warte kurz und versuch es nochmal.', 'rate');
     throw new ApiError(e.error || `Server-Fehler ${r.status}`, e.code);
   }
+  // Direct mode: no server of our own (GitHub Pages, local file) or the user brought a key
+  const DIRECT = () => !!S.settings.key || /github\.io$/.test(location.hostname) || location.protocol === 'file:';
+  async function google(model, body) {
+    if (!S.settings.key) { openKey(); throw new ApiError('Trag zuerst deinen Google API-Schlüssel ein.', 'nokey'); }
+    let r;
+    try {
+      r = await fetch(`${API}/${model}:generateContent`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': S.settings.key }, body: JSON.stringify(body) });
+    } catch { throw new ApiError('Keine Verbindung zu Google. Bist du online?', 'net'); }
+    if (r.ok) return r.json();
+    let m = '';
+    try { m = (await r.json()).error.message || ''; } catch { /* not json */ }
+    if (/api key not valid|api_key_invalid|api key expired/i.test(m)) { openKey(true); throw new ApiError('Google akzeptiert den Schlüssel nicht. Trag ihn neu ein.', 'key'); }
+    if (r.status === 429) throw new ApiError('Google meldet zu viele Anfragen oder ein aufgebrauchtes Kontingent. Warte kurz und prüf die Abrechnung in AI Studio.', 'rate');
+    throw new ApiError(m ? m.slice(0, 300) : `Google-Fehler ${r.status}`, 'google');
+  }
   function context() {
     const taste = Object.entries(S.taste).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([g, v]) => ({ genre: g, score: v }));
     const h = new Date().getHours();
@@ -229,8 +248,18 @@
   }
   async function understand(payload) {
     const t0 = performance.now();
-    const r = await post('/api/understand', Object.assign({ history: S.chat.slice(-12), context: context() }, payload));
-    const d = await r.json();
+    const req = Object.assign({ history: S.chat.slice(-12), context: context() }, payload);
+    let d;
+    if (DIRECT()) {
+      let body;
+      try { body = understandBody(req); } catch (e) { throw new ApiError(e.message); }
+      const raw = await google(GEMINI_MODEL, body);
+      try { d = { result: readUnderstand(raw), usage: raw.usageMetadata }; }
+      catch { throw new ApiError('Gemini hat keine lesbare Antwort geliefert. Bitte nochmal versuchen.'); }
+    } else {
+      const r = await post('/api/understand', req);
+      d = await r.json();
+    }
     const cost = geminiCost(d.usage);
     addCost('gemini', cost);
     const tok = d.usage ? d.usage.totalTokenCount : 0;
@@ -257,8 +286,8 @@
     const t0 = performance.now();
     let d;
     try {
-      const r = await post('/api/compose', { prompt, length: len });
-      d = await r.json();
+      if (DIRECT()) d = await google(len === 'clip' ? LYRIA_CLIP : LYRIA_FULL, { contents: [{ parts: [{ text: prompt }] }] });
+      else d = await (await post('/api/compose', { prompt, length: len })).json();
     } catch (e) {
       log(`<b>Lyria</b> Fehler: ${esc(e.message)}`, prompt, true);
       throw e;
@@ -290,7 +319,7 @@
   function isOn(id) { return $('#' + id).classList.contains('on'); }
   function setOn(id, on) { $('#' + id).classList.toggle('on', on); syncChrome(); }
   function syncChrome() {
-    const full = isOn('s-player') || isOn('s-listen') || isOn('s-code') || (isOn('s-talk') && $('#s-talk').classList.contains('solo'));
+    const full = isOn('s-player') || isOn('s-listen') || isOn('s-code') || isOn('s-key') || (isOn('s-talk') && $('#s-talk').classList.contains('solo'));
     $('#mini').classList.toggle('on', !!(S.cur || S.composing) && !full && !isOn('s-talk') && !isOn('s-set') && !isOn('s-lyr'));
     $('#tabbar').style.transform = full ? 'translateY(100%)' : '';
   }
@@ -884,6 +913,15 @@
     setTimeout(() => $('#codein').focus(), 300);
   }
 
+  // ------------------------------------------------------------ Google key (direct mode)
+  function openKey(invalid) {
+    $('#keyin').value = '';
+    $('#keyerr').textContent = invalid ? 'Der gespeicherte Schlüssel wurde abgelehnt.' : '';
+    setOn('s-set', false);
+    setOn('s-key', true);
+    setTimeout(() => $('#keyin').focus(), 300);
+  }
+
   // ------------------------------------------------------------ layout
   function fit() {
     const pw = $('#phonewrap'), ph = $('#phoneframe');
@@ -904,6 +942,9 @@
     $('#pregen').setAttribute('aria-checked', String(!!S.settings.pregen));
     $('#limitv').textContent = S.settings.limit;
     $('#codeinfo').textContent = S.settings.code ? 'Ein Code ist gespeichert.' : 'Nur nötig, wenn auf Vercel ein APP_CODE gesetzt ist.';
+    $('#coderow').hidden = DIRECT();
+    $('#keyinfo').textContent = S.settings.key ? `Gespeichert in diesem Browser (…${S.settings.key.slice(-4)})` : 'Noch kein Schlüssel eingetragen.';
+    $('#delkey').hidden = !S.settings.key;
     renderCosts();
   }
 
@@ -989,6 +1030,16 @@
     $('#pregen').addEventListener('click', () => { S.settings.pregen = !S.settings.pregen; saveState(); renderSettings(); if (!S.settings.pregen) { S.nextToken++; S.next = null; S.nextState = 'none'; renderNext(); } else if (S.cur) prepareNext(); });
     $('#setcode').addEventListener('click', () => { setOn('s-set', false); openCode(); });
     $('#resetcost').addEventListener('click', () => { S.total = { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }; S.sess = { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], audioSec: 0, genSec: 0 }; saveState(); renderSettings(); toast('Kostenzähler zurückgesetzt'); });
+    $('#keyform').addEventListener('submit', e => {
+      e.preventDefault();
+      const k = $('#keyin').value.trim();
+      if (k.length < 20) { $('#keyerr').textContent = 'Das sieht nicht nach einem vollständigen Schlüssel aus.'; return; }
+      S.settings.key = k; saveState(); setOn('s-key', false); renderSettings();
+      toast('Schlüssel gespeichert. Tippe auf die Kugel.');
+    });
+    $('#keyclose').addEventListener('click', () => setOn('s-key', false));
+    $('#setkey').addEventListener('click', () => openKey());
+    $('#delkey').addEventListener('click', () => { S.settings.key = ''; saveState(); renderSettings(); toast('Schlüssel aus diesem Browser entfernt'); });
     $('#codeform').addEventListener('submit', e => { e.preventDefault(); S.settings.code = $('#codein').value.trim(); saveState(); setOn('s-code', false); toast('Code gespeichert. Versuch es nochmal.'); });
     const ci = $('#composein');
     ci.addEventListener('input', updateComposeIcon);
@@ -1019,6 +1070,7 @@
       S.library = rows.sort((a, b) => b.created - a.created).map(r => Object.assign(r, { url: URL.createObjectURL(r.blob) }));
     }
     document.documentElement.dataset.ready = '1';
+    if (DIRECT() && !S.settings.key) setTimeout(() => openKey(), 500);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();

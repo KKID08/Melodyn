@@ -17,7 +17,7 @@
   <aside class="panel">
     <div class="wm"><svg><use href="#logo"/></svg>melodyn<small>Live-Prototyp</small></div>
     <h1>Sag, wonach dir ist. <span class="serif">Echt diesmal.</span></h1>
-    <p class="lead">Gemini hört dir zu und versteht den Wunsch, Lyria komponiert den Song. Jeder neue Song kostet echtes Geld, darum siehst du hier jeden Cent.</p>
+    <p class="lead">Gemini hört dir zu und versteht den Wunsch, Lyria komponiert den Song. Jeder neue Song kostet echtes Geld auf deinem Google-Konto, darum siehst du hier jeden Cent.</p>
     <div class="costbox" id="costbox"></div>
     <h2>Unter der Haube</h2>
     <ol class="calllog" id="calllog"><li class="muted">Noch keine Anfrage. Tippe auf die Kugel.</li></ol>
@@ -159,11 +159,26 @@
                   <button class="toggle" id="pregen" role="switch" aria-checked="true"><i></i></button></div>
                 <div class="setrow"><div><b>Tageslimit</b><span>Danach fragt Melodyn nach, bevor neue Songs entstehen.</span></div>
                   <div class="stepper"><button data-limit="-5" aria-label="Weniger">−</button><b id="limitv">25</b><button data-limit="5" aria-label="Mehr">+</button></div></div>
-                <div class="setrow"><div><b>Zugangscode</b><span id="codeinfo">Nur nötig, wenn auf Vercel ein APP_CODE gesetzt ist.</span></div>
+                <div class="setrow"><div><b>Google API-Schlüssel</b><span id="keyinfo"></span></div>
+                  <div style="display:flex;gap:6px"><button class="pillbtn" id="setkey">Ändern</button><button class="pillbtn" id="delkey">Entfernen</button></div></div>
+                <div class="setrow" id="coderow"><div><b>Zugangscode</b><span id="codeinfo">Nur nötig, wenn auf Vercel ein APP_CODE gesetzt ist.</span></div>
                   <button class="pillbtn" id="setcode">Ändern</button></div>
                 <button class="pillbtn wide" id="resetcost">Kostenzähler zurücksetzen</button>
                 <p class="finep">Preise: Lyria 3.5 0,08 $ pro Song, Lyria Clip 0,04 $, Gemini 2.5 Flash 0,30 $ je 1 Mio. Text-Tokens, 1,00 $ je 1 Mio. Audio-Tokens, 2,50 $ je 1 Mio. Antwort-Tokens. Stand Sept. 2026 laut öffentlichen Preislisten. Deine echte Rechnung siehst du in Google AI Studio.</p>
               </div>
+            </div>
+          </section>
+
+          <!-- Google key (GitHub Pages / direct mode) -->
+          <section class="scr" id="s-key">
+            <button class="circle keyclose" id="keyclose" aria-label="Schließen"><svg class="i" style="width:18px;height:18px"><use href="#x"/></svg></button>
+            <div class="codebox">
+              <div class="wm" style="justify-content:center"><svg><use href="#logo"/></svg>melodyn</div>
+              <h2>Dein Google-Schlüssel</h2>
+              <p>Melodyn nutzt Gemini zum Zuhören und Lyria zum Komponieren. Beides läuft über deinen eigenen Schlüssel aus Google AI Studio (aistudio.google.com/apikey).</p>
+              <form id="keyform" autocomplete="off"><input id="keyin" type="password" placeholder="API-Schlüssel einfügen" aria-label="Google API-Schlüssel" autocapitalize="off" spellcheck="false"><button class="btn-w" type="submit">Speichern</button></form>
+              <p class="err" id="keyerr"></p>
+              <p class="keynote">Der Schlüssel bleibt nur in diesem Browser und geht direkt an Google. Er landet nicht auf GitHub. Jeder neue Song kostet Geld auf deinem Google-Konto.</p>
             </div>
           </section>
 
@@ -187,6 +202,6 @@
 </main>
 
 <audio id="audio" preload="auto" playsinline></audio>
-<script src="app/app.js"></script>
+<script type="module" src="app/app.js"></script>
 </body>
 </html>

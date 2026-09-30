@@ -671,3 +671,10 @@ svg.i.f { fill: currentColor; stroke: none; }
 html, body { width: 100%; }
 body.live #appmode { width: 100%; padding-block: 24px; }
 .pmeta p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+#s-key { z-index: 66; background: var(--ink); display: grid; place-items: center; }
+.keyclose { position: absolute; top: 62px; right: 20px; width: 36px; height: 36px; background: rgba(255,255,255,.1); }
+.codebox .keynote { font-size: 12.5px; color: var(--text-3); }
+.codebox { width: min(330px, calc(100% - 40px)); grid-template-columns: minmax(0, 1fr); }
+.codebox form { min-width: 0; }
+.codebox .btn-w { flex: none; }

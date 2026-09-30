@@ -20,7 +20,13 @@ Voice-first Musikstream: Du sagst, wonach dir ist, Melodyn erzeugt passende Song
 
 Der Google-Schlüssel liegt nur auf dem Server (Vercel). Im Browser und im Repo taucht er nie auf.
 
-## Auf Vercel veröffentlichen
+## Auf GitHub Pages nutzen
+
+Der Branch `gh-pages` wird als Seite veröffentlicht: **https://kkid08.github.io/Melodyn/**
+
+Beim ersten Öffnen fragt die App nach einem Google API-Schlüssel aus [Google AI Studio](https://aistudio.google.com/apikey). Der Schlüssel wird nur im eigenen Browser gespeichert und geht direkt an Google, er landet nie im Repo. Wer die Seite öffnet, braucht einen eigenen Schlüssel.
+
+## Alternativ: auf Vercel veröffentlichen
 
 1. Auf [vercel.com](https://vercel.com) mit dem GitHub-Konto anmelden.
 2. **Add New → Project**, das Repo `KKID08/Melodyn` auswählen, **Import**.
