@@ -659,17 +659,17 @@ svg.i.f { fill: currentColor; stroke: none; }
 
 /* Real phones: the app fills the screen, no fake device chrome */
 @media (max-width: 600px) {
-  body.live { background: #0a0a0c; }
-  body.live #appmode { display: block; padding: 0; min-height: 100dvh; overflow: hidden; }
-  body.live .panel, body.live .bgglow { display: none; }
-  body.live .stage { display: block; }
-  body.live .frame { border-radius: 0; box-shadow: none; }
-  body.live .sb, body.live .home-ind { display: none; }
-  body.live .device-wrap { margin: 0 auto; }
+  body.app-live { background: #0a0a0c; }
+  body.app-live #appmode { display: block; padding: 0; min-height: 100dvh; overflow: hidden; }
+  body.app-live .panel, body.app-live .bgglow { display: none; }
+  body.app-live .stage { display: block; }
+  body.app-live .frame { border-radius: 0; box-shadow: none; }
+  body.app-live .sb, body.app-live .home-ind { display: none; }
+  body.app-live .device-wrap { margin: 0 auto; }
 }
 
 html, body { width: 100%; }
-body.live #appmode { width: 100%; padding-block: 24px; }
+body.app-live #appmode { width: 100%; padding-block: 24px; }
 .pmeta p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 #s-key { z-index: 66; background: var(--ink); display: grid; place-items: center; }
@@ -678,3 +678,69 @@ body.live #appmode { width: 100%; padding-block: 24px; }
 .codebox { width: min(330px, calc(100% - 40px)); grid-template-columns: minmax(0, 1fr); }
 .codebox form { min-width: 0; }
 .codebox .btn-w { flex: none; }
+
+/* DJ speaking + preview states */
+.pnext.djon .ld i { background: var(--good); animation-duration: .6s; }
+.pnext.djon b { color: var(--good); }
+.pcover.talking { box-shadow: 0 0 0 2px rgba(122,211,164,.55), 0 30px 60px -12px rgba(0,0,0,.55); }
+.pcover.talking .aura i { animation-duration: 3s !important; }
+
+/* ================= Adaptive layout (any phone height) =================
+   The phone is a size container; screens are flex columns instead of fixed y-positions.
+   --top/--bot are the status bar / home indicator zones (real safe areas on phones). */
+.phone { --top: 54px; --bot: 34px; container-type: size; }
+body.app-live .phone.real { --top: calc(env(safe-area-inset-top, 0px) + 10px); --bot: max(env(safe-area-inset-bottom, 0px), 12px); }
+
+.toast { top: calc(var(--top) + 6px); }
+.tabbar { height: calc(50px + var(--bot)); padding-bottom: var(--bot); }
+.mini { bottom: calc(58px + var(--bot)); }
+
+/* Home */
+#s-home { display: flex; flex-direction: column; padding: calc(var(--top) + 12px) 0 calc(58px + var(--bot)); }
+.phone.hasmini #s-home { padding-bottom: calc(126px + var(--bot)); }
+#s-home .head { position: relative; top: auto; left: auto; right: auto; margin: 0 24px; flex: none; }
+.orbzone { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(10px, 2.4cqh, 26px); padding: 10px 0; }
+.orbwrap { position: relative; top: auto; left: auto; margin: 0; width: min(224px, 27cqh); height: min(224px, 27cqh); flex: none; }
+.orb-label { position: relative; top: auto; }
+#s-home .sec { position: relative; top: auto; left: auto; right: auto; padding-left: 24px; flex: none; }
+.card, .card .art { width: min(148px, 17cqh); }
+.card .art { height: min(148px, 17cqh); }
+
+/* Listening */
+#s-listen { display: flex; flex-direction: column; padding: calc(var(--top) + 8px) 0 calc(var(--bot) + 4px); }
+#s-listen .top { position: relative; top: auto; left: auto; right: auto; margin: 0 20px; z-index: 1; flex: none; }
+.said { position: relative; top: auto; left: auto; right: auto; margin: clamp(18px, 5cqh, 44px) 28px 0; min-height: 0; z-index: 1; font-size: clamp(24px, 3.6cqh, 30px); }
+.got { position: relative; top: auto; left: auto; right: auto; margin: clamp(14px, 3cqh, 28px) 28px 0; z-index: 1; }
+.got .row { padding: clamp(8px, 1.4cqh, 12px) 0; }
+.wave { position: relative; bottom: auto; left: auto; right: auto; margin: auto 28px 0; z-index: 1; flex: none; }
+.stopbtn { position: relative; bottom: auto; left: auto; margin: clamp(14px, 3cqh, 28px) auto 0; z-index: 1; flex: none; }
+.hint { position: relative; bottom: auto; margin-top: 10px; z-index: 1; }
+
+/* Player */
+#s-player { display: flex; flex-direction: column; padding: calc(var(--top) + 6px) 0 var(--bot); }
+#s-player > .ptop, #s-player > .pcover, #s-player > .pmeta, #s-player > .pprog, #s-player > .pctrl, #s-player > .pnext, #s-player > .steer { position: relative; top: auto; left: auto; right: auto; bottom: auto; z-index: 1; flex: none; }
+#s-player > .ptop { margin: 0 16px; }
+#s-player > .pcover { width: min(calc(100% - 56px), 40cqh); height: auto; aspect-ratio: 1 / 1; margin: clamp(12px, 3cqh, 28px) auto 0; }
+#s-player > .pmeta { margin: clamp(14px, 3.4cqh, 30px) 28px 0; }
+#s-player > .pprog { margin: clamp(10px, 2.2cqh, 20px) 28px 0; }
+#s-player > .pctrl { margin: clamp(6px, 1.8cqh, 16px) 20px 0; }
+#s-player > .pnext { margin: clamp(8px, 2cqh, 18px) 28px 0; }
+#s-player > .steer { margin: auto 16px 0; }
+.pmeta h1 { font-size: clamp(22px, 3.2cqh, 27px); }
+
+/* Library / taste / sheets follow the top zone */
+#s-lib .head, #s-taste .head { top: calc(var(--top) + 8px); }
+.seg { top: calc(var(--top) + 62px); }
+#s-lib .scroll { top: calc(var(--top) + 110px); bottom: calc(50px + var(--bot)); }
+.thero { top: calc(var(--top) + 62px); height: min(212px, 25cqh); }
+#s-taste .scroll { top: calc(var(--top) + 62px + min(212px, 25cqh) + 12px); bottom: calc(50px + var(--bot)); }
+#s-talk .tmini { top: calc(var(--top) + 16px); }
+#s-talk .sheet { top: calc(var(--top) + 92px); }
+.lyrsheet, .setsheet { top: calc(var(--top) + 42px); }
+.compose { margin-bottom: var(--bot); }
+.setbody, .lyrbody { padding-bottom: calc(var(--bot) + 24px); }
+.keyclose { top: calc(var(--top) + 8px); }
+@media (max-width: 600px) {
+  body.app-live #appmode { padding: 0; }
+}
+#pnexttxt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

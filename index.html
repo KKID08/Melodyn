@@ -10,7 +10,7 @@
 <link rel="stylesheet" href="app/fonts/fonts.css">
 <link rel="stylesheet" href="app/app.css">
 </head>
-<body class="live">
+<body class="app-live">
 
 <main id="appmode">
   <div class="aura bgglow" data-p="self" data-seed="9"></div>
@@ -35,11 +35,13 @@
               <div><p id="greet">Guten Abend</p><div class="h-xl">Wonach ist dir?</div></div>
               <button class="avatar press" id="avatar" aria-label="Kosten und Einstellungen"><div class="aura" style="inset:0" data-p="self" data-seed="2"></div></button>
             </div>
-            <button class="orbwrap" id="orb" aria-label="Sprechen">
-              <div class="aura glow" data-p="self" data-seed="4" data-blur=".22"></div>
-              <div class="aura orb" data-p="self" data-seed="4" data-blur=".14" data-lines="11" data-la=".28"></div>
-            </button>
-            <div class="orb-label"><b>Tippen und einfach sagen</b><button class="typeinstead" id="typeinstead">oder schreiben</button></div>
+            <div class="orbzone">
+              <button class="orbwrap" id="orb" aria-label="Sprechen">
+                <div class="aura glow" data-p="self" data-seed="4" data-blur=".22"></div>
+                <div class="aura orb" data-p="self" data-seed="4" data-blur=".14" data-lines="11" data-la=".28"></div>
+              </button>
+              <div class="orb-label"><b>Tippen und einfach sagen</b><button class="typeinstead" id="typeinstead">oder schreiben</button></div>
+            </div>
             <div class="sec">
               <div class="sec-h"><div class="h-s">Weiter hören</div><button data-tab="lib">Alle</button></div>
               <div class="hrow" id="recent"></div>
@@ -155,6 +157,10 @@
                 <div class="costbox" id="costbox2"></div>
                 <div class="setrow"><div><b>Songlänge</b><span>Voll: ca. 3 Min., 0,08 $, ~45 s Wartezeit. Kurz: 30 s, 0,04 $, ~8 s.</span></div>
                   <div class="seg2" id="lenseg"><button data-len="full">Voll</button><button data-len="clip">Kurz</button></div></div>
+                <div class="setrow"><div><b>Schnellstart mit Clip</b><span>Ein 30-Sekunden-Clip läuft sofort, der volle Song übernimmt danach. Pro Wunsch 0,04 $ extra.</span></div>
+                  <button class="toggle" id="quick" role="switch" aria-checked="true" aria-label="Schnellstart mit Clip"><i></i></button></div>
+                <div class="setrow"><div><b>DJ-Stimme</b><span>Kündigt Songs an und überbrückt Wartezeit. Kostet etwa 0,002 $ pro Ansage.</span></div>
+                  <button class="toggle" id="djset" role="switch" aria-checked="true" aria-label="DJ-Stimme"><i></i></button></div>
                 <div class="setrow"><div><b>Nächsten Song vorbereiten</b><span>Damit keine Pause entsteht. Kostet auch, wenn du ihn skippst.</span></div>
                   <button class="toggle" id="pregen" role="switch" aria-checked="true"><i></i></button></div>
                 <div class="setrow"><div><b>Tageslimit</b><span>Danach fragt Melodyn nach, bevor neue Songs entstehen.</span></div>
@@ -202,6 +208,7 @@
 </main>
 
 <audio id="audio" preload="auto" playsinline></audio>
+<audio id="dj" preload="auto" playsinline></audio>
 <script type="module" src="app/app.js"></script>
 </body>
 </html>

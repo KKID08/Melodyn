@@ -4,6 +4,7 @@
 export const GEMINI_MODEL = 'gemini-2.5-flash';
 export const LYRIA_FULL = 'lyria-3.5';
 export const LYRIA_CLIP = 'lyria-3-clip-preview';
+export const TTS_MODEL = 'gemini-2.5-flash-preview-tts';
 export const API = 'https://generativelanguage.googleapis.com/v1beta/models';
 export const PALETTES = ['night', 'tunnel', 'kitchen', 'brass', 'focus', 'dusk', 'run', 'morning', 'rain'];
 
@@ -29,7 +30,8 @@ Regeln:
 - "spec.vocals": none, male, female oder duet. Instrumental bei Fokus/Arbeit oder wenn gewünscht.
 - "spec.lyrics_language": de, wenn der Nutzer Deutsch spricht, außer er wünscht Englisch. "spec.lyrics_theme" kurz, konkret und passend zum Moment.
 - "spec.instruments": 3 bis 5 konkrete Instrumente oder Klangfarben auf Englisch. "spec.mood": 2 bis 4 englische Adjektive. "spec.avoid": englische Stichworte.
-- Modus "next": erzeuge den nächsten Song derselben Session. Gleiche Richtung, aber hörbar andere Variation (Tempo leicht verschieben, andere Instrumente betonen, neues Textthema, neuer Titel). Keine Rückfrage, "new_session": false, "reply" leer lassen.`;
+- "dj_line": ein kurzer Satz auf Deutsch (höchstens 14 Wörter), den die Melodyn-DJ-Stimme sagt, bevor der Song startet. Warm und locker wie Radio, nennt den Songtitel und knüpft an den Moment an. Keine Fragen, keine Emojis, keine Anführungszeichen. Bei "ask": true leer lassen.
+- Modus "next": erzeuge den nächsten Song derselben Session. Gleiche Richtung, aber hörbar andere Variation (Tempo leicht verschieben, andere Instrumente betonen, neues Textthema, neuer Titel). Keine Rückfrage, "new_session": false, "reply" leer lassen. "dj_line" ist dann eine kurze Überleitung zum neuen Titel (höchstens 10 Wörter).`;
 
 const S = (type, extra = {}) => ({ type, ...extra });
 export const SCHEMA = S('OBJECT', {
@@ -43,6 +45,7 @@ export const SCHEMA = S('OBJECT', {
     station: S('STRING'),
     palette: S('STRING', { enum: PALETTES }),
     title: S('STRING'),
+    dj_line: S('STRING'),
     new_session: S('BOOLEAN'),
     new_rules: S('ARRAY', { items: S('OBJECT', { properties: { text: S('STRING'), scope: S('STRING', { enum: ['Immer', 'Nur heute'] }) }, required: ['text', 'scope'] }) }),
     spec: S('OBJECT', {
@@ -56,7 +59,7 @@ export const SCHEMA = S('OBJECT', {
       required: ['genre', 'genre_de', 'tempo_bpm', 'mood', 'energy', 'valence', 'vocals', 'lyrics_language', 'lyrics_theme', 'instruments', 'avoid'],
     }),
   },
-  required: ['transcript', 'ask', 'reply', 'understood', 'station', 'palette', 'title', 'new_session', 'new_rules', 'spec'],
+  required: ['transcript', 'ask', 'reply', 'understood', 'station', 'palette', 'title', 'dj_line', 'new_session', 'new_rules', 'spec'],
 });
 
 const MAX_AUDIO_B64 = 3_000_000;
@@ -94,4 +97,12 @@ export function understandBody({ mode, text, audio, history, context }) {
 export function readUnderstand(data) {
   const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
   return JSON.parse(text);
+}
+
+// DJ voice: Gemini text-to-speech, returns 24 kHz PCM
+export function speakBody(text, voice = 'Charon') {
+  return {
+    contents: [{ parts: [{ text: `Say in a warm, relaxed, confident German radio DJ voice, natural pace, no pauses at the start: ${String(text).slice(0, 300)}` }] }],
+    generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } },
+  };
 }

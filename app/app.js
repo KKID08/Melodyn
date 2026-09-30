@@ -2,7 +2,7 @@
    Real microphone -> Gemini (understands) -> Music-Spec -> Lyria (composes) -> real MP3.
    On GitHub Pages the browser talks to Google directly with the user's own key (kept in localStorage).
    On Vercel it goes through /api/* so the key stays on the server. */
-import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBody } from './prompt.js';
+import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, TTS_MODEL, readUnderstand, speakBody, understandBody } from './prompt.js';
 
 (() => {
   'use strict';
@@ -143,7 +143,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     session: null, stations: store.get('stations', []),
     chat: [], feedback: [],
     taste: store.get('taste', {}), rules: store.get('rules', []), reactions: store.get('reactions', 0), liked: new Set(),
-    settings: Object.assign({ len: 'full', pregen: true, limit: 25, code: '', key: '' }, store.get('settings', {})),
+    settings: Object.assign({ len: 'full', pregen: true, quick: true, dj: true, limit: 25, code: '', key: '' }, store.get('settings', {})),
     total: store.get('costs', { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }),
     sess: { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], audioSec: 0, genSec: 0 },
     day: store.get('day', { date: '', count: 0 }),
@@ -281,8 +281,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     const s = res.spec;
     return `${s.genre}, ${s.tempo_bpm} BPM, ${(s.mood || []).slice(0, 2).join(' and ')}. ${s.vocals === 'none' ? 'Instrumental.' : `${s.vocals === 'female' ? 'Female' : 'Male'} vocals in ${s.lyrics_language === 'en' ? 'English' : 'German'}.`}`;
   }
-  async function compose(res, retry = false) {
-    const len = S.settings.len, prompt = retry ? simplePrompt(res) : lyriaPrompt(res);
+  async function compose(res, opts = {}) {
+    const len = opts.len || S.settings.len, retry = !!opts.retry, prompt = retry ? simplePrompt(res) : lyriaPrompt(res);
     const t0 = performance.now();
     let d;
     try {
@@ -299,7 +299,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     if (!audioPart) {
       const why = d.candidates?.[0]?.finishReason || d.promptFeedback?.blockReason || 'kein Audio';
       log(`<b>Lyria</b> hat keinen Song geliefert (${esc(why)})${retry ? '' : ', versuche es vereinfacht'}`, prompt + '\n\n' + lyrics, true);
-      if (!retry) return compose(res, true);
+      if (!retry) return compose(res, Object.assign({}, opts, { retry: true }));
       throw new ApiError(`Lyria hat keinen Song geliefert (${why}). Formuliere den Wunsch etwas anders.`);
     }
     const bin = atob(audioPart.inlineData.data), bytes = new Uint8Array(bin.length);
@@ -315,12 +315,78 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     };
   }
 
+  // ------------------------------------------------------------ DJ voice
+  const dj = $('#dj');
+  const PRICE_TTS = { in: 0.5e-6, out: 10e-6 };
+  function pcmToWavUrl(b64, rate) {
+    const bin = atob(b64), n = bin.length;
+    const buf = new DataView(new ArrayBuffer(44 + n));
+    const w = (o, t) => { for (let i = 0; i < t.length; i++) buf.setUint8(o + i, t.charCodeAt(i)); };
+    w(0, 'RIFF'); buf.setUint32(4, 36 + n, true); w(8, 'WAVE'); w(12, 'fmt '); buf.setUint32(16, 16, true); buf.setUint16(20, 1, true); buf.setUint16(22, 1, true);
+    buf.setUint32(24, rate, true); buf.setUint32(28, rate * 2, true); buf.setUint16(32, 2, true); buf.setUint16(34, 16, true); w(36, 'data'); buf.setUint32(40, n, true);
+    for (let i = 0; i < n; i++) buf.setUint8(44 + i, bin.charCodeAt(i));
+    return URL.createObjectURL(new Blob([buf.buffer], { type: 'audio/wav' }));
+  }
+  async function tts(text) {
+    if (!text || !S.settings.dj) return null;
+    const t0 = performance.now();
+    let d;
+    try {
+      if (DIRECT()) d = await google(TTS_MODEL, speakBody(text));
+      else d = await (await post('/api/speak', { text })).json();
+    } catch (e) { log(`<b>DJ-Stimme</b> Fehler: ${esc(e.message)}`, text, true); return null; }
+    const part = (d.candidates?.[0]?.content?.parts || []).find(p => p.inlineData);
+    if (!part) return null;
+    const rate = +((/rate=(\d+)/i.exec(part.inlineData.mimeType) || [0, 24000])[1]);
+    const u = d.usageMetadata || {};
+    const cost = (u.promptTokenCount || 0) * PRICE_TTS.in + (u.candidatesTokenCount || 0) * PRICE_TTS.out;
+    addCost('gemini', cost);
+    log(`<b>DJ-Stimme</b> „${esc(text)}“ · ${((performance.now() - t0) / 1000).toFixed(1)} s · ${usd(cost, 4)}`);
+    return pcmToWavUrl(part.inlineData.data, rate);
+  }
+  let djDone = null;
+  function playDj(url) {
+    return new Promise(resolve => {
+      if (!url) return resolve();
+      const finish = () => { dj.onended = dj.onerror = null; S.djActive = false; djDone = null; renderNext(); $('#pcover').classList.remove('talking'); resolve(); };
+      djDone = finish;
+      S.djActive = true; renderNext(); $('#pcover').classList.add('talking');
+      dj.onended = finish; dj.onerror = finish;
+      dj.src = url;
+      const p = dj.play();
+      if (p && p.catch) p.catch(finish);
+    });
+  }
+  function stopDj() { if (djDone) { dj.pause(); djDone(); } }
+  let fillerUrl = null;
+  async function filler() {
+    if (!fillerUrl) fillerUrl = await tts('Gleich kommt die ganze Nummer. Bleib kurz dran.');
+    return fillerUrl;
+  }
+  // Instant audible "got it" while Gemini is still thinking
+  let chimeCtx;
+  function chime() {
+    try {
+      chimeCtx = chimeCtx || new (window.AudioContext || window.webkitAudioContext)();
+      chimeCtx.resume();
+      const t = chimeCtx.currentTime;
+      [[660, 0], [990, 0.12]].forEach(([f, d]) => {
+        const o = chimeCtx.createOscillator(), g = chimeCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t + d); g.gain.exponentialRampToValueAtTime(0.12, t + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.5);
+        o.connect(g); g.connect(chimeCtx.destination); o.start(t + d); o.stop(t + d + 0.55);
+      });
+    } catch { /* no audio */ }
+  }
+
   // ------------------------------------------------------------ screens
   function isOn(id) { return $('#' + id).classList.contains('on'); }
   function setOn(id, on) { $('#' + id).classList.toggle('on', on); syncChrome(); }
   function syncChrome() {
     const full = isOn('s-player') || isOn('s-listen') || isOn('s-code') || isOn('s-key') || (isOn('s-talk') && $('#s-talk').classList.contains('solo'));
-    $('#mini').classList.toggle('on', !!(S.cur || S.composing) && !full && !isOn('s-talk') && !isOn('s-set') && !isOn('s-lyr'));
+    const mini = !!(S.cur || S.composing) && !full && !isOn('s-talk') && !isOn('s-set') && !isOn('s-lyr');
+    $('#mini').classList.toggle('on', mini);
+    $('#phone').classList.toggle('hasmini', mini);
     $('#tabbar').style.transform = full ? 'translateY(100%)' : '';
   }
   function showTab(t) {
@@ -344,11 +410,13 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
   })();
   let unlocked = false;
   function unlockAudio() {
-    if (unlocked || S.cur) return;
+    if (unlocked) return;
     unlocked = true;
-    audio.src = SILENT;
-    const p = audio.play();
-    if (p && p.catch) p.then(() => audio.pause()).catch(() => { unlocked = false; });
+    for (const el of S.cur ? [dj] : [audio, dj]) {
+      el.src = SILENT;
+      const p = el.play();
+      if (p && p.catch) p.then(() => el.pause()).catch(() => { unlocked = false; });
+    }
   }
   function setPlaying(on) {
     if (!S.cur) return;
@@ -362,17 +430,18 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     $('#pcover').classList.toggle('paused', !S.playing && !S.composing);
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = S.playing ? 'playing' : 'paused';
   }
-  function setSong(song, { replay = false } = {}) {
-    if (S.cur && S.cur !== song && !S.cur.replay) S.history.push(S.cur);
+  function setSong(song, { replay = false, djUrl = null, noPregen = false } = {}) {
+    if (S.cur && S.cur !== song && !S.cur.replay && !S.cur.preview) S.history.push(S.cur);
     S.cur = replay ? Object.assign({}, song, { replay: true }) : song;
     S.composing = null;
     audio.src = song.url;
     audio.currentTime = 0;
-    setPlaying(true);
     paintNow(S.cur);
     renderNow();
     mediaSession(S.cur);
-    if (!replay) { S.session && (S.session.title = song.title); prepareNext(); }
+    if (djUrl) playDj(djUrl).then(() => { if (S.cur === song && !S.composing) setPlaying(true); });
+    else setPlaying(true);
+    if (!replay && !song.preview) { S.session && (S.session.title = song.title); if (!noPregen) prepareNext(); }
     if (S.tab === 'lib') renderLib();
   }
   function mediaSession(s) {
@@ -395,7 +464,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     $('#ptitle').innerHTML = c ? '<span class="dots">Wird komponiert</span>' : esc(s.title);
     $('#pgenre').textContent = c ? (c.error ? c.error : `${c.spec.genre_de} · ${c.spec.tempo_bpm} BPM · „${c.title}“`) : `${s.spec.genre_de} · ${s.spec.tempo_bpm} BPM`;
     $('#pstation').textContent = s.station;
-    $('#psub').textContent = c ? `${S.settings.len === 'clip' ? 'Lyria Clip' : 'Lyria 3.5'} schreibt Beat, Akkorde und Text` : s.replay ? 'Aus deiner Bibliothek · kostet nichts' : `für dich komponiert · ${(s.genMs / 1000).toFixed(0)} s Rechenzeit`;
+    $('#psub').textContent = c ? (c.waitFull ? 'Die ganze Version ist gleich fertig' : 'Melodyn komponiert für dich') : s.replay ? 'Aus deiner Bibliothek · kostet nichts' : s.preview ? 'Vorschau · die ganze Version kommt gleich' : `für dich komponiert · ${(s.genMs / 1000).toFixed(0)} s Rechenzeit`;
     const saved = S.cur && S.library.some(x => x.id === S.cur.id);
     $('#paddicon').setAttribute('href', saved ? '#added' : '#add');
     $('#pup').classList.toggle('on', !!(S.cur && S.liked.has(S.cur.id)) && !c);
@@ -406,7 +475,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     $('#ministation').textContent = s.station;
     clearInterval(waitTimer);
     if (c && !c.error) {
-      const expect = S.settings.len === 'clip' ? 9 : 46;
+      const expect = c.expect || (S.settings.len === 'clip' ? 9 : 46);
       const tick = () => {
         const el = (performance.now() - c.t0) / 1000;
         $('#waitclock').textContent = el < expect + 5 ? `noch ca. ${Math.max(1, Math.round(expect - el))} s` : `${Math.round(el)} s, gleich fertig`;
@@ -430,6 +499,14 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
   function renderNext() {
     const el = $('#pnext'), t = $('#pnexttxt');
     el.classList.remove('ready');
+    el.classList.toggle('djon', !!S.djActive);
+    if (S.djActive) { t.innerHTML = '<b>Melodyn DJ</b> spricht'; return; }
+    if (S.cur && S.cur.preview && !S.composing) {
+      if (S.cur.full) { t.innerHTML = `Gleich: <b>${esc(S.cur.title)}</b> in voller Länge · bereit`; el.classList.add('ready'); }
+      else if (S.cur.fullError) t.textContent = 'Die ganze Version hat nicht geklappt · Skip holt einen neuen Song';
+      else t.innerHTML = `Gleich: <b>${esc(S.cur.title)}</b> in voller Länge · wird komponiert`;
+      return;
+    }
     if (S.composing) { t.innerHTML = S.composing.error ? 'Tippe unten und versuch es nochmal' : 'Der erste Song braucht einen Moment'; return; }
     if (!S.cur) { t.textContent = ''; return; }
     if (S.cur.replay) { t.textContent = 'Wiederhören aus der Bibliothek · kostenlos'; el.classList.add('ready'); return; }
@@ -452,7 +529,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     } else Object.assign(S.session, { spec: res.spec, palette: res.palette || S.session.palette });
     const st = { station: S.session.station, palette: S.session.palette, spec: S.session.spec };
     S.stations = [st, ...S.stations.filter(x => x.station !== st.station)].slice(0, 8);
-    saveState(); renderTaste(false);
+    saveState(); renderTaste(false); renderRecent();
   }
   function overLimit() {
     if (S.day.count < S.settings.limit || S.limitOk) return false;
@@ -460,26 +537,67 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     return true;
   }
   let composeToken = 0;
-  async function startSong(res) {
+  // New wish or change of direction: DJ + 30 s clip first, full song takes over when ready
+  async function startSong(res, { delayOpen = 0 } = {}) {
     applyResult(res);
     if (overLimit()) return;
     const token = ++composeToken;
     S.nextToken++; S.next = null; S.nextPromise = null; S.nextState = 'none';
-    S.composing = { title: res.title, station: S.session.station, palette: res.palette, seed: 'c' + token + res.title, spec: res.spec, t0: performance.now() };
+    stopDj();
+    const quick = S.settings.len === 'full' && S.settings.quick;
+    const t0 = performance.now();
+    S.composing = { title: res.title, station: S.session.station, palette: res.palette, seed: 'c' + token + res.title, spec: res.spec, t0, expect: quick || S.settings.len === 'clip' ? 10 : 46 };
     if (S.cur) audio.pause();
     paintNow(S.composing);
-    setOn('s-player', true);
+    if (delayOpen) setTimeout(() => { if (token === composeToken) setOn('s-player', true); }, delayOpen);
+    else setOn('s-player', true);
     renderNow();
+    res.station = S.session.station;
+    const fullP = compose(res, { len: S.settings.len });
+    const clipP = quick ? compose(res, { len: 'clip' }).catch(() => null) : null;
+    const djP = tts(res.dj_line);
+    const fail = e => {
+      if (token !== composeToken) return;
+      S.composing = S.composing || { title: res.title, station: S.session.station, palette: res.palette, seed: 'e' + token, spec: res.spec, t0 };
+      S.composing.error = e.message; renderNow(); toast(e.message, false);
+      addBotMsg('Das hat leider nicht geklappt: ' + e.message, true);
+    };
+    const djUrl = await djP;
+    if (token !== composeToken) return;
+    if (djUrl) await playDj(djUrl);
+    if (token !== composeToken) return;
+    if (clipP) {
+      const clip = await clipP;
+      if (token !== composeToken) return;
+      if (clip) {
+        clip.preview = true; clip.fullP = fullP; clip.fullT0 = t0;
+        fullP.then(f => { clip.full = f; if (S.cur === clip) renderNext(); }, () => { clip.fullError = true; if (S.cur === clip) renderNext(); });
+        setSong(clip);
+        return;
+      }
+    }
     try {
-      const song = await compose(res);
+      const song = await fullP;
       if (token !== composeToken) return;
       setSong(song);
+    } catch (e) { fail(e); }
+  }
+  // Clip finished (or skipped): hand over to the full version of the same moment
+  async function handoff(clip) {
+    if (clip.full) { setSong(clip.full); return; }
+    if (clip.fullError) { clip.preview = false; nextSong('end'); return; }
+    const token = composeToken;
+    S.composing = { title: clip.title, station: clip.station, palette: clip.palette, seed: clip.seed, spec: clip.spec, t0: clip.fullT0, expect: 46, waitFull: true };
+    audio.pause();
+    renderNow();
+    if (S.settings.dj) { const f = await filler(); if (f && token === composeToken && !clip.full) await playDj(f); }
+    try {
+      const full = await clip.fullP;
+      if (token !== composeToken) return;
+      setSong(full);
     } catch (e) {
       if (token !== composeToken) return;
-      S.composing.error = e.message;
-      renderNow();
-      toast(e.message, false);
-      addBotMsg('Das hat leider nicht geklappt: ' + e.message, true);
+      S.composing.error = e.message; renderNow(); toast(e.message, false);
     }
   }
   function prepareNext() {
@@ -494,8 +612,9 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
       if (token !== S.nextToken) return null;
       S.nextTitle = res.title; renderNext();
       res.station = S.session ? S.session.station : res.station;
-      const song = await compose(res);
+      const [song, djUrl] = await Promise.all([compose(res), tts(res.dj_line)]);
       if (token !== S.nextToken) return null;
+      song.djUrl = djUrl;
       if (S.session) S.session.spec = res.spec;
       S.next = song; S.nextState = 'ready'; renderNext();
       return song;
@@ -503,26 +622,28 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
   }
   async function nextSong(reason) {
     if (S.composing && !S.composing.error) return;
+    if (S.cur && S.cur.preview && reason !== 'dislike') return handoff(S.cur);
     if (!S.session) { if (S.cur) toast('Sag Melodyn zuerst, wonach dir ist', false); return; }
     if (reason === 'skip' && S.cur && !S.cur.replay) feedback('skip');
-    if (S.next && S.nextState === 'ready') { setSong(S.next); return; }
+    stopDj();
+    if (S.next && S.nextState === 'ready') { const n = S.next; setSong(n, { djUrl: n.djUrl }); return; }
     if (overLimit()) return;
     const token = ++composeToken;
-    const pending = S.nextState === 'working' && S.nextPromise;
-    S.composing = { title: S.nextTitle || 'Nächster Song', station: S.session.station, palette: S.session.palette, seed: 'n' + token, spec: S.session.spec, t0: performance.now() };
-    audio.pause();
-    paintNow(S.composing); renderNow();
-    try {
-      let song = pending ? await S.nextPromise : null;
-      if (!song) {
-        const res = await understand({ mode: 'next' });
-        res.station = S.session.station;
-        S.composing.title = res.title; renderNow();
-        song = await compose(res);
-        S.session.spec = res.spec;
-      }
+    if (S.nextState === 'working' && S.nextPromise) {
+      S.composing = { title: S.nextTitle || 'Nächster Song', station: S.session.station, palette: S.session.palette, seed: 'n' + token, spec: S.session.spec, t0: performance.now(), expect: 40 };
+      audio.pause(); paintNow(S.composing); renderNow();
+      const song = await S.nextPromise;
       if (token !== composeToken) return;
-      setSong(song);
+      if (song) { setSong(song, { djUrl: song.djUrl }); return; }
+    }
+    // Nothing prepared: same fast path as a new wish
+    S.composing = { title: 'Nächster Song', station: S.session.station, palette: S.session.palette, seed: 'n' + token, spec: S.session.spec, t0: performance.now(), expect: 12 };
+    audio.pause(); paintNow(S.composing); renderNow();
+    try {
+      const res = await understand({ mode: 'next' });
+      if (token !== composeToken) return;
+      res.new_session = false;
+      startSong(res);
     } catch (e) {
       if (token !== composeToken) return;
       S.composing.error = e.message; renderNow(); toast(e.message, false);
@@ -727,6 +848,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     });
     if (id !== listenId) return;
     const clip = await Rec.stop();
+    if (clip) chime();
     bars.forEach(b => { b.style.height = '4px'; });
     if (!clip) { setOn('s-listen', false); toast('Ich habe nichts gehört. Nochmal?', false); return; }
     $('#livelabel').innerHTML = 'Melodyn versteht …';
@@ -752,6 +874,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     S.chat.push({ role: 'user', text: res.transcript || '(gesprochen)' });
     S.chat.push({ role: 'model', text: res.reply || '' });
     $('#livelabel').textContent = 'Verstanden';
+    // Music and DJ start working right now; the screen keeps showing what was understood meanwhile
+    if (!res.ask) startSong(res, { delayOpen: REDUCED ? 300 : 2600 });
     paint($('#halo'), res.palette || 'self', 'h' + id, { blur: 0.18 });
     const said = $('#said'); said.innerHTML = '';
     for (const word of String(res.transcript || '').split(/\s+/).filter(Boolean)) {
@@ -762,8 +886,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     }
     $('#got').innerHTML = '<div class="lab in">Verstanden</div>' + (res.understood || []).slice(0, 4).map(g => `<div class="row"><span>${esc(g.label)}</span><b>${esc(g.value)}</b></div>`).join('');
     for (const row of $$('#got .row')) { await sleep(REDUCED ? 0 : 220); row.classList.add('in'); }
-    $('#listenhint').textContent = res.ask ? 'Melodyn hat eine Frage' : 'Lyria komponiert jetzt deinen Song';
-    await sleep(REDUCED ? 200 : 1100);
+    $('#listenhint').textContent = res.ask ? 'Melodyn hat eine Frage' : 'Lyria komponiert schon';
+    await sleep(REDUCED ? 200 : 700);
     if (id !== listenId) return;
     $('#halo').style.transform = 'translateY(-160px) scale(1.2)';
     await sleep(300);
@@ -775,7 +899,6 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     } else {
       addMeMsg(res.transcript || '…', true, true);
       addBotMsg(res.reply, false, true);
-      startSong(res);
       await sleep(250);
       setOn('s-listen', false);
     }
@@ -844,6 +967,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     if (talkBusy) return;
     talkBusy = true;
     unlockAudio();
+    chime();
     $$('.choice').forEach(c => { c.disabled = true; });
     if (text) addMeMsg(text, false);
     const t = botShell();
@@ -861,10 +985,10 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     if (res.ask) { t.remove(); await showQuestion(res); talkBusy = false; return; }
     t.lastElementChild.outerHTML = `<p>${esc(res.reply || 'Okay, kommt sofort.')}</p>`;
     scrollMsgs();
-    await sleep(REDUCED ? 100 : 1000);
+    startSong(res, { delayOpen: REDUCED ? 100 : 1100 });
+    await sleep(REDUCED ? 100 : 1100);
     talkBusy = false;
     setOn('s-talk', false);
-    startSong(res);
   }
   let talkRec = false;
   async function composeMic() {
@@ -924,12 +1048,15 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
 
   // ------------------------------------------------------------ layout
   function fit() {
-    const pw = $('#phonewrap'), ph = $('#phoneframe');
-    let s;
-    if (window.innerWidth <= 600) s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
-    else s = Math.min(1, (window.innerHeight - 60) / 868, (window.innerWidth - 452) / 414);
+    const pw = $('#phonewrap'), ph = $('#phoneframe'), phone = $('#phone');
+    const real = window.innerWidth <= 600;
+    phone.classList.toggle('real', real);
+    // Real phones: fill the width, and let the layout take whatever height the browser gives
+    const s = real ? window.innerWidth / 390 : Math.min(1, (window.innerHeight - 60) / 868, (window.innerWidth - 452) / 414);
+    const h = real ? window.innerHeight / s : 844;
+    phone.style.height = ph.style.height = h + 'px';
     ph.style.transform = `scale(${s})`;
-    pw.style.width = 390 * s + 'px'; pw.style.height = 844 * s + 'px';
+    pw.style.width = 390 * s + 'px'; pw.style.height = h * s + 'px';
   }
   function clockTick() {
     const d = new Date();
@@ -940,6 +1067,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
   function renderSettings() {
     $$('#lenseg button').forEach(b => b.classList.toggle('on', b.dataset.len === S.settings.len));
     $('#pregen').setAttribute('aria-checked', String(!!S.settings.pregen));
+    $('#quick').setAttribute('aria-checked', String(!!S.settings.quick));
+    $('#djset').setAttribute('aria-checked', String(!!S.settings.dj));
     $('#limitv').textContent = S.settings.limit;
     $('#codeinfo').textContent = S.settings.code ? 'Ein Code ist gespeichert.' : 'Nur nötig, wenn auf Vercel ein APP_CODE gesetzt ist.';
     $('#coderow').hidden = DIRECT();
@@ -1004,7 +1133,11 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     $('#stopbtn').addEventListener('click', () => { if (sendNow) sendNow(); });
     $('#pclose').addEventListener('click', () => setOn('s-player', false));
     $('#plyrics').addEventListener('click', openLyrics);
-    $('#pplay').addEventListener('click', () => { if (S.composing && S.composing.error) { openTalk('steer'); return; } setPlaying(audio.paused); });
+    $('#pplay').addEventListener('click', () => {
+      if (S.composing && S.composing.error) { openTalk('steer'); return; }
+      if (S.djActive) { stopDj(); if (S.cur && !S.composing) setPlaying(true); return; }
+      setPlaying(audio.paused);
+    });
     $('#pnextbtn').addEventListener('click', () => nextSong('skip'));
     $('#pprev').addEventListener('click', prevSong);
     $('#pup').addEventListener('click', like);
@@ -1028,6 +1161,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     $('#avatar').addEventListener('click', () => { renderSettings(); setOn('s-set', true); });
     $('#tastecost').addEventListener('click', () => { renderSettings(); setOn('s-set', true); });
     $('#pregen').addEventListener('click', () => { S.settings.pregen = !S.settings.pregen; saveState(); renderSettings(); if (!S.settings.pregen) { S.nextToken++; S.next = null; S.nextState = 'none'; renderNext(); } else if (S.cur) prepareNext(); });
+    $('#quick').addEventListener('click', () => { S.settings.quick = !S.settings.quick; saveState(); renderSettings(); });
+    $('#djset').addEventListener('click', () => { S.settings.dj = !S.settings.dj; if (!S.settings.dj) stopDj(); saveState(); renderSettings(); });
     $('#setcode').addEventListener('click', () => { setOn('s-set', false); openCode(); });
     $('#resetcost').addEventListener('click', () => { S.total = { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }; S.sess = { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], audioSec: 0, genSec: 0 }; saveState(); renderSettings(); toast('Kostenzähler zurückgesetzt'); });
     $('#keyform').addEventListener('submit', e => {
@@ -1051,8 +1186,13 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, readUnderstand, understandBo
     audio.addEventListener('loadedmetadata', () => { if (S.cur && audio.src === S.cur.url) { S.cur.dur = audio.duration; renderTime(); } });
     let lastT = 0;
     audio.addEventListener('timeupdate', () => { const t = audio.currentTime; if (S.cur && !S.cur.replay && t > lastT && t - lastT < 2) S.sess.audioSec += t - lastT; lastT = t; });
-    audio.addEventListener('ended', () => { if (!S.cur || audio.src === SILENT) return; feedback('complete'); nextSong('end'); });
+    audio.addEventListener('ended', () => {
+      if (!S.cur || audio.src === SILENT) return;
+      if (S.cur.preview) { handoff(S.cur); return; }
+      feedback('complete'); nextSong('end');
+    });
     window.addEventListener('resize', fit);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
     setInterval(clockTick, 15000);
     setInterval(renderCosts, 5000);
   }
