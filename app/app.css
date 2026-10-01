@@ -782,11 +782,9 @@ body.demo .panel .wm small::after { content: " · Demo"; color: #ffd36b; }
 .orbwrap .orbcv { position: absolute; left: -42%; top: -42%; width: 184%; height: 184%; pointer-events: none; }
 .orbwrap:active .orb { transform: none; }
 .orbwrap:focus-visible { outline-offset: 10px; }
-/* Listening: the same orb, large, rising from below and reacting to the voice */
-#s-listen .halocv { position: absolute; left: 50%; top: calc(100cqh - 62cqw); width: 150cqw; height: 150cqw; transform: translate(-50%, 0); transition: transform .9s var(--ease), opacity .5s; pointer-events: none; z-index: 0; }
-#s-listen:not(.on) .halocv { transform: translate(-50%, 18%) scale(.9); opacity: 0; }
-#s-listen .fade { background: linear-gradient(to bottom, var(--ink) 0%, var(--ink) 34%, rgba(10,10,12,.55) 58%, rgba(10,10,12,0) 78%); }
-#s-listen .stopbtn { margin-top: auto; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+#s-listen .stopbtn { box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+/* Sound wave: fixed-height bars scaled from the centre line */
+.wave i { height: 60px; transform: scaleY(.08); transform-origin: 50% 50%; transition: none; }
 .orbwrap { width: min(240px, 29cqh); height: min(240px, 29cqh); }
 #s-listen .hint { text-shadow: 0 1px 12px rgba(0,0,0,.6); color: rgba(255,255,255,.85); }
 .card.idea b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }

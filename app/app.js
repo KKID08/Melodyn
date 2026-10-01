@@ -2,10 +2,10 @@
    Real microphone -> Gemini (understands) -> Music-Spec -> Lyria (composes) -> real MP3.
    On GitHub Pages the browser talks to Google directly with the user's own key (kept in localStorage).
    On Vercel it goes through /api/* so the key stays on the server. */
-import * as Mix from './mix.js?v=ee9fbe8111';
-import * as Demo from './demo.js?v=ee9fbe8111';
-import { Orb } from './orb.js?v=ee9fbe8111';
-import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=ee9fbe8111';
+import * as Mix from './mix.js?v=b1530ddeb7';
+import * as Demo from './demo.js?v=b1530ddeb7';
+import { Orb } from './orb.js?v=b1530ddeb7';
+import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=b1530ddeb7';
 
 (() => {
   'use strict';
@@ -838,7 +838,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     saveState(); renderTaste(false); renderRecent(); paintOrb();
   }
   // The orb on the home screen takes on the colours of the current moment and pulses with the music
-  let homeOrb = null, haloOrb = null;
+  let homeOrb = null;
   function paintOrb() {
     if (!homeOrb) return;
     const c = S.cur && !S.composing ? S.cur : null;
@@ -849,7 +849,6 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     if (!homeOrb) return;
     const covered = isOn('s-player') || isOn('s-listen') || isOn('s-key') || isOn('s-code') || (isOn('s-talk') && $('#s-talk').classList.contains('solo'));
     if (S.tab === 'home' && !covered && !document.hidden) homeOrb.start(); else homeOrb.stop();
-    if (haloOrb && !isOn('s-listen')) setTimeout(() => { if (!isOn('s-listen')) haloOrb.stop(); }, 700);
   }
   function overLimit(retry) {
     if (DEMO() || S.day.count < S.settings.limit || S.limitOk) return false;
@@ -1193,25 +1192,32 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     try { await micStart(); }
     catch (e) { duck(false); toast(e.message, false); openTalk('solo'); return; }
     const hear = DEMO() ? Demo.hearStart() : null;
+    paint($('#halo'), (S.session && S.session.palette) || 'self', 'halo' + id, { blur: 0.18, fade: false });
     $('#halo').style.transform = '';
-    if (!haloOrb) haloOrb = new Orb($('#halo'), { glow: 0.22, rings: 11, lights: 5, still: REDUCED, maxDpr: 1 });
-    haloOrb.setPalette(PAL[(S.session && S.session.palette) || 'self'], true);
-    haloOrb.setBusy(false); haloOrb.setLevel(0);
     $('#said').innerHTML = '<span class="w in" style="color:var(--text-3)">Sprich jetzt …</span>';
     $('#got').innerHTML = '';
     $('#livelabel').innerHTML = '<i></i>Melodyn hört zu';
     $('#listenhint').textContent = 'Tippen zum Senden';
     $('#stopbtn').style.visibility = '';
     setOn('s-listen', true);
-    requestAnimationFrame(() => { haloOrb.resize(); haloOrb.start(); });
+    // Sound wave: each bar is stretched with a transform (no layout work), values eased per frame
+    const bars = $$('#wave i'), N = bars.length, levels = new Float32Array(N), shown = new Float32Array(N);
+    const env = Array.from({ length: N }, (_, k) => Math.sin(Math.PI * (k + 0.5) / N));
+    bars.forEach((b, k) => { b.style.opacity = (0.35 + env[k] * 0.65).toFixed(2); });
     let spoke = false, quietSince = 0;
     const t0 = performance.now();
     await new Promise(resolve => {
       sendNow = resolve;
       const loop = () => {
         if (id !== listenId || !Rec.on) return resolve();
-        const l = Rec.level();
-        haloOrb.setLevel(Math.min(1, l * 9));
+        const l = Math.min(1, Rec.level() * 9);
+        levels.copyWithin(0, 1); levels[N - 1] = l;
+        for (let k = 0; k < N; k++) {
+          // mirror the history from the centre outward, so the wave grows from the middle
+          const src = levels[N - 1 - Math.abs(Math.round(k - (N - 1) / 2)) * 2] || 0;
+          shown[k] += (src - shown[k]) * 0.35;
+          bars[k].style.transform = `scaleY(${(0.08 + shown[k] * (0.4 + 0.6 * env[k]) * 0.92).toFixed(3)})`;
+        }
         const now = performance.now();
         if (l > 0.03) { spoke = true; quietSince = now; }
         if (spoke && now - quietSince > 1600) return resolve();
@@ -1224,8 +1230,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const clip = await Rec.stop();
     if (hear) demoHeard = await Demo.hearStop(hear);
     if (clip) { chime(); wishSent(); }
-    haloOrb.setLevel(0); haloOrb.setBusy(true);
-    if (!clip) { duck(false); haloOrb.stop(); setOn('s-listen', false); toast('Ich habe nichts gehört. Nochmal?', false); return; }
+    bars.forEach(b => { b.style.transform = 'scaleY(0.08)'; });
+    if (!clip) { duck(false); setOn('s-listen', false); toast('Ich habe nichts gehört. Nochmal?', false); return; }
     $('#livelabel').innerHTML = 'Melodyn versteht …';
     $('#listenhint').textContent = 'Gemini hört sich deine Aufnahme an';
     $('#stopbtn').style.visibility = 'hidden';
@@ -1234,7 +1240,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     try { res = await understand({ mode: 'request', audio: { mime: clip.mime, data: clip.data } }); }
     catch (e) {
       if (id !== listenId) return;
-      duck(false); wishT0 = 0; haloOrb.setBusy(false);
+      duck(false); wishT0 = 0;
       $('#said').innerHTML = `<span class="w in" style="font-size:22px">${esc(e.message)}</span>`;
       $('#livelabel').textContent = 'Hat nicht geklappt';
       $('#listenhint').textContent = 'Schließen mit ✕ oben links';
@@ -1253,7 +1259,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     $('#livelabel').textContent = 'Verstanden';
     // Music and DJ start working right now; the screen keeps showing what was understood meanwhile
     if (!res.ask) startSong(res, { delayOpen: REDUCED ? 300 : 2600 });
-    haloOrb.setBusy(false); haloOrb.setPalette(PAL[res.palette] || PAL.self); haloOrb.ripple();
+    paint($('#halo'), res.palette || 'self', 'h' + id, { blur: 0.18 });
     const said = $('#said'); said.innerHTML = '';
     for (const word of String(res.transcript || '').split(/\s+/).filter(Boolean)) {
       const w = document.createElement('span'); w.className = 'w'; w.textContent = word;
@@ -1266,7 +1272,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     $('#listenhint').textContent = res.ask ? 'Melodyn hat eine Frage' : 'Lyria komponiert schon';
     await sleep(REDUCED ? 200 : 700);
     if (id !== listenId) return;
-    $('#halo').style.transform = 'translate(-50%, -18%) scale(1.15)';
+    $('#halo').style.transform = 'translateY(-160px) scale(1.2)';
     await sleep(300);
     if (res.ask) {
       duck(false); wishT0 = 0;
@@ -1281,7 +1287,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       setOn('s-listen', false);
     }
   }
-  function cancelListen() { listenId++; Rec.cancel(); if (sendNow) sendNow(); duck(false); if (haloOrb) haloOrb.stop(); setOn('s-listen', false); }
+  function cancelListen() { listenId++; Rec.cancel(); if (sendNow) sendNow(); duck(false); setOn('s-listen', false); }
 
   // ------------------------------------------------------------ conversation sheet
   function scrollMsgs() { const m = $('#msgs'); m.scrollTop = m.scrollHeight; }
@@ -1626,7 +1632,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       feedback('complete'); nextSong('end');
     });
     window.addEventListener('resize', fit);
-    window.addEventListener('resize', () => { if (homeOrb) homeOrb.resize(); if (haloOrb) haloOrb.resize(); });
+    window.addEventListener('resize', () => { if (homeOrb) homeOrb.resize(); });
     if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
     setInterval(clockTick, 15000);
     setInterval(renderCosts, 5000);
@@ -1638,6 +1644,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     fit();
     bind();
     requestAnimationFrame(() => paintStatic(document));
+    $('#wave').innerHTML = '<i></i>'.repeat(46);
     homeOrb = new Orb($('#orbcv'), { glow: 0.42, still: REDUCED });
     paintOrb();
     requestAnimationFrame(() => { homeOrb.resize(); orbsVisible(); });

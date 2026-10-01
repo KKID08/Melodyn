@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Melodyn</title>
-<link rel="stylesheet" href="app/fonts/fonts.css?v=ee9fbe8111">
-<link rel="stylesheet" href="app/app.css?v=ee9fbe8111">
+<link rel="stylesheet" href="app/fonts/fonts.css?v=b1530ddeb7">
+<link rel="stylesheet" href="app/app.css?v=b1530ddeb7">
 </head>
 <body class="app-live">
 
@@ -79,7 +79,8 @@
 
           <!-- Listening -->
           <section class="scr" id="s-listen">
-            <canvas class="halocv" id="halo" aria-hidden="true"></canvas>
+            <div class="aura halo" id="halo"></div>
+            <div class="fade"></div>
             <div class="top">
               <button class="circle" id="listenclose" aria-label="Abbrechen"><svg class="i" style="width:18px;height:18px"><use href="#x"/></svg></button>
               <span class="live" id="livelabel"><i></i>Melodyn hört zu</span>
@@ -87,6 +88,7 @@
             </div>
             <p class="said" id="said"></p>
             <div class="got" id="got"></div>
+            <div class="wave" id="wave" aria-hidden="true"></div>
             <button class="circle stopbtn" id="stopbtn" aria-label="Senden"><svg class="i f"><use href="#stop"/></svg></button>
             <div class="hint" id="listenhint">Tippen zum Senden</div>
           </section>
@@ -209,6 +211,6 @@
 
 <audio id="audio" preload="auto" playsinline></audio>
 <audio id="dj" preload="auto" playsinline></audio>
-<script type="module" src="app/app.js?v=ee9fbe8111"></script>
+<script type="module" src="app/app.js?v=b1530ddeb7"></script>
 </body>
 </html>
