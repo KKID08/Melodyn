@@ -2,9 +2,9 @@
    Real microphone -> Gemini (understands) -> Music-Spec -> Lyria (composes) -> real MP3.
    On GitHub Pages the browser talks to Google directly with the user's own key (kept in localStorage).
    On Vercel it goes through /api/* so the key stays on the server. */
-import * as Mix from './mix.js?v=16af24aa46';
-import * as Demo from './demo.js?v=16af24aa46';
-import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=16af24aa46';
+import * as Mix from './mix.js?v=8693204862';
+import * as Demo from './demo.js?v=8693204862';
+import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=8693204862';
 
 (() => {
   'use strict';
@@ -36,7 +36,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
   <symbol id="up" viewBox="0 0 24 24"><path d="M7 10.5V20H4.5A1.5 1.5 0 0 1 3 18.5V12a1.5 1.5 0 0 1 1.5-1.5H7zm0 0l3.6-6.6A1.9 1.9 0 0 1 14 5.3V9h4.9a2 2 0 0 1 2 2.4l-1.4 6.9a2 2 0 0 1-2 1.7H7"/></symbol>
   <symbol id="down" viewBox="0 0 24 24"><g transform="rotate(180 12 12)"><path d="M7 10.5V20H4.5A1.5 1.5 0 0 1 3 18.5V12a1.5 1.5 0 0 1 1.5-1.5H7zm0 0l3.6-6.6A1.9 1.9 0 0 1 14 5.3V9h4.9a2 2 0 0 1 2 2.4l-1.4 6.9a2 2 0 0 1-2 1.7H7"/></g></symbol>
   <symbol id="add" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></symbol>
-  <symbol id="added" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"/><path d="M8 12.3l2.7 2.7L16.2 9.5" stroke="#f2eee5" stroke-width="2"/></symbol>
+  <symbol id="added" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"/><path d="M8 12.3l2.7 2.7L16.2 9.5" style="stroke:var(--bg)" stroke-width="2"/></symbol>
   <symbol id="chev" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></symbol>
   <symbol id="chevr" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
   <symbol id="more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.7" fill="currentColor" stroke="none"/></symbol>
@@ -143,7 +143,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     session: null, stations: store.get('stations', []),
     chat: [], feedback: [],
     taste: store.get('taste', {}), rules: store.get('rules', []), reactions: store.get('reactions', 0), liked: new Set(),
-    settings: Object.assign({ len: 'full', pregen: true, quick: true, dj: true, deep: true, mode: 'live', limit: 25, code: '', key: '' }, store.get('settings', {})),
+    settings: Object.assign({ len: 'full', pregen: true, quick: true, dj: true, deep: true, mode: 'live', theme: 'auto', limit: 25, code: '', key: '' }, store.get('settings', {})),
     total: store.get('costs', { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }),
     sess: { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], firstMs: [], audioSec: 0, genSec: 0 },
     day: store.get('day', { date: '', count: 0 }),
@@ -527,7 +527,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const mini = !!(S.cur || S.composing) && !full && !isOn('s-talk') && !isOn('s-set') && !isOn('s-lyr');
     $('#mini').classList.toggle('on', mini);
     $('#phone').classList.toggle('hasmini', mini);
-    $('#tabbar').style.transform = full ? 'translateY(100%)' : '';
+    $('#tabbar').style.transform = full ? 'translateY(170%)' : '';
   }
   function showTab(t) {
     S.tab = t;
@@ -1412,6 +1412,18 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     setTimeout(() => $('#keyin').focus(), 300);
   }
 
+  // Light paper or dark ink; "auto" follows the phone
+  const darkQ = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+  function applyTheme() {
+    const t = S.settings.theme || 'auto';
+    const dark = t === 'dark' || (t === 'auto' && darkQ && darkQ.matches);
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    const m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.content = dark ? '#121211' : '#f3f0ea';
+    $$('#themeseg button').forEach(b => b.classList.toggle('on', b.dataset.look === t));
+  }
+  if (darkQ && darkQ.addEventListener) darkQ.addEventListener('change', applyTheme);
+
   // Switch between real Google calls and the free demo
   function setMode(mode) {
     if (mode === S.settings.mode) return;
@@ -1503,6 +1515,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
         return;
       }
       if (d.mode) { setMode(d.mode); return; }
+      if (d.look) { S.settings.theme = d.look; saveState(); applyTheme(); return; }
       if (d.len) { S.settings.len = d.len; saveState(); renderSettings(); toast(d.len === 'clip' ? 'Kurze Songs: 30 s, schneller und günstiger' : 'Volle Songs: ca. 3 Minuten'); if (S.nextState === 'working' || S.nextState === 'ready') prepareNext(); return; }
       if (d.limit) { S.settings.limit = clamp(S.settings.limit + +d.limit, 5, 200); S.limitOk = false; saveState(); renderSettings(); return; }
       if (t.id === 'forget') {
@@ -1618,6 +1631,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
 
   // ------------------------------------------------------------ boot
   async function boot() {
+    applyTheme();
     clockTick();
     fit();
     bind();
