@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Melodyn</title>
-<link rel="stylesheet" href="app/fonts/fonts.css?v=b1530ddeb7">
-<link rel="stylesheet" href="app/app.css?v=b1530ddeb7">
+<link rel="stylesheet" href="app/fonts/fonts.css?v=9e03fb5620">
+<link rel="stylesheet" href="app/app.css?v=9e03fb5620">
 </head>
 <body class="app-live">
 
@@ -36,7 +36,7 @@
               <button class="avatar press" id="avatar" aria-label="Kosten und Einstellungen"><div class="aura" style="inset:0" data-p="self" data-seed="2"></div></button>
             </div>
             <div class="orbzone">
-              <button class="orbwrap" id="orb" aria-label="Sprechen"><canvas class="orbcv" id="orbcv" aria-hidden="true"></canvas></button>
+              <button class="orbwrap" id="orb" aria-label="Sprechen"><canvas class="orbcv" id="orbcv" aria-hidden="true"></canvas><canvas class="scenecv" id="scenecv" aria-hidden="true"></canvas></button>
               <div class="orb-label"><b>Tippen und einfach sagen</b><button class="typeinstead" id="typeinstead">oder schreiben</button></div>
             </div>
             <div class="sec">
@@ -152,6 +152,8 @@
               <div class="setbody">
                 <div class="h-xl" style="font-size:28px">Kosten &amp; Einstellungen</div>
                 <div class="costbox" id="costbox2"></div>
+                <div class="setrow lookrow"><div><b>Look der Startseite</b><span>Wie Melodyn auf dich wartet. Alle Looks nehmen die Farben deiner Stimmung an.</span></div>
+                  <div class="seg2 seg4" id="lookseg"><button data-look="wave">Welle</button><button data-look="aurora">Licht</button><button data-look="pulse">Puls</button><button data-look="orb">Kugel</button></div></div>
                 <div class="setrow moderow"><div><b>Modus</b><span>Echt: Gemini und Lyria über deinen Schlüssel, kostet Geld. Demo: keine Anfrage an Google, Beispielsongs und Browser-Stimme, kostet nichts.</span></div>
                   <div class="seg2" id="modeseg"><button data-mode="live">Echt</button><button data-mode="demo">Demo</button></div></div>
                 <div class="setrow"><div><b>Songlänge</b><span>Voll: ca. 3 Min., 0,08 $, ~45 s Wartezeit. Kurz: 30 s, 0,04 $, ~8 s.</span></div>
@@ -211,6 +213,6 @@
 
 <audio id="audio" preload="auto" playsinline></audio>
 <audio id="dj" preload="auto" playsinline></audio>
-<script type="module" src="app/app.js?v=b1530ddeb7"></script>
+<script type="module" src="app/app.js?v=9e03fb5620"></script>
 </body>
 </html>

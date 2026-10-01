@@ -795,3 +795,19 @@ body.demo .panel .wm small::after { content: " · Demo"; color: #ffd36b; }
 /* Performance: spoken words animate without blur filters */
 .said .w { filter: none; transition: opacity .3s, transform .35s var(--ease); }
 .said .w.in { filter: none; }
+
+/* ================= Home looks ================= */
+.orbwrap .scenecv { display: none; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.orbwrap.wide { width: 100%; height: min(300px, 36cqh); border-radius: 0; }
+.orbwrap.wide .orbcv { display: none; }
+.orbwrap.wide .scenecv { display: block; }
+.orbwrap.wide:focus-visible { outline-offset: -4px; border-radius: 18px; }
+.seg4 button { padding: 7px 10px; }
+.lookrow { flex-wrap: wrap; }
+.lookrow > div:first-child { flex: 1 1 100%; }
+.lookrow .seg2 { margin-top: 10px; }
+
+/* Listening wave in the mood's colours, with a soft light underneath (no filters) */
+.wave { --w1: #ff7a2f; --w2: #e23d6d; --w3: #2a47b8; }
+.wave i { width: 3.5px; border-radius: 3px; background: linear-gradient(to top, var(--w1), #fff 50%, var(--w2)); opacity: 1; }
+.wave::before { content: ""; position: absolute; left: 10%; right: 10%; top: 50%; height: 120px; margin-top: -60px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--w1) 45%, transparent), transparent); pointer-events: none; z-index: -1; }

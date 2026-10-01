@@ -2,10 +2,11 @@
    Real microphone -> Gemini (understands) -> Music-Spec -> Lyria (composes) -> real MP3.
    On GitHub Pages the browser talks to Google directly with the user's own key (kept in localStorage).
    On Vercel it goes through /api/* so the key stays on the server. */
-import * as Mix from './mix.js?v=b1530ddeb7';
-import * as Demo from './demo.js?v=b1530ddeb7';
-import { Orb } from './orb.js?v=b1530ddeb7';
-import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=b1530ddeb7';
+import * as Mix from './mix.js?v=9e03fb5620';
+import * as Demo from './demo.js?v=9e03fb5620';
+import { Orb } from './orb.js?v=9e03fb5620';
+import { Scene } from './scene.js?v=9e03fb5620';
+import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=9e03fb5620';
 
 (() => {
   'use strict';
@@ -166,7 +167,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     session: null, stations: store.get('stations', []),
     chat: [], feedback: [],
     taste: store.get('taste', {}), rules: store.get('rules', []), reactions: store.get('reactions', 0), liked: new Set(),
-    settings: Object.assign({ len: 'full', pregen: true, quick: true, dj: true, deep: true, mode: 'live', limit: 25, code: '', key: '' }, store.get('settings', {})),
+    settings: Object.assign({ len: 'full', pregen: true, quick: true, dj: true, deep: true, mode: 'live', look: 'wave', limit: 25, code: '', key: '' }, store.get('settings', {})),
     total: store.get('costs', { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }),
     sess: { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], firstMs: [], audioSec: 0, genSec: 0 },
     day: store.get('day', { date: '', count: 0 }),
@@ -845,6 +846,24 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     homeOrb.setPalette(PAL[(c && c.palette) || (S.session && S.session.palette) || 'self'] || PAL.self);
     homeOrb.setBpm(c && S.playing && c.spec ? c.spec.tempo_bpm : 0);
   }
+  // Home look: the orb, or one of the wide scenes (wave, aurora, pulse)
+  let orbV = null, sceneV = null;
+  function applyLook() {
+    const look = S.settings.look || 'wave', wide = look !== 'orb';
+    if (homeOrb) homeOrb.stop();
+    $('#orb').classList.toggle('wide', wide);
+    $('#orb').dataset.look = look;
+    if (wide) {
+      if (!sceneV) sceneV = new Scene($('#scenecv'), { theme: look, still: REDUCED });
+      sceneV.setTheme(look); homeOrb = sceneV;
+    } else {
+      if (!orbV) orbV = new Orb($('#orbcv'), { glow: 0.42, still: REDUCED });
+      homeOrb = orbV;
+    }
+    $$('#lookseg button').forEach(b => b.classList.toggle('on', b.dataset.look === look));
+    paintOrb();
+    requestAnimationFrame(() => { homeOrb.resize(); orbsVisible(); });
+  }
   function orbsVisible() {
     if (!homeOrb) return;
     const covered = isOn('s-player') || isOn('s-listen') || isOn('s-key') || isOn('s-code') || (isOn('s-talk') && $('#s-talk').classList.contains('solo'));
@@ -1194,6 +1213,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const hear = DEMO() ? Demo.hearStart() : null;
     paint($('#halo'), (S.session && S.session.palette) || 'self', 'halo' + id, { blur: 0.18, fade: false });
     $('#halo').style.transform = '';
+    waveColours((S.session && S.session.palette) || 'self');
     $('#said').innerHTML = '<span class="w in" style="color:var(--text-3)">Sprich jetzt …</span>';
     $('#got').innerHTML = '';
     $('#livelabel').innerHTML = '<i></i>Melodyn hört zu';
@@ -1212,11 +1232,15 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
         if (id !== listenId || !Rec.on) return resolve();
         const l = Math.min(1, Rec.level() * 9);
         levels.copyWithin(0, 1); levels[N - 1] = l;
+        const tt = (performance.now() - t0) / 1000;
         for (let k = 0; k < N; k++) {
           // mirror the history from the centre outward, so the wave grows from the middle
           const src = levels[N - 1 - Math.abs(Math.round(k - (N - 1) / 2)) * 2] || 0;
-          shown[k] += (src - shown[k]) * 0.35;
-          bars[k].style.transform = `scaleY(${(0.08 + shown[k] * (0.4 + 0.6 * env[k]) * 0.92).toFixed(3)})`;
+          // a gentle travelling shimmer keeps it alive in speaking pauses
+          const idle = 0.05 + 0.035 * (0.5 + 0.5 * Math.sin(tt * 3.2 - k * 0.32)) * env[k];
+          const goal = Math.max(idle, src * (0.4 + 0.6 * env[k]));
+          shown[k] += (goal - shown[k]) * (goal > shown[k] ? 0.45 : 0.18);
+          bars[k].style.transform = `scaleY(${Math.max(0.06, shown[k]).toFixed(3)})`;
         }
         const now = performance.now();
         if (l > 0.03) { spoke = true; quietSince = now; }
@@ -1260,6 +1284,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     // Music and DJ start working right now; the screen keeps showing what was understood meanwhile
     if (!res.ask) startSong(res, { delayOpen: REDUCED ? 300 : 2600 });
     paint($('#halo'), res.palette || 'self', 'h' + id, { blur: 0.18 });
+    waveColours(res.palette || 'self');
     const said = $('#said'); said.innerHTML = '';
     for (const word of String(res.transcript || '').split(/\s+/).filter(Boolean)) {
       const w = document.createElement('span'); w.className = 'w'; w.textContent = word;
@@ -1286,6 +1311,10 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       await sleep(250);
       setOn('s-listen', false);
     }
+  }
+  function waveColours(p) {
+    const pal = PAL[p] || PAL.self, w = $('#wave');
+    w.style.setProperty('--w1', pal.c[0]); w.style.setProperty('--w2', pal.c[1] || pal.c[0]); w.style.setProperty('--w3', pal.c[2] || pal.c[0]);
   }
   function cancelListen() { listenId++; Rec.cancel(); if (sendNow) sendNow(); duck(false); setOn('s-listen', false); }
 
@@ -1467,6 +1496,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
   function renderSettings() {
     $$('#lenseg button').forEach(b => b.classList.toggle('on', b.dataset.len === S.settings.len));
     $$('#modeseg button').forEach(b => b.classList.toggle('on', b.dataset.mode === S.settings.mode));
+    $$('#lookseg button').forEach(b => b.classList.toggle('on', b.dataset.look === (S.settings.look || 'wave')));
     document.body.classList.toggle('demo', DEMO());
     $('#pregen').setAttribute('aria-checked', String(!!S.settings.pregen));
     $('#quick').setAttribute('aria-checked', String(!!S.settings.quick));
@@ -1633,6 +1663,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     });
     window.addEventListener('resize', fit);
     window.addEventListener('resize', () => { if (homeOrb) homeOrb.resize(); });
+    $('#lookseg').addEventListener('click', e => { const b = e.target.closest('[data-look]'); if (!b) return; S.settings.look = b.dataset.look; saveState(); applyLook(); });
     if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
     setInterval(clockTick, 15000);
     setInterval(renderCosts, 5000);
@@ -1645,9 +1676,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     bind();
     requestAnimationFrame(() => paintStatic(document));
     $('#wave').innerHTML = '<i></i>'.repeat(46);
-    homeOrb = new Orb($('#orbcv'), { glow: 0.42, still: REDUCED });
-    paintOrb();
-    requestAnimationFrame(() => { homeOrb.resize(); orbsVisible(); });
+    applyLook();
     const orbBtn = $('#orb');
     orbBtn.addEventListener('pointerdown', () => homeOrb.setPressed(true));
     for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) orbBtn.addEventListener(ev, () => homeOrb.setPressed(false));
