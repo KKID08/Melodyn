@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Melodyn – clean 2D concepts</title>
+<link rel="stylesheet" href="../../app/fonts/fonts.css">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #d9d6d0; font-family: 'Geist', system-ui, sans-serif; -webkit-font-smoothing: antialiased; padding: 40px; }
+.concept { display: flex; gap: 28px; padding: 36px 36px 40px; background: #e9e6e0; border-radius: 28px; margin-bottom: 40px; width: max-content; flex-direction: column; }
+.concept > header { display: flex; align-items: baseline; gap: 16px; color: #111; }
+.concept > header b { font-size: 34px; letter-spacing: -.03em; font-weight: 650; }
+.concept > header span { font-size: 17px; color: #555; }
+.row { display: flex; gap: 28px; }
+.ph { width: 390px; height: 844px; border-radius: 44px; overflow: hidden; position: relative; box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 30px 60px -30px rgba(0,0,0,.35); display: flex; flex-direction: column; }
+.sb { height: 50px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 30px 0 34px; font-size: 15px; font-weight: 600; }
+.sb i { width: 64px; height: 20px; border-radius: 99px; background: currentColor; opacity: .9; }
+.pad { padding: 0 24px; }
+svg { display: block; }
+.ico { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.tab { margin-top: auto; display: flex; justify-content: space-around; padding: 10px 0 30px; font-size: 11px; }
+.tab div { display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: .45; }
+.tab div.on { opacity: 1; }
+.list { display: flex; flex-direction: column; }
+.li { display: flex; align-items: center; gap: 14px; padding: 12px 0; }
+.li b { display: block; font-size: 16px; font-weight: 580; }
+.li span { font-size: 13px; opacity: .6; }
+.li .d { margin-left: auto; font-size: 13px; opacity: .5; font-family: 'Geist Mono'; }
+
+/* ============ A · Linie ============ */
+.A { background: #0c0c0d; color: #f4f2ee; }
+.A .greet { font-size: 15px; color: #8b8984; margin-top: 18px; }
+.A h1 { font-size: 38px; font-weight: 600; letter-spacing: -.035em; line-height: 1.05; margin-top: 6px; }
+.A .hero { margin: 30px auto 0; }
+.A .cta { display: flex; align-items: center; gap: 12px; justify-content: center; margin-top: 26px; font-size: 15px; }
+.A .cta .btn { width: 64px; height: 64px; border-radius: 50%; border: 1.5px solid #f4f2ee; display: grid; place-items: center; }
+.A .h2 { font-size: 13px; color: #8b8984; letter-spacing: .02em; margin: 36px 0 12px; }
+.A .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.A .chip { border: 1px solid #2c2b29; border-radius: 99px; padding: 9px 14px; font-size: 14px; }
+.A .chip i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 8px; vertical-align: 1px; }
+.A .said { font-size: 30px; font-weight: 560; letter-spacing: -.025em; line-height: 1.15; margin-top: 30px; }
+.A .said em { font-style: normal; color: #5a5955; }
+.A .kv { margin-top: 26px; border-top: 1px solid #222; }
+.A .kv div { display: flex; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid #222; font-size: 15px; }
+.A .kv span { color: #8b8984; }
+.A .cover { width: 342px; height: 342px; margin: 18px auto 0; border-radius: 6px; background: #151516; }
+.A .meta { margin-top: 26px; display: flex; justify-content: space-between; align-items: flex-end; }
+.A .meta h2 { font-size: 26px; font-weight: 600; letter-spacing: -.025em; }
+.A .meta p { color: #8b8984; font-size: 15px; margin-top: 4px; }
+.A .prog { margin-top: 22px; height: 1px; background: #2c2b29; position: relative; }
+.A .prog i { position: absolute; left: 0; top: -1px; height: 3px; width: 34%; background: #f4f2ee; }
+.A .times { display: flex; justify-content: space-between; font: 12px 'Geist Mono'; color: #77756f; margin-top: 8px; }
+.A .ctrl { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding: 0 6px; }
+.A .play { width: 70px; height: 70px; border-radius: 50%; background: #f4f2ee; color: #0c0c0d; display: grid; place-items: center; }
+.A .next { margin-top: 18px; font-size: 13px; color: #8b8984; display: flex; gap: 8px; align-items: center; }
+.A .steer { margin: auto 16px 34px; border: 1px solid #2c2b29; border-radius: 99px; height: 54px; display: flex; align-items: center; padding: 0 8px 0 20px; color: #77756f; font-size: 15px; justify-content: space-between; }
+.A .steer b { width: 40px; height: 40px; border-radius: 50%; background: #f4f2ee; color: #0c0c0d; display: grid; place-items: center; }
+.A .tab { border-top: 1px solid #1d1d1c; }
+
+/* ============ B · Papier ============ */
+.B { background: #f2eee5; color: #161513; }
+.B .greet { font-size: 15px; color: #77736a; margin-top: 18px; }
+.B h1 { font-family: 'Instrument Serif'; font-weight: 400; font-size: 52px; letter-spacing: -.02em; line-height: .95; margin-top: 6px; }
+.B .hero { margin: 26px auto 0; }
+.B .cta { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 22px; font-size: 15px; }
+.B .cta .btn { width: 72px; height: 72px; border-radius: 50%; background: #161513; color: #f2eee5; display: grid; place-items: center; }
+.B .cta small { color: #77736a; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+.B .h2 { font-size: 13px; color: #77736a; margin: 30px 0 12px; text-transform: uppercase; letter-spacing: .08em; font-family: 'Geist Mono'; }
+.B .cards { display: flex; gap: 12px; }
+.B .card { width: 132px; }
+.B .card b { display: block; font-size: 14.5px; font-weight: 580; margin-top: 8px; }
+.B .card span { font-size: 12.5px; color: #77736a; }
+.B .said { font-family: 'Instrument Serif'; font-size: 40px; line-height: 1.05; margin-top: 28px; }
+.B .said em { color: #b5afa3; font-style: normal; }
+.B .kv { margin-top: 24px; }
+.B .kv div { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #d9d3c6; font-size: 15px; }
+.B .kv span { color: #77736a; }
+.B .cover { width: 342px; height: 342px; margin: 18px auto 0; border-radius: 4px; }
+.B .meta { margin-top: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+.B .meta h2 { font-family: 'Instrument Serif'; font-weight: 400; font-size: 36px; line-height: 1; }
+.B .meta p { color: #77736a; font-size: 15px; margin-top: 6px; }
+.B .prog { margin-top: 22px; height: 2px; background: #d9d3c6; position: relative; }
+.B .prog i { position: absolute; inset: 0 66% 0 0; background: #161513; }
+.B .times { display: flex; justify-content: space-between; font: 12px 'Geist Mono'; color: #8d887d; margin-top: 8px; }
+.B .ctrl { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 0 6px; }
+.B .play { width: 72px; height: 72px; border-radius: 50%; background: #161513; color: #f2eee5; display: grid; place-items: center; }
+.B .next { margin-top: 18px; font-size: 13px; color: #77736a; }
+.B .steer { margin: auto 16px 34px; background: #e7e1d4; border-radius: 99px; height: 54px; display: flex; align-items: center; padding: 0 8px 0 20px; color: #8d887d; font-size: 15px; justify-content: space-between; }
+.B .steer b { width: 40px; height: 40px; border-radius: 50%; background: #161513; color: #f2eee5; display: grid; place-items: center; }
+.B .tab { border-top: 1px solid #ddd6c8; }
+
+/* ============ C · Raster ============ */
+.C { background: #121212; color: #efefef; font-family: 'Geist'; }
+.C .mono { font-family: 'Geist Mono'; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; color: #7a7a7a; }
+.C h1 { font-size: 44px; font-weight: 700; letter-spacing: -.045em; line-height: .98; margin-top: 10px; }
+.C .hero { margin: 24px 24px 0; border-radius: 0; }
+.C .cta { display: flex; justify-content: space-between; align-items: center; margin: 14px 24px 0; }
+.C .cta .btn { height: 52px; padding: 0 22px; border-radius: 99px; background: #d7ff3c; color: #121212; display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 15px; }
+.C .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 26px; }
+.C .tile { aspect-ratio: 1; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; color: #121212; }
+.C .tile b { font-size: 15px; font-weight: 650; letter-spacing: -.01em; }
+.C .said { font-size: 34px; font-weight: 650; letter-spacing: -.035em; line-height: 1.05; margin-top: 26px; }
+.C .said em { font-style: normal; color: #4a4a4a; }
+.C .kv { margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #2a2a2a; border: 1px solid #2a2a2a; }
+.C .kv div { background: #121212; padding: 12px; }
+.C .kv span { display: block; font: 10.5px 'Geist Mono'; text-transform: uppercase; letter-spacing: .06em; color: #7a7a7a; margin-bottom: 6px; }
+.C .kv b { font-size: 16px; font-weight: 600; }
+.C .cover { width: 342px; height: 342px; margin: 16px auto 0; }
+.C .meta { margin-top: 20px; }
+.C .meta h2 { font-size: 30px; font-weight: 700; letter-spacing: -.035em; }
+.C .meta p { margin-top: 6px; }
+.C .prog { margin-top: 20px; display: flex; gap: 2px; }
+.C .prog i { flex: 1; height: 14px; background: #2a2a2a; }
+.C .prog i.on { background: #efefef; }
+.C .times { display: flex; justify-content: space-between; margin-top: 8px; }
+.C .ctrl { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+.C .play { width: 76px; height: 52px; border-radius: 99px; background: #d7ff3c; color: #121212; display: grid; place-items: center; }
+.C .steer { margin: auto 16px 34px; background: #1e1e1e; border-radius: 99px; height: 54px; display: flex; align-items: center; padding: 0 8px 0 20px; color: #7a7a7a; font-size: 15px; justify-content: space-between; }
+.C .steer b { width: 40px; height: 40px; border-radius: 50%; background: #d7ff3c; color: #121212; display: grid; place-items: center; }
+
+/* ============ D · Weich ============ */
+.D { background: #f4f1fb; color: #1d1838; }
+.D .greet { font-size: 15px; color: #7e78a0; margin-top: 18px; }
+.D h1 { font-size: 36px; font-weight: 650; letter-spacing: -.03em; line-height: 1.05; margin-top: 6px; }
+.D .hero { margin: 26px auto 0; }
+.D .cta { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 20px; font-size: 15px; font-weight: 560; }
+.D .cta small { color: #7e78a0; font-weight: 450; font-size: 13px; }
+.D .h2 { font-size: 17px; font-weight: 650; margin: 30px 0 12px; }
+.D .cards { display: flex; gap: 12px; }
+.D .card { width: 140px; padding: 12px; border-radius: 24px; background: #fff; box-shadow: 0 1px 0 rgba(29,24,56,.06); }
+.D .card b { display: block; font-size: 14px; font-weight: 620; margin-top: 10px; }
+.D .card span { font-size: 12px; color: #7e78a0; }
+.D .said { font-size: 30px; font-weight: 640; letter-spacing: -.025em; line-height: 1.15; margin-top: 28px; }
+.D .said em { font-style: normal; color: #b9b3d6; }
+.D .kv { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px; }
+.D .kv div { background: #fff; border-radius: 99px; padding: 9px 14px; font-size: 14px; }
+.D .kv span { color: #7e78a0; margin-right: 6px; }
+.D .cover { width: 342px; height: 342px; margin: 16px auto 0; border-radius: 36px; }
+.D .meta { margin-top: 22px; display: flex; justify-content: space-between; align-items: flex-end; }
+.D .meta h2 { font-size: 27px; font-weight: 680; letter-spacing: -.03em; }
+.D .meta p { color: #7e78a0; font-size: 15px; margin-top: 4px; }
+.D .prog { margin-top: 22px; height: 8px; border-radius: 99px; background: #e2ddf3; position: relative; }
+.D .prog i { position: absolute; inset: 0 66% 0 0; border-radius: 99px; background: #6c56f0; }
+.D .times { display: flex; justify-content: space-between; font-size: 12px; color: #7e78a0; margin-top: 8px; }
+.D .ctrl { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding: 0 6px; }
+.D .play { width: 74px; height: 74px; border-radius: 26px; background: #6c56f0; color: #fff; display: grid; place-items: center; }
+.D .steer { margin: auto 16px 34px; background: #fff; border-radius: 22px; height: 56px; display: flex; align-items: center; padding: 0 8px 0 18px; color: #9a94bb; font-size: 15px; justify-content: space-between; }
+.D .steer b { width: 42px; height: 42px; border-radius: 15px; background: #6c56f0; color: #fff; display: grid; place-items: center; }
+.D .tab { background: #fff; border-radius: 26px 26px 0 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// Deterministic random
+function rng(seed) { let a = 0; for (const ch of String(seed)) a = Math.imul(a ^ ch.charCodeAt(0), 2654435761) >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+const I = {
+  mic: '<rect x="9" y="3" width="6" height="11.5" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/>',
+  play: '<path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none"/>',
+  pause: '<rect x="7" y="5" width="3.6" height="14" rx="1" fill="currentColor" stroke="none"/><rect x="13.4" y="5" width="3.6" height="14" rx="1" fill="currentColor" stroke="none"/>',
+  next: '<path d="M5 6v12l9-6z"/><path d="M18 6v12"/>',
+  prev: '<path d="M19 6v12l-9-6z"/><path d="M6 6v12"/>',
+  up: '<path d="M7 11v9H4.5V11H7zm0 0l4-7.5a2 2 0 0 1 3.2 1.6V9h4.6a2 2 0 0 1 2 2.4l-1.4 6.8A2 2 0 0 1 17.4 20H7"/>',
+  down: '<g transform="rotate(180 12 12)"><path d="M7 11v9H4.5V11H7zm0 0l4-7.5a2 2 0 0 1 3.2 1.6V9h4.6a2 2 0 0 1 2 2.4l-1.4 6.8A2 2 0 0 1 17.4 20H7"/></g>',
+  add: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+  listen: '<path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/>',
+  lib: '<rect x="4" y="8" width="12" height="12" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v10"/>',
+  user: '<circle cx="12" cy="8.5" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>',
+  x: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  chev: '<path d="M6 9.5l6 6 6-6"/>',
+  more: '<circle cx="5" cy="12" r="1.4" fill="currentColor"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><circle cx="19" cy="12" r="1.4" fill="currentColor"/>',
+  stop: '<rect x="7" y="7" width="10" height="10" rx="1.6" fill="currentColor" stroke="none"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+};
+const ic = (n, s = 26, extra = '') => `<svg class="ico" viewBox="0 0 24 24" style="width:${s}px;height:${s}px" ${extra}>${I[n]}</svg>`;
+const sb = (t = '9:41') => `<div class="sb"><span>${t}</span><i style="opacity:0"></i><span>●●● ▮</span></div>`;
+const tabs = (on, cls = '') => `<div class="tab ${cls}">${[['listen', 'Hören'], ['lib', 'Bibliothek'], ['user', 'Dein Sound']].map(([i, l], k) => `<div class="${k === on ? 'on' : ''}">${ic(i, 24)}${l}</div>`).join('')}</div>`;
+
+// ---------- generative 2D artwork ----------
+// contour rings as flat lines (A)
+function contour(size, seed, { stroke = '#f4f2ee', accent = '#ff6a3d', n = 16, bg = 'none', sw = 1 } = {}) {
+  const r = rng(seed), cx = size * (0.42 + r() * 0.16), cy = size * (0.42 + r() * 0.16), f1 = 3 + Math.floor(r() * 2), f2 = 5 + Math.floor(r() * 3), p1 = r() * 6, p2 = r() * 6;
+  let out = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${bg !== 'none' ? `<rect width="${size}" height="${size}" fill="${bg}"/>` : ''}`;
+  for (let i = 0; i < n; i++) {
+    const base = size * 0.62 * Math.pow((i + 1) / (n + 1), 1.08), amp = base * 0.075;
+    let d = '';
+    for (let k = 0; k <= 120; k++) { const a = k / 120 * Math.PI * 2, rr = base + amp * Math.sin(a * f1 + p1 + i * .3) + amp * .5 * Math.sin(a * f2 + p2 - i * .2); d += (k ? 'L' : 'M') + (cx + rr * Math.cos(a)).toFixed(1) + ' ' + (cy + rr * Math.sin(a)).toFixed(1); }
+    const hi = i === Math.floor(n * 0.45);
+    out += `<path d="${d}Z" fill="none" stroke="${hi ? accent : stroke}" stroke-width="${hi ? sw * 2 : sw}" opacity="${hi ? 1 : (0.25 + 0.6 * (1 - i / n)).toFixed(2)}"/>`;
+  }
+  return out + '</svg>';
+}
+// Bauhaus composition (B)
+function bauhaus(size, seed, pal) {
+  const r = rng(seed), u = size / 4;
+  let o = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="${size}" height="${size}" fill="${pal[0]}"/>`;
+  const cells = [];
+  for (let y = 0; y < 4; y += 2) for (let x = 0; x < 4; x += 2) cells.push([x, y]);
+  cells.forEach(([x, y], i) => {
+    const c = pal[1 + (i + Math.floor(r() * 3)) % (pal.length - 1)], X = x * u, Y = y * u, S = 2 * u, k = Math.floor(r() * 5);
+    if (k === 0) o += `<circle cx="${X + u}" cy="${Y + u}" r="${u}" fill="${c}"/>`;
+    else if (k === 1) o += `<path d="M${X} ${Y + S} A${u} ${u} 0 0 1 ${X + S} ${Y + S}Z" fill="${c}"/><path d="M${X} ${Y + u} A${u} ${u} 0 0 1 ${X + S} ${Y + u}" fill="none" stroke="${pal[pal.length - 1]}" stroke-width="${u * .12}"/>`;
+    else if (k === 2) o += `<path d="M${X} ${Y} L${X + S} ${Y} L${X} ${Y + S}Z" fill="${c}"/>`;
+    else if (k === 3) o += `<rect x="${X}" y="${Y + u * .5}" width="${S}" height="${u}" fill="${c}"/>`;
+    else o += `<path d="M${X} ${Y} A${S} ${S} 0 0 1 ${X + S} ${Y + S} L${X} ${Y + S}Z" fill="${c}"/>`;
+  });
+  return o + '</svg>';
+}
+// Flat colour + waveform glyph (C)
+function glyph(w, h, seed, bg, fg) {
+  const r = rng(seed), n = 28; let o = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><rect width="${w}" height="${h}" fill="${bg}"/>`;
+  const bw = w / (n * 2);
+  for (let i = 0; i < n; i++) { const env = Math.sin(Math.PI * (i + .5) / n), hh = h * (0.08 + env * (0.2 + r() * 0.45)); o += `<rect x="${(i * 2 + .5) * bw}" y="${h / 2 - hh / 2}" width="${bw}" height="${hh}" rx="${bw / 2}" fill="${fg}"/>`; }
+  return o + '</svg>';
+}
+// Soft flat blobs (D)
+function blob(size, seed, cols, bg) {
+  const r = rng(seed); let o = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${bg ? `<rect width="${size}" height="${size}" fill="${bg}"/>` : ''}`;
+  cols.forEach((c, i) => {
+    const cx = size * (0.3 + r() * 0.4), cy = size * (0.3 + r() * 0.4), R = size * (0.18 + r() * 0.16); let d = '';
+    for (let k = 0; k <= 8; k++) { const a = k / 8 * Math.PI * 2, rr = R * (0.85 + r() * 0.3); d += (k ? ' ' : 'M') + (cx + rr * Math.cos(a)).toFixed(1) + ',' + (cy + rr * Math.sin(a)).toFixed(1); }
+    o += `<path d="${smooth(d)}" fill="${c}" opacity="${i ? .92 : 1}" style="mix-blend-mode:multiply"/>`;
+  });
+  return o + '</svg>';
+}
+function smooth(d) { // closed Catmull-Rom through points
+  const p = d.replace('M', '').trim().split(' ').map(s => s.split(',').map(Number)); p.pop();
+  const n = p.length; let s = `M${p[0][0]},${p[0][1]}`;
+  for (let i = 0; i < n; i++) { const p0 = p[(i - 1 + n) % n], p1 = p[i], p2 = p[(i + 1) % n], p3 = p[(i + 2) % n]; s += ` C${p1[0] + (p2[0] - p0[0]) / 6},${p1[1] + (p2[1] - p0[1]) / 6} ${p2[0] - (p3[0] - p1[0]) / 6},${p2[1] - (p3[1] - p1[1]) / 6} ${p2[0]},${p2[1]}`; }
+  return s + 'Z';
+}
+// listening bars
+function bars(w, h, seed, fg, hi, n = 40, shape = 'round') {
+  const r = rng(seed); let o = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`; const bw = w / (n * 1.9);
+  for (let i = 0; i < n; i++) { const env = Math.sin(Math.PI * (i + .5) / n), hh = Math.max(bw, h * env * (0.15 + r() * 0.85)); const x = i * w / n + (w / n - bw) / 2; o += `<rect x="${x}" y="${h / 2 - hh / 2}" width="${bw}" height="${hh}" rx="${shape === 'round' ? bw / 2 : 0}" fill="${Math.abs(i - n / 2) < n * 0.18 ? hi : fg}"/>`; }
+  return o + '</svg>';
+}
+
+const MOODS = [['Nachtfahrt', 'Synthwave', '#ff6a3d'], ['90er West Coast', 'Hip-Hop', '#e8b23a'], ['Konzentrieren', 'Lo-Fi', '#7fb7a4'], ['Kochen mit Freunden', 'Neo-Soul', '#e2584d']];
+
+// ================= A
+function A() {
+  const acc = '#ff6a3d';
+  const home = `<div class="ph A">${sb()}<div class="pad"><p class="greet">Guten Abend</p><h1>Wonach ist dir?</h1></div>
+    <div class="hero">${contour(300, 'home', { accent: acc, n: 18 })}</div>
+    <div class="cta"><div class="btn">${ic('mic', 26)}</div></div>
+    <div class="pad"><p class="h2">Zum Start</p><div class="chips">${MOODS.map(m => `<span class="chip"><i style="background:${m[2]}"></i>${m[0]}</span>`).join('')}<span class="chip"><i style="background:#9c8cff"></i>Laufen gehen</span></div></div>
+    ${tabs(0)}</div>`;
+  const listen = `<div class="ph A">${sb()}<div class="pad" style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">${ic('x', 24)}<span style="font-size:13px;color:#8b8984"><i style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${acc};margin-right:8px"></i>Melodyn hört zu</span><span style="width:24px"></span></div>
+    <div class="pad"><p class="said">Ich fahre nachts nach Hause, <em>mach was Ruhiges …</em></p>
+    <div class="kv"><div><span>Situation</span>Nachtfahrt</div><div><span>Stimmung</span>ruhig, gleichmäßig</div><div><span>Genre</span>Synthwave</div></div></div>
+    <div style="margin-top:auto" class="pad">${bars(342, 90, 'l', '#f4f2ee', acc, 46)}</div>
+    <div style="margin:34px auto 20px" class="cta"><div class="btn" style="background:#f4f2ee;color:#0c0c0d;border:0">${ic('stop', 24)}</div></div>
+    <p style="text-align:center;font-size:13px;color:#77756f;margin-bottom:36px">Tippen zum Senden</p></div>`;
+  const player = `<div class="ph A">${sb()}<div class="pad" style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">${ic('chev', 26)}<div style="text-align:center"><b style="font-size:14px;font-weight:600">Heimfahrt, nachts</b><p style="font-size:12px;color:#8b8984">für dich komponiert</p></div>${ic('more', 26)}</div>
+    <div class="cover">${contour(342, 'p1', { accent: acc, n: 22, bg: '#151516' })}</div>
+    <div class="pad"><div class="meta"><div><h2>Tunnel Lights</h2><p>Synthwave · 98 BPM</p></div>${ic('add', 28)}</div>
+    <div class="prog"><i></i></div><div class="times"><span>1:02</span><span>−2:01</span></div>
+    <div class="ctrl">${ic('down', 26)}${ic('prev', 30)}<div class="play">${ic('pause', 30)}</div>${ic('next', 30)}${ic('up', 26)}</div>
+    <p class="next"><i style="width:6px;height:6px;border-radius:50%;background:${acc}"></i>Als Nächstes: <b style="color:#f4f2ee;font-weight:550">Neon Road</b></p></div>
+    <div class="steer">„Etwas schneller“, „mehr Gitarren“ …<b>${ic('mic', 20)}</b></div></div>`;
+  const lib = `<div class="ph A">${sb()}<div class="pad"><h1 style="margin-top:14px">Bibliothek</h1>
+    <div style="display:flex;gap:18px;margin:18px 0 8px;font-size:15px"><b style="border-bottom:2px solid #f4f2ee;padding-bottom:6px;font-weight:600">Gespeichert</b><span style="color:#77756f">Verlauf</span></div>
+    <div class="list">${[['Tunnel Lights', 'Synthwave · Heimfahrt', '3:03', '#ff6a3d'], ['Sunset Boulevard', 'West Coast · Sommerabend', '2:57', '#e8b23a'], ['Stille Seiten', 'Lo-Fi · Fokus', '3:12', '#7fb7a4'], ['Pfeffer & Gold', 'Neo-Soul · Kochen', '2:48', '#e2584d'], ['Kilometer Null', 'Drum & Bass · Laufen', '3:20', '#9c8cff']].map((s, i) => `<div class="li" style="border-bottom:1px solid #1d1d1c"><div style="border-radius:4px;overflow:hidden">${contour(52, s[0], { accent: s[3], n: 7, bg: '#151516' })}</div><div><b>${s[0]}</b><span>${s[1]}</span></div><span class="d">${s[2]}</span></div>`).join('')}</div></div>${tabs(1)}</div>`;
+  return [home, listen, player, lib];
+}
+
+// ================= B
+function B() {
+  const P = { night: ['#1f3a5f', '#e86a3a', '#f2c14e', '#efe8d8', '#161513'], gold: ['#e3b23c', '#161513', '#d9653b', '#f2eee5', '#1f3a5f'], sage: ['#8aa37b', '#f2eee5', '#1f3a5f', '#d9653b', '#161513'], red: ['#d9653b', '#f2c14e', '#161513', '#efe8d8', '#1f3a5f'] };
+  const home = `<div class="ph B">${sb()}<div class="pad"><p class="greet">Guten Abend</p><h1>Wonach ist dir?</h1></div>
+    <div class="hero">${bauhausHero(280)}</div>
+    <div class="cta"><div class="btn">${ic('mic', 28)}</div><small>oder schreiben</small></div>
+    <div class="pad"><p class="h2">Zum Start</p><div class="cards">${[['Nachtfahrt', 'Synthwave', P.night], ['West Coast', 'Hip-Hop', P.gold], ['Fokus', 'Lo-Fi', P.sage]].map(c => `<div class="card">${bauhaus(132, c[0], c[2])}<b>${c[0]}</b><span>${c[1]}</span></div>`).join('')}</div></div>
+    ${tabs(0)}</div>`;
+  const listen = `<div class="ph B">${sb()}<div class="pad" style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">${ic('x', 24)}<span style="font:12px 'Geist Mono';letter-spacing:.08em;text-transform:uppercase;color:#77736a"><i style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#d9653b;margin-right:8px"></i>hört zu</span><span style="width:24px"></span></div>
+    <div class="pad"><p class="said">Ich fahre nachts nach Hause, <em>mach was Ruhiges …</em></p>
+    <div class="kv"><div><span>Situation</span>Nachtfahrt</div><div><span>Stimmung</span>ruhig, gleichmäßig</div><div><span>Genre</span>Synthwave</div></div></div>
+    <div style="margin-top:auto" class="pad">${bars(342, 90, 'l', '#161513', '#d9653b', 40, 'square')}</div>
+    <div style="margin:34px auto 20px" class="cta"><div class="btn" style="background:#d9653b">${ic('stop', 24)}</div></div><p style="text-align:center;font-size:13px;color:#77736a;margin-bottom:36px">Tippen zum Senden</p></div>`;
+  const player = `<div class="ph B">${sb()}<div class="pad" style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">${ic('chev', 26)}<div style="text-align:center"><b style="font:11px 'Geist Mono';letter-spacing:.08em;text-transform:uppercase">Heimfahrt, nachts</b></div>${ic('more', 26)}</div>
+    <div class="cover" style="overflow:hidden">${bauhaus(342, 'night-cover', P.night)}</div>
+    <div class="pad"><div class="meta"><div><h2>Tunnel Lights</h2><p>Synthwave · 98 BPM</p></div>${ic('add', 28)}</div>
+    <div class="prog"><i></i></div><div class="times"><span>1:02</span><span>−2:01</span></div>
+    <div class="ctrl">${ic('down', 26)}${ic('prev', 30)}<div class="play">${ic('pause', 30)}</div>${ic('next', 30)}${ic('up', 26)}</div>
+    <p class="next">Als Nächstes: <b style="color:#161513;font-weight:560">Neon Road</b></p></div>
+    <div class="steer">„Etwas schneller“, „mehr Gitarren“ …<b>${ic('mic', 20)}</b></div></div>`;
+  const lib = `<div class="ph B">${sb()}<div class="pad"><h1 style="margin-top:14px">Bibliothek</h1>
+    <div style="display:flex;gap:8px;margin:18px 0 8px;font-size:14px"><span style="background:#161513;color:#f2eee5;border-radius:99px;padding:7px 14px">Gespeichert</span><span style="border:1px solid #d0c9ba;border-radius:99px;padding:7px 14px">Verlauf</span></div>
+    <div class="list">${[['Tunnel Lights', 'Synthwave · Heimfahrt', '3:03', P.night], ['Sunset Boulevard', 'West Coast · Sommerabend', '2:57', P.gold], ['Stille Seiten', 'Lo-Fi · Fokus', '3:12', P.sage], ['Pfeffer & Gold', 'Neo-Soul · Kochen', '2:48', P.red], ['Kilometer Null', 'Drum & Bass · Laufen', '3:20', P.night]].map((s, i) => `<div class="li" style="border-bottom:1px solid #ddd6c8">${bauhaus(52, s[0], s[3])}<div><b>${s[0]}</b><span>${s[1]}</span></div><span class="d">${s[2]}</span></div>`).join('')}</div></div>${tabs(1)}</div>`;
+  return [home, listen, player, lib];
+}
+function bauhausHero(s) {
+  // stacked half-circles like a sound sign, flat colours
+  const c = ['#1f3a5f', '#d9653b', '#e3b23c', '#8aa37b', '#161513'];
+  let o = `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">`;
+  o += `<circle cx="${s / 2}" cy="${s / 2}" r="${s / 2}" fill="${c[0]}"/>`;
+  o += `<path d="M0 ${s / 2} A${s / 2} ${s / 2} 0 0 0 ${s} ${s / 2}Z" fill="${c[1]}"/>`;
+  o += `<circle cx="${s / 2}" cy="${s / 2}" r="${s * .3}" fill="${c[2]}"/>`;
+  o += `<path d="M${s * .2} ${s / 2} A${s * .3} ${s * .3} 0 0 0 ${s * .8} ${s / 2}Z" fill="${c[4]}"/>`;
+  o += `<circle cx="${s / 2}" cy="${s / 2}" r="${s * .1}" fill="#f2eee5"/>`;
+  for (let i = 0; i < 5; i++) o += `<rect x="${s * .36 + i * s * .06}" y="${s * .5 - s * (0.03 + 0.04 * Math.sin(i * 1.3 + 1) ** 2)}" width="${s * .025}" height="${s * (0.06 + 0.08 * Math.sin(i * 1.3 + 1) ** 2)}" fill="#f2eee5" rx="${s * .012}" transform="translate(0 ${s * .17})"/>`;
+  return o + '</svg>';
+}
+
+// ================= C
+function C() {
+  const T = [['#ff6a3d', 'Nachtfahrt', 'Synthwave'], ['#e8b23a', 'West Coast', 'Hip-Hop'], ['#7fb7a4', 'Fokus', 'Lo-Fi'], ['#9c8cff', 'Laufen', 'D&B']];
+  const home = `<div class="ph C">${sb()}<div class="pad"><p class="mono" style="margin-top:16px">Guten Abend — Do 21:40</p><h1>Wonach<br>ist dir?</h1></div>
+    <div class="hero">${glyph(342, 220, 'h', '#ff6a3d', '#121212')}</div>
+    <div class="cta"><span class="mono">Tippen und sagen</span><div class="btn">${ic('mic', 22)}Sprechen</div></div>
+    <div class="pad"><div class="grid">${T.map(t => `<div class="tile" style="background:${t[0]}"><span style="font:10.5px 'Geist Mono';letter-spacing:.06em;text-transform:uppercase">${t[2]}</span><b>${t[1]}</b></div>`).join('')}</div></div>
+    </div>`;
+  const listen = `<div class="ph C">${sb()}<div class="pad" style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">${ic('x', 24)}<span class="mono" style="color:#d7ff3c">● Aufnahme</span><span class="mono">0:04</span></div>
+    <div class="pad"><p class="said">Ich fahre nachts nach Hause, <em>mach was Ruhiges …</em></p>
+    <div class="kv"><div><span>Situation</span><b>Nachtfahrt</b></div><div><span>Stimmung</span><b>ruhig</b></div><div><span>Genre</span><b>Synthwave</b></div><div><span>Tempo</span><b>98 BPM</b></div></div></div>
+    <div style="margin-top:auto" class="pad">${bars(342, 100, 'l', '#efefef', '#d7ff3c', 34, 'square')}</div>
+    <div style="margin:30px 24px 40px;display:flex;justify-content:space-between;align-items:center"><span class="mono">Tippen zum Senden</span><div class="play" style="width:auto;padding:0 22px;display:flex;gap:8px;font-weight:650">${ic('stop', 20)}Senden</div></div></div>`;
+  const player = `<div class="ph C">${sb()}<div class="pad" style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">${ic('chev', 26)}<span class="mono">Heimfahrt, nachts</span>${ic('more', 26)}</div>
+    <div class="cover">${glyph(342, 342, 'p', '#ff6a3d', '#121212')}</div>
+    <div class="pad"><div class="meta"><span class="mono">Synthwave · 98 BPM · für dich komponiert</span><h2>Tunnel Lights</h2></div>
+    <div class="prog">${Array.from({ length: 30 }, (_, i) => `<i class="${i < 10 ? 'on' : ''}"></i>`).join('')}</div><div class="times"><span class="mono">1:02</span><span class="mono">−2:01</span></div>
+    <div class="ctrl">${ic('down', 26)}${ic('prev', 30)}<div class="play">${ic('pause', 28)}</div>${ic('next', 30)}${ic('up', 26)}</div></div>
+    <div class="steer">„Etwas schneller“ …<b>${ic('mic', 20)}</b></div></div>`;
+  const lib = `<div class="ph C">${sb()}<div class="pad"><p class="mono" style="margin-top:16px">12 Songs · 37 Min.</p><h1>Bibliothek</h1>
+    <div class="list" style="margin-top:14px;border-top:1px solid #2a2a2a">${[['Tunnel Lights', 'Synthwave', '3:03', '#ff6a3d'], ['Sunset Boulevard', 'West Coast', '2:57', '#e8b23a'], ['Stille Seiten', 'Lo-Fi', '3:12', '#7fb7a4'], ['Pfeffer & Gold', 'Neo-Soul', '2:48', '#e2584d'], ['Kilometer Null', 'Drum & Bass', '3:20', '#9c8cff']].map((s, i) => `<div class="li" style="border-bottom:1px solid #2a2a2a"><span class="mono" style="width:18px">${String(i + 1).padStart(2, '0')}</span>${glyph(46, 46, s[0], s[3], '#121212')}<div><b>${s[0]}</b><span class="mono" style="font-size:10.5px">${s[1]}</span></div><span class="d">${s[2]}</span></div>`).join('')}</div></div>${tabs(1)}</div>`;
+  return [home, listen, player, lib];
+}
+
+// ================= D
+function D() {
+  const home = `<div class="ph D">${sb()}<div class="pad"><p class="greet">Guten Abend</p><h1>Wonach ist dir?</h1></div>
+    <div class="hero" style="position:relative;width:280px;height:280px">${blob(280, 'home', ['#c9bfff', '#ffb59e', '#9fe0cf'])}<div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:84px;height:84px;border-radius:30px;background:#6c56f0;color:#fff;display:grid;place-items:center">${ic('mic', 32)}</div></div>
+    <div class="cta">Tippen und einfach sagen<small>oder schreiben</small></div>
+    <div class="pad"><p class="h2">Zum Start</p><div class="cards">${[['Nachtfahrt', 'Synthwave', ['#c9bfff', '#ffb59e']], ['West Coast', 'Hip-Hop', ['#ffd88a', '#ffb59e']], ['Fokus', 'Lo-Fi', ['#9fe0cf', '#c9bfff']]].map(c => `<div class="card"><div style="border-radius:16px;overflow:hidden">${blob(116, c[0], c[2], '#f4f1fb')}</div><b>${c[0]}</b><span>${c[1]}</span></div>`).join('')}</div></div>
+    ${tabs(0)}</div>`;
+  const listen = `<div class="ph D">${sb()}<div class="pad" style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span style="width:38px;height:38px;border-radius:14px;background:#fff;display:grid;place-items:center">${ic('x', 20)}</span><span style="font-size:13px;color:#7e78a0;font-weight:560">Melodyn hört zu</span><span style="width:38px"></span></div>
+    <div class="pad"><p class="said">Ich fahre nachts nach Hause, <em>mach was Ruhiges …</em></p>
+    <div class="kv"><div><span>Situation</span>Nachtfahrt</div><div><span>Stimmung</span>ruhig</div><div><span>Genre</span>Synthwave</div></div></div>
+    <div style="margin-top:auto" class="pad">${bars(342, 100, 'l', '#c9bfff', '#6c56f0', 36)}</div>
+    <div style="margin:30px auto 18px"><div style="width:76px;height:76px;border-radius:28px;background:#6c56f0;color:#fff;display:grid;place-items:center">${ic('stop', 24)}</div></div><p style="text-align:center;font-size:13px;color:#7e78a0;margin-bottom:36px">Tippen zum Senden</p></div>`;
+  const player = `<div class="ph D">${sb()}<div class="pad" style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span style="width:38px;height:38px;border-radius:14px;background:#fff;display:grid;place-items:center">${ic('chev', 22)}</span><div style="text-align:center"><b style="font-size:14px">Heimfahrt, nachts</b></div><span style="width:38px;height:38px;border-radius:14px;background:#fff;display:grid;place-items:center">${ic('more', 22)}</span></div>
+    <div class="cover" style="overflow:hidden">${blob(342, 'cover', ['#c9bfff', '#ffb59e', '#9fe0cf', '#ffd88a'], '#e9e4fb')}</div>
+    <div class="pad"><div class="meta"><div><h2>Tunnel Lights</h2><p>Synthwave · 98 BPM</p></div>${ic('add', 28)}</div>
+    <div class="prog"><i></i></div><div class="times"><span>1:02</span><span>−2:01</span></div>
+    <div class="ctrl">${ic('down', 26)}${ic('prev', 30)}<div class="play">${ic('pause', 30)}</div>${ic('next', 30)}${ic('up', 26)}</div></div>
+    <div class="steer">„Etwas schneller“, „mehr Gitarren“ …<b>${ic('mic', 20)}</b></div></div>`;
+  const lib = `<div class="ph D">${sb()}<div class="pad"><h1 style="margin-top:14px">Bibliothek</h1>
+    <div style="display:flex;gap:6px;margin:16px 0 10px;background:#e8e3f7;border-radius:16px;padding:4px;width:max-content;font-size:14px;font-weight:560"><span style="background:#fff;border-radius:12px;padding:7px 14px">Gespeichert</span><span style="padding:7px 14px;color:#7e78a0">Verlauf</span></div>
+    <div class="list" style="gap:8px">${[['Tunnel Lights', 'Synthwave · Heimfahrt', '3:03', ['#c9bfff', '#ffb59e']], ['Sunset Boulevard', 'West Coast · Sommerabend', '2:57', ['#ffd88a', '#ffb59e']], ['Stille Seiten', 'Lo-Fi · Fokus', '3:12', ['#9fe0cf', '#c9bfff']], ['Pfeffer & Gold', 'Neo-Soul · Kochen', '2:48', ['#ffb59e', '#ffd88a']], ['Kilometer Null', 'Drum & Bass · Laufen', '3:20', ['#c9bfff', '#9fe0cf']]].map(s => `<div class="li" style="background:#fff;border-radius:20px;padding:10px 14px 10px 10px"><div style="border-radius:14px;overflow:hidden">${blob(50, s[0], s[3], '#f4f1fb')}</div><div><b>${s[0]}</b><span>${s[1]}</span></div><span class="d">${s[2]}</span></div>`).join('')}</div></div>${tabs(1)}</div>`;
+  return [home, listen, player, lib];
+}
+
+const C_ = [
+  ['A', 'Linie', 'Schwarz, eine Akzentfarbe pro Stimmung, Melodyn-Konturlinien als Strichgrafik', A],
+  ['B', 'Papier', 'Warmes Papierweiß, Serifen-Überschriften, flache Bauhaus-Formen als Cover', B],
+  ['C', 'Raster', 'Schweizer Stil: Grafit, kräftige flache Farbflächen, Mono-Labels, Limetten-Akzent', C],
+  ['D', 'Weich', 'Helles Lavendel, runde flache Formen, freundlich und weich', D],
+];
+document.getElementById('root').innerHTML = C_.map(([id, name, desc, fn]) => `<section class="concept" id="c${id}"><header><b>${id} · ${name}</b><span>${desc}</span></header><div class="row">${fn().join('')}</div></section>`).join('');
+document.fonts.ready.then(() => { document.documentElement.dataset.ready = '1'; });
+</script>
+</body>
+</html>
