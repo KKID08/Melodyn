@@ -1,0 +1,31 @@
+{
+ "songs": [
+  {
+   "file": "demo/song1.mp3",
+   "lyrics": "[[A0]]\n[[B1]]\n[:] Die lichter der stadt, sie ziehen vorbei\n[:] Wie funken im dunkel, so endlos und frei\n[:] Der asphalte glänzt im neonen schein\n[:] Und ich bin in dieser nacht ganz allein\n[:] Die straße ist lang, der weg ist noch weit\n[:] Wir reisen durch raum und wir reisen durch zeit\n[[C2]]\n[:] Ein weiter weg nach haus, im dunkel der nacht\n[:] Wo die stadt in Millionen farben erwacht\n[:] Folge dem strom, wo das neonlicht brennt\n[:] Ein gefühl, das kein ende und keine grenzen kennt\n[:] Weit weg nach haus, ich finde den weg\n[:] Über die straßen, wo das leben sich regt\n[[B3]]\n[:] Schatten verschmelzen im rückspiegellicht\n[:] Ein neues kapitel, das langsam bricht\n[:] Die welt schläft tief, doch die stadt bleibt wach\n[:] Und ich folge dem licht, das mich glücklich macht\n[:] Nur noch ein paar meilen, dann bin ich am ziel\n[:] Dieses spiel mit der dunkelheit fordert viel\n[[C4]]\n[:] Ein weiter weg nach haus, im dunkel der nacht\n[:] Wo die stadt in Millionen farben erwacht\n[:] Folge dem strom, wo das neonlicht brennt\n[:] Ein gefühl, das kein ende und keine grenzen kennt\n[:] Weit weg nach haus, ich finde den weg\n[:] Über die straßen, wo das leben sich regt\n[[D5]]\n[:] Die nacht ist mein freund, sie schweigt und versteht\n[:] Während der wind mir durchs offene fenster weht\n[:] Wir sind fast da, die lichter werden hell\n[:] Und die zeit vergeht in dieser nacht so schnell\n[[E6]]\n[:] Fast zu haus, die lichter verblassen langsam...\n[:] Der weite weg ist zu ende.\n[:] Gute nacht, stadt der lichter.",
+   "bpm": 98
+  },
+  {
+   "file": "demo/song2.mp3",
+   "lyrics": "[[A0]]\n[[B1]]\n[:] Fluorescent rivers, bleeding through the glass,\n[:] The city's heartbeat fading in the dark.\n[:] We chase the shadows that we left behind,\n[:] An endless ribbon stretching through the night.\n[:] (Ooh, this endless road.)\n[[C2]]\n[:] The dashboard glows, a quiet guiding star,\n[:] Telling me exactly where we are.\n[:] The city fades, a memory in my mind,\n[:] Leaving all the broken glass behind.\n[[D3]]\n[:] City lights are burning in the rearview mirror!\n[:] The road is long, but home is getting clearer!\n[:] We ride the waves of synthesis and sound!\n[:] Until the quiet of our street is found!\n[:] (Glow in the dark.)\n[:] City lights are burning in the rearview mirror!\n[:] The road is long, but home is getting clearer!\n[[B4]]\n[:] Midnight radio playing our favorite song,\n[:] Reminding me of where we both belong.\n[:] The white lines blur, a steady hypnotist,\n[:] Through the neon haze and the cooling mist.\n[:] (We are moving on.)\n[[C5]]\n[:] The dashboard glows, a quiet guiding star,\n[:] Telling me exactly where we are.\n[:] The city fades, a memory in my mind,\n[:] Leaving all the broken glass behind.\n[[D6]]\n[:] City lights are burning in the rearview mirror!\n[:] The road is long, but home is getting clearer!\n[:] We ride the waves of synthesis and sound!\n[:] Until the quiet of our street is found!\n[:] (Glow in the dark.)\n[:] City lights are burning in the rearview mirror!\n[:] The road is long, but home is getting clearer!\n[[E7]]\n[:] Home at last, the journey's finally through...\n[:] (In the quiet of the night.)\n[:] Just the hum of the engine and the thought of you...\n[:] Fade to black, the road is finally done.",
+   "bpm": 100
+  },
+  {
+   "file": "demo/song3.mp3",
+   "lyrics": "[[A0]]\n[[B1]]\n[:] Die sonne sinkt, der himmel färbt sich sacht\n[:] Wir sitzen auf der treppe, spüren die nacht\n[:] Die kühle luft vertreibt den heißen tag\n[:] Ein lächeln hier, ein blick, den jeder mag\n[:] Nichts brennt mehr, der kopf ist endlich frei\n[:] Erinnerungen ziehen still vorbei\n[:] Wir teilen den moment, kein zeitdruck weit und breit\n[:] Auf dieser stufe fühlt sich alles endlos an die zeit\n[[C2]]\n[:] Ein lauer abend auf der stoop mit meinen leuten\n[:] Wir reden nicht über morgen, nur über heute\n[:] Die goldene stunde vergeht, doch wir bleiben hier\n[:] Mit einem lächeln und 'nem kühlen getränk bei dir\n[:] (Ja, auf der stoop mit meinen leuten)\n[[B3]]\n[:] Weißt du noch damals, drüben im park?\n[:] Als die nächte so lang waren und die sonne so stark\n[:] Kein geld in den taschen, aber träume im kopf\n[:] Heute sitzen wir hier, klopfen auf holz am stopp\n[:] Die stadt wird ruhiger, die lichter gehen an\n[:] Wir fangen einfach wieder von vorne an\n[:] Kein stress, kein druck, nur dieses eine gefühl\n[:] Dass die welt da draußen kurz pause machen will\n[[C4]]\n[:] Ein lauer abend auf der stoop mit meinen leuten\n[:] Wir reden nicht über morgen, nur über heute\n[:] Die goldene stunde vergeht, doch wir bleiben hier\n[:] Mit einem lächeln und 'nem kühlen getränk bei dir\n[:] (Ein lauer abend...)\n[[D5]]\n[[B6]]\n[:] Die dämmerung bricht ein, der himmel wird deep blue\n[:] Wir hören einfach nur dem schweigen der stadt zu\n[:] Manchmal braucht es nicht viel, um glücklich zu sein\n[:] Nur 'ne treppe, ein paar freunde und den mondenschein\n[:] Wir blicken zurück auf das, was hinter uns liegt\n[:] Und wissen, dass die freundschaft am ende doch siegt\n[:] Keine sorgen mehr für jetzt, die welt kann warten\n[:] Wir haben alles, was wir brauchen, um neu zu starten\n[[E7]]\n[:] Ein lauer abend auf der stoop mit meinen leuten...\n[:] Nur über heute... und für immer...\n[:] (Ja, genau so...)\n[:] (Wir bleiben hier...)",
+   "bpm": 92
+  }
+ ],
+ "clips": [
+  {
+   "file": "demo/clip1.mp3",
+   "lyrics": "[0.0:4.9] Die Lichter der Stadt ziehen vorbei,\n[6.0:10.9] Ein Meer aus Neon, so einerlei.\n[12.0:16.9] Der lange Weg nach Hause, er ist so weit,\n[18.0:22.9] Ein stiller Moment in der Ewigkeit.",
+   "bpm": 98
+  },
+  {
+   "file": "demo/clip2.mp3",
+   "lyrics": "<instrumental>",
+   "bpm": 100
+  }
+ ]
+}

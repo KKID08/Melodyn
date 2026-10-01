@@ -28,6 +28,10 @@ Was die App mitdenkt:
 
 Der Google-Schlüssel liegt nur auf dem Server (Vercel). Im Browser und im Repo taucht er nie auf.
 
+## Demo-Modus (kostenlos)
+
+In den Einstellungen unter **Modus** auf **Demo** stellen, oder auf dem Schlüssel-Bildschirm „Erst mal ohne Schlüssel ausprobieren“ tippen. Dann geht keine einzige Anfrage an Google: Wünsche werden mit einfachen Stichwort-Regeln verstanden, es laufen echte, vorab erzeugte Lyria-Songs aus dem Ordner `demo/`, und die DJ-Stimme kommt aus der Sprachausgabe des Browsers. Clip, voller Song, Übergänge, Bibliothek und alle Menüs funktionieren wie im echten Modus. Gut zum Arbeiten am Design.
+
 ## Auf GitHub Pages nutzen
 
 Der Branch `gh-pages` wird als Seite veröffentlicht: **https://kkid08.github.io/Melodyn/**

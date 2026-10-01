@@ -3,6 +3,7 @@
    On GitHub Pages the browser talks to Google directly with the user's own key (kept in localStorage).
    On Vercel it goes through /api/* so the key stays on the server. */
 import * as Mix from './mix.js';
+import * as Demo from './demo.js';
 import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js';
 
 (() => {
@@ -146,7 +147,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     session: null, stations: store.get('stations', []),
     chat: [], feedback: [],
     taste: store.get('taste', {}), rules: store.get('rules', []), reactions: store.get('reactions', 0), liked: new Set(),
-    settings: Object.assign({ len: 'full', pregen: true, quick: true, dj: true, deep: true, limit: 25, code: '', key: '' }, store.get('settings', {})),
+    settings: Object.assign({ len: 'full', pregen: true, quick: true, dj: true, deep: true, mode: 'live', limit: 25, code: '', key: '' }, store.get('settings', {})),
     total: store.get('costs', { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }),
     sess: { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], firstMs: [], audioSec: 0, genSec: 0 },
     day: store.get('day', { date: '', count: 0 }),
@@ -193,7 +194,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const avg = s.genMs.length ? s.genMs.reduce((a, b) => a + b, 0) / s.genMs.length / 1000 : 0;
     const firstAvg = s.firstMs.length ? s.firstMs.reduce((a, b) => a + b, 0) / s.firstMs.length / 1000 : 0;
     // Music cost per hour of freshly generated audio (skips not included), plus Gemini share
-    const perHour = s.genSec > 0 ? (s.lyria + s.gemini) / (s.genSec / 3600) : (S.settings.len === 'clip' ? PRICE.clip * 120 : PRICE.full * 20.3);
+    const perHour = DEMO() ? 0 : s.genSec > 0 ? (s.lyria + s.gemini) / (s.genSec / 3600) : (S.settings.len === 'clip' ? PRICE.clip * 120 : PRICE.full * 20.3);
     const html = `<div class="big"><b>${usd(sum)}</b><span>diese Sitzung<br>${usd(tsum)} insgesamt</span></div>
       <dl>
         <dt>Songs von Lyria</dt><dd>${s.songs + s.clips} · ${usd(s.lyria)}</dd>
@@ -204,7 +205,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
         <dt>Erzeugte Musik</dt><dd>${fmt(s.genSec)} Min.</dd>
         <dt>Heute erzeugt</dt><dd>${S.day.count} / ${S.settings.limit}</dd>
       </dl>
-      <p class="note">Nach öffentlichen Preislisten gerechnet. Die echte Rechnung steht in Google AI Studio.</p>`;
+      <p class="note">${DEMO() ? 'Demo-Modus: Keine Anfrage geht an Google, alles kostet 0 $.' : 'Nach öffentlichen Preislisten gerechnet. Die echte Rechnung steht in Google AI Studio.'}</p>`;
     $('#costbox').innerHTML = html;
     $('#costbox2').innerHTML = html;
   }
@@ -233,7 +234,9 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     throw new ApiError(e.error || `Server-Fehler ${r.status}`, e.code);
   }
   // Direct mode: no server of our own (GitHub Pages, local file) or the user brought a key
-  const DIRECT = () => !!S.settings.key || /github\.io$/.test(location.hostname) || location.protocol === 'file:';
+  // Demo mode: no request ever leaves the browser, nothing costs money
+  const DEMO = () => S.settings.mode === 'demo';
+  const DIRECT = () => DEMO() || !!S.settings.key || /github\.io$/.test(location.hostname) || location.protocol === 'file:';
   async function google(model, body, attempt = 0) {
     if (!S.settings.key) { openKey(); throw new ApiError('Trag zuerst deinen Google API-Schlüssel ein.', 'nokey'); }
     let r;
@@ -270,7 +273,10 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const t0 = performance.now();
     const req = Object.assign({ history: S.chat.slice(-12), context: context() }, payload);
     let d;
-    if (DIRECT()) {
+    if (DEMO()) {
+      await sleep(payload.mode === 'next' ? 500 : 900);
+      d = { result: Demo.understand(req, demoHeard), usage: null };
+    } else if (DIRECT()) {
       let body;
       try { body = understandBody(req); } catch (e) { throw new ApiError(e.message); }
       const raw = await google(GEMINI_MODEL, body);
@@ -281,7 +287,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       d = await r.json();
     }
     const cost = geminiCost(d.usage);
-    addCost('gemini', cost);
+    if (!DEMO()) addCost('gemini', cost);
     const tok = d.usage ? d.usage.totalTokenCount : 0;
     log(`<b>Gemini</b> ${payload.mode === 'next' ? 'plant den nächsten Song' : payload.audio ? 'hört zu und versteht' : 'versteht'} · ${((performance.now() - t0) / 1000).toFixed(1)} s · ${tok} Tokens · ${usd(cost, 4)}`, JSON.stringify(d.result, null, 2));
     if (payload.mode === 'next') d.result._next = true;
@@ -294,16 +300,17 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const t0 = performance.now();
     let r, usage;
     try {
-      if (DIRECT()) { const raw = await google(model, producerBody(input, model)); r = readProducer(raw); usage = raw.usageMetadata; }
+      if (DEMO()) { await sleep(400); r = Demo.produce(input); }
+      else if (DIRECT()) { const raw = await google(model, producerBody(input, model)); r = readProducer(raw); usage = raw.usageMetadata; }
       else { const d = await (await post('/api/produce', { model, input })).json(); r = d.result; usage = d.usage; }
     } catch (e) {
       // Unknown model or unsupported option: don't try this one again in this session
       if (e.status === 400 || e.status === 403 || e.status === 404) deadModels.add(model);
       throw e;
     }
-    const cost = geminiCost(usage, model);
-    addCost('gemini', cost);
-    r.model = model; r.ms = performance.now() - t0; r.cost = cost;
+    const cost = DEMO() ? 0 : geminiCost(usage, model);
+    if (!DEMO()) addCost('gemini', cost);
+    r.model = DEMO() ? 'Demo' : model; r.ms = performance.now() - t0; r.cost = cost;
     return r;
   }
   async function producerChain(models, input) {
@@ -327,7 +334,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       rules: S.rules.filter(r => r.scope !== 'Aus').map(r => r.text),
       previous,
     };
-    const useDeep = S.settings.deep && !deadModels.has(PRODUCER_DEEP);
+    const useDeep = S.settings.deep && !deadModels.has(PRODUCER_DEEP) && !DEMO();
     let r = null;
     if (useDeep && deep) r = await producerChain([PRODUCER_DEEP, PRODUCER_FAST, GEMINI_MODEL], input);
     else if (useDeep) {
@@ -381,6 +388,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const len = opts.len || S.settings.len, retry = !!opts.retry, prompt = retry ? simplePrompt(res) : lyriaText(res, len);
     const t0 = performance.now();
     let d;
+    if (DEMO()) return demoCompose(res, len, prompt, t0);
     try {
       if (DIRECT()) d = await google(len === 'clip' ? LYRIA_CLIP : LYRIA_FULL, { contents: [{ parts: [{ text: prompt }] }] });
       else d = await (await post('/api/compose', { prompt, length: len })).json();
@@ -411,6 +419,22 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     };
   }
 
+  // Demo: a short, believable wait, then one of the real Lyria songs that ship with the app
+  async function demoCompose(res, len, prompt, t0) {
+    const [song] = await Promise.all([Demo.song(len), sleep(len === 'clip' ? 2200 : 5500)]);
+    const ms = performance.now() - t0, blob = song.blob;
+    S.sess.genMs.push(ms); S.sess.genSec += blob.size * 8 / 192000;
+    if (len === 'clip') S.sess.clips++; else S.sess.songs++;
+    renderCosts();
+    log(`<b>Demo</b> ${len === 'clip' ? 'Clip' : 'Song'} „${esc(res.title)}“ aus den Beispielsongs · ${(ms / 1000).toFixed(0)} s · kostenlos`, 'Dieser Prompt wäre an Lyria gegangen:\n' + prompt);
+    const id = 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    return {
+      id, title: res.title, station: res.station || (S.session && S.session.station) || 'Melodyn', palette: res.palette || 'self', seed: id,
+      spec: res.spec, target: res.lyria ? res.lyria.target : '', intent: res.lyria ? res.lyria.listener_intent : '', lyrics: song.lyrics, prompt, blob, url: URL.createObjectURL(blob), dur: 0, genMs: ms, len, demo: true,
+    };
+  }
+  let demoHeard = '';
+
   // ------------------------------------------------------------ DJ voice
   const dj = $('#dj');
   const PRICE_TTS = { in: 0.5e-6, out: 10e-6 };
@@ -425,6 +449,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
   }
   async function tts(text) {
     if (!text || !S.settings.dj) return null;
+    if (DEMO()) return 'speech:' + text;
     const t0 = performance.now();
     let d;
     try {
@@ -447,13 +472,14 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       const finish = () => { dj.onended = dj.onerror = null; S.djActive = false; djDone = null; renderNext(); $('#pcover').classList.remove('talking'); resolve(); };
       djDone = finish;
       S.djActive = true; renderNext(); $('#pcover').classList.add('talking');
+      if (url.startsWith('speech:')) { heard(); Demo.speak(url.slice(7)).then(finish); return; }
       dj.onended = finish; dj.onerror = finish;
       dj.src = url;
       const p = dj.play();
       if (p && p.catch) p.catch(finish);
     });
   }
-  function stopDj() { if (djDone) { dj.pause(); djDone(); } }
+  function stopDj() { if (djDone) { dj.pause(); Demo.hush(); djDone(); } }
   let fillerUrl = null;
   async function filler() {
     if (!fillerUrl) fillerUrl = await tts('Gleich kommt die ganze Nummer. Bleib kurz dran.');
@@ -705,7 +731,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     $('#ptitle').innerHTML = c ? '<span class="dots">Wird komponiert</span>' : esc(s.title);
     $('#pgenre').textContent = c ? (c.error ? c.error : `${c.spec.genre_de} · ${c.spec.tempo_bpm} BPM · „${c.title}“`) : `${s.spec.genre_de} · ${s.spec.tempo_bpm} BPM`;
     $('#pstation').textContent = s.station;
-    $('#psub').textContent = c ? (c.waitFull ? 'Die ganze Version ist gleich fertig' : 'Melodyn komponiert für dich') : s.replay ? 'Aus deiner Bibliothek · kostet nichts' : s.preview ? 'Vorschau · die ganze Version kommt gleich' : `für dich komponiert · ${(s.genMs / 1000).toFixed(0)} s Rechenzeit`;
+    $('#psub').textContent = c ? (c.waitFull ? 'Die ganze Version ist gleich fertig' : 'Melodyn komponiert für dich') : s.replay ? 'Aus deiner Bibliothek · kostet nichts' : s.preview ? 'Vorschau · die ganze Version kommt gleich' : s.demo ? 'Demo · Beispielsong, kostet nichts' : `für dich komponiert · ${(s.genMs / 1000).toFixed(0)} s Rechenzeit`;
     const saved = S.cur && (S.cur.preview ? (S.cur.wantSave || (S.cur.full && S.library.some(x => x.id === S.cur.full.id))) : S.library.some(x => x.id === S.cur.id));
     $('#paddicon').setAttribute('href', saved ? '#added' : '#add');
     $('#pup').classList.toggle('on', !!(S.cur && S.liked.has(S.cur.id)) && !c);
@@ -799,7 +825,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     paint($('#orb .orb'), pal, '4', { blur: 0.14, lines: 11, la: 0.28 });
   }
   function overLimit(retry) {
-    if (S.day.count < S.settings.limit || S.limitOk) return false;
+    if (DEMO() || S.day.count < S.settings.limit || S.limitOk) return false;
     toast(`Tageslimit von ${S.settings.limit} Songs erreicht`, false, retry ? { label: 'Trotzdem', fn: () => { S.limitOk = true; retry(); } } : null);
     return true;
   }
@@ -876,7 +902,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     S.nextToken++;
     const token = S.nextToken;
     S.next = null; S.nextTitle = '';
-    if (!S.settings.pregen || !S.session || S.day.count >= S.settings.limit) { S.nextState = 'none'; S.nextPromise = null; renderNext(); return; }
+    if (!S.settings.pregen || !S.session || (S.day.count >= S.settings.limit && !DEMO())) { S.nextState = 'none'; S.nextPromise = null; renderNext(); return; }
     S.nextState = 'working';
     renderNext();
     S.nextPromise = (async () => {
@@ -1135,6 +1161,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     duck(true);
     try { await micStart(); }
     catch (e) { duck(false); toast(e.message, false); openTalk('solo'); return; }
+    const hear = DEMO() ? Demo.hearStart() : null;
     paint($('#halo'), 'self', 'halo' + id, { blur: 0.18, fade: false });
     $('#halo').style.transform = '';
     $('#said').innerHTML = '<span class="w in" style="color:var(--text-3)">Sprich jetzt …</span>';
@@ -1163,6 +1190,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     });
     if (id !== listenId) return;
     const clip = await Rec.stop();
+    if (hear) demoHeard = await Demo.hearStop(hear);
     if (clip) { chime(); wishSent(); }
     bars.forEach(b => { b.style.height = '4px'; });
     if (!clip) { duck(false); setOn('s-listen', false); toast('Ich habe nichts gehört. Nochmal?', false); return; }
@@ -1309,7 +1337,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     talkBusy = false;
     setOn('s-talk', false);
   }
-  let talkRec = false;
+  let talkRec = false, composeHear = null;
   async function composeMic() {
     const form = $('#compose'), inp = $('#composein');
     if (inp.value.trim()) { const v = inp.value; inp.value = ''; updateComposeIcon(); talk({ text: v }); return; }
@@ -1317,6 +1345,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       unlockAudio();
       duck(true);
       try { await micStart(); } catch (e) { duck(false); toast(e.message, false); inp.focus(); return; }
+      composeHear = DEMO() ? Demo.hearStart() : null;
       talkRec = true; form.classList.add('recording');
       inp.placeholder = 'Aufnahme läuft … zum Senden tippen';
       $('#composeicon use').setAttribute('href', '#stop');
@@ -1329,6 +1358,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     inp.placeholder = 'Schreib Melodyn, wonach dir ist …';
     updateComposeIcon();
     const clip = await Rec.stop();
+    if (composeHear) { demoHeard = await Demo.hearStop(composeHear); composeHear = null; }
     if (!clip) { duck(false); toast('Ich habe nichts gehört', false); return; }
     talk({ audioClip: { mime: clip.mime, data: clip.data } });
   }
@@ -1366,6 +1396,18 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     setTimeout(() => $('#keyin').focus(), 300);
   }
 
+  // Switch between real Google calls and the free demo
+  function setMode(mode) {
+    if (mode === S.settings.mode) return;
+    S.settings.mode = mode; saveState();
+    // Real mode on a static host needs the listener's own Google key first
+    if (mode === 'live' && !S.settings.key && (/github\.io$/.test(location.hostname) || location.protocol === 'file:')) { renderSettings(); openKey(); }
+    // Whatever was prepared in the other mode doesn't belong here
+    S.nextToken++; S.next = null; S.nextPromise = null; S.nextState = 'none'; S.armed = null;
+    renderSettings(); renderNext();
+    toast(mode === 'demo' ? 'Demo-Modus: kostenlos, Beispielsongs' : 'Echter Modus: Gemini und Lyria, kostet Geld');
+  }
+
   // ------------------------------------------------------------ layout
   function fit() {
     const pw = $('#phonewrap'), ph = $('#phoneframe'), phone = $('#phone');
@@ -1386,6 +1428,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
   }
   function renderSettings() {
     $$('#lenseg button').forEach(b => b.classList.toggle('on', b.dataset.len === S.settings.len));
+    $$('#modeseg button').forEach(b => b.classList.toggle('on', b.dataset.mode === S.settings.mode));
+    document.body.classList.toggle('demo', DEMO());
     $('#pregen').setAttribute('aria-checked', String(!!S.settings.pregen));
     $('#quick').setAttribute('aria-checked', String(!!S.settings.quick));
     $('#djset').setAttribute('aria-checked', String(!!S.settings.dj));
@@ -1441,6 +1485,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
         if (o) talk({ text: `${o.label}: ${o.description}` });
         return;
       }
+      if (d.mode) { setMode(d.mode); return; }
       if (d.len) { S.settings.len = d.len; saveState(); renderSettings(); toast(d.len === 'clip' ? 'Kurze Songs: 30 s, schneller und günstiger' : 'Volle Songs: ca. 3 Minuten'); if (S.nextState === 'working' || S.nextState === 'ready') prepareNext(); return; }
       if (d.limit) { S.settings.limit = clamp(S.settings.limit + +d.limit, 5, 200); S.limitOk = false; saveState(); renderSettings(); return; }
       if (t.id === 'forget') {
@@ -1493,10 +1538,11 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       e.preventDefault();
       const k = $('#keyin').value.trim();
       if (k.length < 20) { $('#keyerr').textContent = 'Das sieht nicht nach einem vollständigen Schlüssel aus.'; return; }
-      S.settings.key = k; saveState(); setOn('s-key', false); renderSettings();
+      S.settings.key = k; S.settings.mode = 'live'; saveState(); setOn('s-key', false); renderSettings();
       toast('Schlüssel gespeichert. Tippe auf die Kugel.');
     });
     $('#keyclose').addEventListener('click', () => setOn('s-key', false));
+    $('#keydemo').addEventListener('click', () => { setOn('s-key', false); S.settings.mode = 'live'; setMode('demo'); });
     $('#toastact').addEventListener('click', () => { const f = toastFn; toastFn = null; $('#toast').classList.remove('on'); if (f) f(); });
     $('#setkey').addEventListener('click', () => openKey());
     $('#delkey').addEventListener('click', () => { S.settings.key = ''; saveState(); renderSettings(); toast('Schlüssel aus diesem Browser entfernt'); });
@@ -1565,7 +1611,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       S.library = rows.sort((a, b) => b.created - a.created).map(r => Object.assign(r, { url: URL.createObjectURL(r.blob) }));
     }
     document.documentElement.dataset.ready = '1';
-    if (DIRECT() && !S.settings.key) setTimeout(() => openKey(), 500);
+    if (DIRECT() && !S.settings.key && !DEMO()) setTimeout(() => openKey(), 500);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
