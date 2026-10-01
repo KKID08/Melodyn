@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f2eee5">
+<meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Melodyn</title>
-<link rel="stylesheet" href="app/fonts/fonts.css?v=0527c5e070">
-<link rel="stylesheet" href="app/app.css?v=0527c5e070">
+<link rel="stylesheet" href="app/fonts/fonts.css?v=f63d61c544">
+<link rel="stylesheet" href="app/app.css?v=f63d61c544">
 </head>
 <body class="app-live">
 
@@ -31,19 +31,15 @@
           <!-- Home -->
           <section class="scr tabscr on" id="s-home">
             <div class="head">
-              <div><p><span id="greet">Guten Abend</span><span class="demopill">Demo</span></p><div class="h-xl">Wonach ist <em>dir?</em></div></div>
+              <div class="h-xl"><span id="greet">Guten Abend</span><span class="demopill">Demo</span></div>
               <button class="avatar press" id="avatar" aria-label="Kosten und Einstellungen"><svg class="i"><use href="#tune"/></svg></button>
             </div>
-            <div class="orbzone">
-              <button class="orbwrap" id="orb" aria-label="Sprechen">
-                <svg class="sign" viewBox="0 0 100 100" aria-hidden="true">
-                  <g class="turn"><path class="o1" d="M0 50A50 50 0 0 1 100 50Z"/><path class="o2" d="M0 50A50 50 0 0 0 100 50Z"/></g>
-                  <g class="turn2"><circle class="i1" cx="50" cy="50" r="30"/><path class="i2" d="M20 50A30 30 0 0 0 80 50Z"/></g>
-                  <circle class="dot" cx="50" cy="50" r="8"/>
-                  <g class="bars"><rect x="37.7" y="57" width="2.6" height="14" rx="1.3"/><rect x="43.7" y="57" width="2.6" height="14" rx="1.3"/><rect x="49.7" y="57" width="2.6" height="14" rx="1.3"/><rect x="55.7" y="57" width="2.6" height="14" rx="1.3"/><rect x="61.7" y="57" width="2.6" height="14" rx="1.3"/></g>
-                </svg>
+            <div class="ask">
+              <button class="askcard" id="orb" aria-label="Sprechen: sag, wonach dir ist">
+                <span class="asktxt"><b>Wonach ist dir?</b><span>Sag es einfach. Melodyn macht den passenden Song.</span></span>
+                <span class="askmic"><svg class="i"><use href="#mic"/></svg></span>
               </button>
-              <div class="orb-label"><button class="micbtn" id="micbtn" aria-label="Sprechen"><svg class="i"><use href="#mic"/></svg></button><button class="typeinstead" id="typeinstead">Schreiben</button></div>
+              <button class="askfield" id="typeinstead"><svg class="i"><use href="#search"/></svg>Oder schreib, wonach dir ist …</button>
             </div>
             <div class="sec">
               <div class="sec-h"><div class="h-s" id="recenth">Weiter hören</div><button data-tab="lib" id="recentall">Alle</button></div>
@@ -53,14 +49,14 @@
 
           <!-- Library -->
           <section class="scr tabscr" id="s-lib">
-            <div class="head"><div class="h-xl">Deine <em>Songs</em></div><div class="acts"><button id="libplus" aria-label="Neuer Wunsch"><svg class="i"><use href="#plus"/></svg></button></div></div>
+            <div class="head"><div class="h-xl">Bibliothek</div><div class="acts"><button id="libplus" aria-label="Neuer Wunsch"><svg class="i"><use href="#plus"/></svg></button></div></div>
             <div class="seg" id="libseg"><button class="on" data-seg="songs">Gespeichert</button><button data-seg="hist">Verlauf</button></div>
             <div class="scroll" id="libbody"></div>
           </section>
 
           <!-- Taste -->
           <section class="scr tabscr" id="s-taste">
-            <div class="head"><div class="h-xl">Dein <em>Sound</em></div><button id="tastecost" aria-label="Kosten"><svg class="i"><use href="#tune"/></svg></button></div>
+            <div class="head"><div class="h-xl">Dein Sound</div><button id="tastecost" aria-label="Kosten"><svg class="i"><use href="#tune"/></svg></button></div>
             <div class="scroll">
               <div class="thero"><div class="tart" data-p="self" data-seed="taste"></div>
                 <div class="txt"><p id="tastesum">Noch lernt Melodyn dich kennen. Like, skippe und speichere, dann entsteht hier dein Profil.</p><span id="learned"></span></div></div>
@@ -107,7 +103,7 @@
             <div class="pcover" id="pcover"><div class="coverart" id="pcoverart"></div><div class="shim"></div><div class="waitclock" id="waitclock"></div></div>
             <div class="pmeta">
               <div style="min-width:0"><h1 id="ptitle"></h1><p id="pgenre"></p></div>
-              <button class="add" id="padd" aria-label="In Bibliothek speichern"><svg class="i"><use href="#add" id="paddicon"/></svg></button>
+              <button class="like" id="pup" aria-label="Gefällt mir"><svg class="i"><use href="#heart"/></svg></button>
             </div>
             <div class="pprog"><div class="track" id="ptrack"><i id="pbar"></i></div><div class="times"><span id="pcur">0:00</span><span id="prem">−0:00</span></div></div>
             <div class="pctrl">
@@ -115,10 +111,10 @@
               <button class="circle mid" id="pprev" aria-label="Vorheriger Song"><svg class="i f"><use href="#prev"/></svg></button>
               <button class="circle play" id="pplay" aria-label="Abspielen"><svg class="i f"><use href="#play" class="playuse"/></svg></button>
               <button class="circle mid" id="pnextbtn" aria-label="Nächster Song"><svg class="i f"><use href="#next"/></svg></button>
-              <button class="circle side" id="pup" aria-label="Gefällt mir"><svg class="i"><use href="#up"/></svg></button>
+              <button class="circle side" id="padd" aria-label="In Bibliothek speichern"><svg class="i"><use href="#add" id="paddicon"/></svg></button>
             </div>
             <div class="pnext" id="pnext"><span class="ld"><i></i><i></i><i></i></span><span id="pnexttxt"></span></div>
-            <button class="steer" id="steer"><span>„Etwas schneller“, „mehr Gitarren“ …</span><span class="circle"><svg class="i"><use href="#mic"/></svg></span></button>
+            <button class="steer" id="steer"><span>Wunsch ändern, z. B. „etwas ruhiger“</span><span class="circle"><svg class="i"><use href="#mic"/></svg></span></button>
           </section>
 
           <!-- Conversation -->
@@ -214,6 +210,6 @@
 
 <audio id="audio" preload="auto" playsinline></audio>
 <audio id="dj" preload="auto" playsinline></audio>
-<script type="module" src="app/app.js?v=0527c5e070"></script>
+<script type="module" src="app/app.js?v=f63d61c544"></script>
 </body>
 </html>

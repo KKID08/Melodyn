@@ -2,9 +2,9 @@
    Real microphone -> Gemini (understands) -> Music-Spec -> Lyria (composes) -> real MP3.
    On GitHub Pages the browser talks to Google directly with the user's own key (kept in localStorage).
    On Vercel it goes through /api/* so the key stays on the server. */
-import * as Mix from './mix.js?v=0527c5e070';
-import * as Demo from './demo.js?v=0527c5e070';
-import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=0527c5e070';
+import * as Mix from './mix.js?v=f63d61c544';
+import * as Demo from './demo.js?v=f63d61c544';
+import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=f63d61c544';
 
 (() => {
   'use strict';
@@ -49,6 +49,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
   <symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></symbol>
   <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7"/></symbol>
   <symbol id="tune" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+  <symbol id="heart" viewBox="0 0 24 24"><path d="M12 20.3s-7.8-4.6-7.8-10.4A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 7.8 2.6c0 5.8-7.8 10.4-7.8 10.4z"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.3"/><path d="M15.5 15.5l4.5 4.5"/></symbol>
   <symbol id="stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2.2"/></symbol>
   <symbol id="logo" viewBox="0 0 32 32"><path d="M4 18.5c2.2 0 2.6-7 4.8-7s2.6 11 4.8 11 2.6-15 4.8-15 2.6 15 4.8 15 2.6-7.5 4.8-7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>`);
@@ -839,10 +841,9 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
   function paintOrb() {
     const c = S.cur && !S.composing ? S.cur : null;
     const p = (c && c.palette) || (S.session && S.session.palette) || 'self', pal = PAL[p] || PAL.self;
-    const orb = $('#orb'), phone = $('#phone');
+    const orb = $('#orb');
     orb.style.setProperty('--h1', pal[0]); orb.style.setProperty('--h2', ACCENT[p] || pal[1]);
     orb.style.setProperty('--h3', pal[2] === (ACCENT[p] || pal[1]) ? pal[1] : pal[2]); orb.style.setProperty('--h4', pal[4]);
-    phone.style.setProperty('--acc', ACCENT[p] || '#d9653b');
     const bpm = c && S.playing && c.spec ? c.spec.tempo_bpm : 0;
     orb.classList.toggle('beat', !!bpm);
     if (bpm) orb.style.setProperty('--beat', (60 / bpm).toFixed(3) + 's');
@@ -1291,7 +1292,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       setOn('s-listen', false);
     }
   }
-  function waveColours(p) { $('#s-listen').style.setProperty('--acc', ACCENT[p] || '#d9653b'); }
+  function waveColours() { /* the interface keeps one brand colour */ }
   function cancelListen() { listenId++; Rec.cancel(); if (sendNow) sendNow(); duck(false); setOn('s-listen', false); }
 
   // ------------------------------------------------------------ conversation sheet
@@ -1445,7 +1446,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const dark = t === 'dark' || (t === 'auto' && darkQ && darkQ.matches);
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     const m = document.querySelector('meta[name="theme-color"]');
-    if (m) m.content = dark ? '#121211' : '#f3f0ea';
+    if (m) m.content = dark ? '#0e0e10' : '#ffffff';
     $$('#themeseg button').forEach(b => b.classList.toggle('on', b.dataset.look === t));
   }
   if (darkQ && darkQ.addEventListener) darkQ.addEventListener('change', applyTheme);
@@ -1551,7 +1552,6 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       }
     });
     $('#orb').addEventListener('click', listen);
-    $('#micbtn').addEventListener('click', listen);
     $('#typeinstead').addEventListener('click', () => { unlockAudio(); openTalk('solo'); setTimeout(() => $('#composein').focus(), 350); });
     $('#libplus').addEventListener('click', () => { showTab('home'); listen(); });
     $('#listenclose').addEventListener('click', cancelListen);
