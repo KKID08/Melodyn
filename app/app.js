@@ -2,10 +2,10 @@
    Real microphone -> Gemini (understands) -> Music-Spec -> Lyria (composes) -> real MP3.
    On GitHub Pages the browser talks to Google directly with the user's own key (kept in localStorage).
    On Vercel it goes through /api/* so the key stays on the server. */
-import * as Mix from './mix.js?v=4ccb2b6d69';
-import * as Demo from './demo.js?v=4ccb2b6d69';
-import { Orb } from './orb.js?v=4ccb2b6d69';
-import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=4ccb2b6d69';
+import * as Mix from './mix.js?v=ee9fbe8111';
+import * as Demo from './demo.js?v=ee9fbe8111';
+import { Orb } from './orb.js?v=ee9fbe8111';
+import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=ee9fbe8111';
 
 (() => {
   'use strict';
@@ -68,6 +68,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     rain:    { bg: '#101a24', c: ['#6f8fa8', '#c6d3dc', '#3d5a73', '#9bb3a6', '#e2e8ec'] },
     self:    { bg: '#0d0f2a', c: ['#ff7a2f', '#ffb23f', '#2a47b8', '#e23d6d', '#8fc7b5', '#6d5bd0'] },
   };
+  const hexA = (h, a) => { const v = parseInt(h.slice(1), 16); return `rgba(${v >> 16 & 255},${v >> 8 & 255},${v & 255},${a})`; };
   function rng(seed) {
     let a = 0;
     for (const ch of String(seed)) a = Math.imul(a ^ ch.charCodeAt(0), 2654435761) >>> 0;
@@ -93,6 +94,9 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     }
     return [cx / W, cy / H];
   }
+  // Aura artwork. The soft colour field is painted once into a small canvas (it is blurry anyway) and
+  // the whole layer drifts with a cheap CSS transform. Live CSS blur on moving blobs looked the same
+  // but made phones re-blur the full screen on every frame.
   function paint(el, p, seed, o = {}) {
     if (!el) return;
     el.classList.add('aura');
@@ -102,11 +106,25 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const lay = document.createElement('div');
     lay.className = 'lay';
     lay.style.background = pal.bg;
+    const f = Math.min(1, 200 / M), cv = document.createElement('canvas');
+    // The field is drawn 24% larger than the element so the drift never shows an edge
+    const pad = 0.12, cw = Math.max(8, Math.round(W * (1 + 2 * pad) * f)), ch = Math.max(8, Math.round(H * (1 + 2 * pad) * f));
+    cv.width = cw; cv.height = ch; cv.className = 'field';
+    const c = cv.getContext('2d');
+    c.fillStyle = pal.bg; c.fillRect(0, 0, cw, ch);
+    c.setTransform(f, 0, 0, f, W * pad * f, H * pad * f);
     for (let k = 0; k < n; k++) {
-      const i = document.createElement('i'), s = M * (0.5 + r() * 0.5);
-      i.style.cssText = `width:${s}px;height:${s}px;left:${r() * W - s / 2}px;top:${r() * H - s / 2}px;background:${pal.c[k % pal.c.length]};filter:blur(${M * blur}px);opacity:${0.75 + r() * 0.25};--dx:${((r() - 0.5) * M * 0.3).toFixed(1)}px;--dy:${((r() - 0.5) * M * 0.3).toFixed(1)}px;--sc:${(0.85 + r() * 0.35).toFixed(2)};--d:${(9 + r() * 10).toFixed(1)}s;animation-delay:-${(r() * 10).toFixed(1)}s`;
-      lay.appendChild(i);
+      const s = M * (0.5 + r() * 0.5), x = r() * W, y = r() * H, b = M * blur;
+      const R0 = s / 2 + b, inner = Math.max(0, (s / 2 - b) / R0);
+      const g = c.createRadialGradient(x, y, 0, x, y, R0), col = pal.c[k % pal.c.length], a = 0.75 + r() * 0.25;
+      g.addColorStop(0, hexA(col, a)); g.addColorStop(inner, hexA(col, a * 0.92)); g.addColorStop(1, hexA(col, 0));
+      c.fillStyle = g; c.fillRect(x - R0, y - R0, R0 * 2, R0 * 2);
+      r(); r(); r(); r(); r(); // same number of draws per blob as before, so existing artwork keeps its look
     }
+    cv.style.setProperty('--d', (14 + r() * 10).toFixed(1) + 's');
+    cv.style.setProperty('--dx', ((r() - 0.5) * 8).toFixed(1) + '%');
+    cv.style.setProperty('--dy', ((r() - 0.5) * 8).toFixed(1) + '%');
+    lay.appendChild(cv);
     if (o.lines) {
       const cv = document.createElement('canvas'), d = 2;
       cv.width = Math.round(W * d); cv.height = Math.round(H * d);
@@ -1176,7 +1194,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     catch (e) { duck(false); toast(e.message, false); openTalk('solo'); return; }
     const hear = DEMO() ? Demo.hearStart() : null;
     $('#halo').style.transform = '';
-    if (!haloOrb) haloOrb = new Orb($('#halo'), { glow: 0.22, rings: 14, lights: 6, still: REDUCED });
+    if (!haloOrb) haloOrb = new Orb($('#halo'), { glow: 0.22, rings: 11, lights: 5, still: REDUCED, maxDpr: 1 });
     haloOrb.setPalette(PAL[(S.session && S.session.palette) || 'self'], true);
     haloOrb.setBusy(false); haloOrb.setLevel(0);
     $('#said').innerHTML = '<span class="w in" style="color:var(--text-3)">Sprich jetzt …</span>';
