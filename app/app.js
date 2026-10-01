@@ -2,10 +2,10 @@
    Real microphone -> Gemini (understands) -> Music-Spec -> Lyria (composes) -> real MP3.
    On GitHub Pages the browser talks to Google directly with the user's own key (kept in localStorage).
    On Vercel it goes through /api/* so the key stays on the server. */
-import * as Mix from './mix.js';
-import * as Demo from './demo.js';
-import { Orb } from './orb.js';
-import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js';
+import * as Mix from './mix.js?v=4ccb2b6d69';
+import * as Demo from './demo.js?v=4ccb2b6d69';
+import { Orb } from './orb.js?v=4ccb2b6d69';
+import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=4ccb2b6d69';
 
 (() => {
   'use strict';

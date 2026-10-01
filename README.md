@@ -38,6 +38,8 @@ Der Branch `gh-pages` wird als Seite veröffentlicht: **https://kkid08.github.io
 
 Beim ersten Öffnen fragt die App nach einem Google API-Schlüssel aus [Google AI Studio](https://aistudio.google.com/apikey). Der Schlüssel wird nur im eigenen Browser gespeichert und geht direkt an Google, er landet nie im Repo. Wer die Seite öffnet, braucht einen eigenen Schlüssel.
 
+Vor jedem Veröffentlichen `node tools/stamp.mjs` ausführen. Das hängt eine Versionsnummer an alle App-Dateien, damit Browser ein Update sofort laden statt bis zu 10 Minuten die alte Version zu zeigen.
+
 ## Alternativ: auf Vercel veröffentlichen
 
 1. Auf [vercel.com](https://vercel.com) mit dem GitHub-Konto anmelden.
