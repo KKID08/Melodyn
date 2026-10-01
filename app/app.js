@@ -4,6 +4,7 @@
    On Vercel it goes through /api/* so the key stays on the server. */
 import * as Mix from './mix.js';
 import * as Demo from './demo.js';
+import { Orb } from './orb.js';
 import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js';
 
 (() => {
@@ -532,6 +533,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     $('#mini').classList.toggle('on', mini);
     $('#phone').classList.toggle('hasmini', mini);
     $('#tabbar').style.transform = full ? 'translateY(100%)' : '';
+    orbsVisible();
   }
   function showTab(t) {
     S.tab = t;
@@ -540,6 +542,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     if (t === 'lib') renderLib();
     if (t === 'taste') renderTaste(true);
     if (t === 'home') renderRecent();
+    orbsVisible();
   }
 
   // ------------------------------------------------------------ playback
@@ -576,6 +579,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     $('#miniplay use').setAttribute('href', S.playing ? '#pause' : '#play');
     $('#pcover').classList.toggle('paused', !S.playing && !S.composing);
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = S.playing ? 'playing' : 'paused';
+    paintOrb();
   }
   // ------------------------------------------------------------ DJ transitions between tracks
   // Clip -> full song and song -> next song. Normal playback stays on the <audio> element (lock screen,
@@ -815,14 +819,19 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     S.stations = [st, ...S.stations.filter(x => x.station !== st.station)].slice(0, 8);
     saveState(); renderTaste(false); renderRecent(); paintOrb();
   }
-  // The orb on the home screen takes on the colours of the current moment
-  let orbPal = 'self';
+  // The orb on the home screen takes on the colours of the current moment and pulses with the music
+  let homeOrb = null, haloOrb = null;
   function paintOrb() {
-    const pal = S.session ? S.session.palette || 'self' : 'self';
-    if (pal === orbPal) return;
-    orbPal = pal;
-    paint($('#orb .glow'), pal, '4', { blur: 0.22 });
-    paint($('#orb .orb'), pal, '4', { blur: 0.14, lines: 11, la: 0.28 });
+    if (!homeOrb) return;
+    const c = S.cur && !S.composing ? S.cur : null;
+    homeOrb.setPalette(PAL[(c && c.palette) || (S.session && S.session.palette) || 'self'] || PAL.self);
+    homeOrb.setBpm(c && S.playing && c.spec ? c.spec.tempo_bpm : 0);
+  }
+  function orbsVisible() {
+    if (!homeOrb) return;
+    const covered = isOn('s-player') || isOn('s-listen') || isOn('s-key') || isOn('s-code') || (isOn('s-talk') && $('#s-talk').classList.contains('solo'));
+    if (S.tab === 'home' && !covered && !document.hidden) homeOrb.start(); else homeOrb.stop();
+    if (haloOrb && !isOn('s-listen')) setTimeout(() => { if (!isOn('s-listen')) haloOrb.stop(); }, 700);
   }
   function overLimit(retry) {
     if (DEMO() || S.day.count < S.settings.limit || S.limitOk) return false;
@@ -1069,8 +1078,13 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
   }
   function renderRecent() {
     const row = $('#recent');
+    $('#recenth').textContent = S.stations.length ? 'Weiter hören' : 'Zum Start';
+    $('#recentall').hidden = !S.stations.length;
     if (!S.stations.length) {
-      row.innerHTML = '<p class="empty" style="text-align:left;padding:18px 24px 0 0">Hier erscheinen deine Momente, sobald Melodyn den ersten Song für dich gemacht hat.</p>';
+      // First visit: a few moments to tap instead of an empty shelf
+      const ideas = [['Nachtfahrt nach Hause', 'tunnel', 'Synthwave'], ['90er West Coast, chillig', 'brass', 'Hip-Hop'], ['Ich muss mich konzentrieren', 'focus', 'Lo-Fi'], ['Ich koche für Freunde', 'kitchen', 'Neo-Soul'], ['Laufen gehen', 'run', 'Drum & Bass']];
+      row.innerHTML = ideas.map(([w, p, g], i) => `<button class="card idea" data-wish="${esc(w)}"><div class="art" id="rc${i}"></div><b>${esc(w)}</b><span>${esc(g)}</span></button>`).join('');
+      ideas.forEach(([w, p], i) => paint($('#rc' + i), p, w, { blur: 0.12, lines: 9, fade: false }));
       return;
     }
     row.innerHTML = S.stations.slice(0, 6).map((st, i) => `<button class="card" data-station="${i}"><div class="art" id="rc${i}"></div><b>${esc(st.station)}</b><span>${esc(S.session && S.session.station === st.station ? 'Läuft gerade' : st.spec.genre_de)}</span></button>`).join('');
@@ -1086,7 +1100,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       const bpm = likes.length ? Math.round(likes.reduce((a, f) => a + f.bpm, 0) / likes.length) : null;
       $('#tastesum').textContent = `Am liebsten ${top.join(' und ')}${bpm ? `, meist um ${bpm} BPM` : ''}.`;
     }
-    $('#learned').textContent = S.reactions ? `Gelernt aus ${S.reactions} Reaktionen` : '';
+    $('#learned').textContent = S.reactions ? `Gelernt aus ${S.reactions} ${S.reactions === 1 ? 'Reaktion' : 'Reaktionen'}` : '';
     $('#nowblk').innerHTML = S.session
       ? `<div class="nowcard"><b>Gerade: ${esc(S.session.station)}</b><span>Bleibt nur für diese Session</span><button class="forget" id="forget">Vergessen</button></div>`
       : '<div class="nowcard gone"><b>Keine aktive Session</b><span>Sag Melodyn, wonach dir ist</span></div>';
@@ -1154,7 +1168,6 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
 
   // ------------------------------------------------------------ listening screen
   let listenId = 0, sendNow = null;
-  function buildWave() { $('#wave').innerHTML = '<i></i>'.repeat(46); }
   async function listen() {
     const id = ++listenId;
     unlockAudio();
@@ -1162,15 +1175,17 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     try { await micStart(); }
     catch (e) { duck(false); toast(e.message, false); openTalk('solo'); return; }
     const hear = DEMO() ? Demo.hearStart() : null;
-    paint($('#halo'), 'self', 'halo' + id, { blur: 0.18, fade: false });
     $('#halo').style.transform = '';
+    if (!haloOrb) haloOrb = new Orb($('#halo'), { glow: 0.22, rings: 14, lights: 6, still: REDUCED });
+    haloOrb.setPalette(PAL[(S.session && S.session.palette) || 'self'], true);
+    haloOrb.setBusy(false); haloOrb.setLevel(0);
     $('#said').innerHTML = '<span class="w in" style="color:var(--text-3)">Sprich jetzt …</span>';
     $('#got').innerHTML = '';
     $('#livelabel').innerHTML = '<i></i>Melodyn hört zu';
     $('#listenhint').textContent = 'Tippen zum Senden';
     $('#stopbtn').style.visibility = '';
     setOn('s-listen', true);
-    const bars = $$('#wave i'), levels = new Array(bars.length).fill(0);
+    requestAnimationFrame(() => { haloOrb.resize(); haloOrb.start(); });
     let spoke = false, quietSince = 0;
     const t0 = performance.now();
     await new Promise(resolve => {
@@ -1178,8 +1193,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       const loop = () => {
         if (id !== listenId || !Rec.on) return resolve();
         const l = Rec.level();
-        levels.push(l); levels.shift();
-        bars.forEach((b, k) => { const env = Math.sin(Math.PI * k / (bars.length - 1)); b.style.height = (5 + Math.min(1, levels[k] * 9) * 54 * (0.4 + 0.6 * env)).toFixed(1) + 'px'; b.style.opacity = (0.4 + env * 0.6).toFixed(2); });
+        haloOrb.setLevel(Math.min(1, l * 9));
         const now = performance.now();
         if (l > 0.03) { spoke = true; quietSince = now; }
         if (spoke && now - quietSince > 1600) return resolve();
@@ -1192,8 +1206,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const clip = await Rec.stop();
     if (hear) demoHeard = await Demo.hearStop(hear);
     if (clip) { chime(); wishSent(); }
-    bars.forEach(b => { b.style.height = '4px'; });
-    if (!clip) { duck(false); setOn('s-listen', false); toast('Ich habe nichts gehört. Nochmal?', false); return; }
+    haloOrb.setLevel(0); haloOrb.setBusy(true);
+    if (!clip) { duck(false); haloOrb.stop(); setOn('s-listen', false); toast('Ich habe nichts gehört. Nochmal?', false); return; }
     $('#livelabel').innerHTML = 'Melodyn versteht …';
     $('#listenhint').textContent = 'Gemini hört sich deine Aufnahme an';
     $('#stopbtn').style.visibility = 'hidden';
@@ -1202,7 +1216,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     try { res = await understand({ mode: 'request', audio: { mime: clip.mime, data: clip.data } }); }
     catch (e) {
       if (id !== listenId) return;
-      duck(false); wishT0 = 0;
+      duck(false); wishT0 = 0; haloOrb.setBusy(false);
       $('#said').innerHTML = `<span class="w in" style="font-size:22px">${esc(e.message)}</span>`;
       $('#livelabel').textContent = 'Hat nicht geklappt';
       $('#listenhint').textContent = 'Schließen mit ✕ oben links';
@@ -1221,7 +1235,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     $('#livelabel').textContent = 'Verstanden';
     // Music and DJ start working right now; the screen keeps showing what was understood meanwhile
     if (!res.ask) startSong(res, { delayOpen: REDUCED ? 300 : 2600 });
-    paint($('#halo'), res.palette || 'self', 'h' + id, { blur: 0.18 });
+    haloOrb.setBusy(false); haloOrb.setPalette(PAL[res.palette] || PAL.self); haloOrb.ripple();
     const said = $('#said'); said.innerHTML = '';
     for (const word of String(res.transcript || '').split(/\s+/).filter(Boolean)) {
       const w = document.createElement('span'); w.className = 'w'; w.textContent = word;
@@ -1234,7 +1248,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     $('#listenhint').textContent = res.ask ? 'Melodyn hat eine Frage' : 'Lyria komponiert schon';
     await sleep(REDUCED ? 200 : 700);
     if (id !== listenId) return;
-    $('#halo').style.transform = 'translateY(-160px) scale(1.2)';
+    $('#halo').style.transform = 'translate(-50%, -18%) scale(1.15)';
     await sleep(300);
     if (res.ask) {
       duck(false); wishT0 = 0;
@@ -1249,7 +1263,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       setOn('s-listen', false);
     }
   }
-  function cancelListen() { listenId++; Rec.cancel(); if (sendNow) sendNow(); duck(false); setOn('s-listen', false); }
+  function cancelListen() { listenId++; Rec.cancel(); if (sendNow) sendNow(); duck(false); if (haloOrb) haloOrb.stop(); setOn('s-listen', false); }
 
   // ------------------------------------------------------------ conversation sheet
   function scrollMsgs() { const m = $('#msgs'); m.scrollTop = m.scrollHeight; }
@@ -1372,7 +1386,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const lyr = String(s.lyrics || '').replace(/<instrumental>/i, '').trim();
     if (lyr) {
       const blocks = lyr.split(/\[\[[A-Z]\d+\]\]/).map(b => b.trim()).filter(Boolean);
-      html += blocks.map(b => `<div class="part">${b.split('\n').map(l => l.replace(/^\[:\]\s*/, '').trim()).filter(Boolean).map(l => `<p>${esc(l)}</p>`).join('')}</div>`).join('');
+      html += blocks.map(b => `<div class="part">${b.split('\n').map(l => l.replace(/^\[:\]\s*/, '').replace(/^\[\d+(?:\.\d+)?:\d+(?:\.\d+)?\]\s*/, '').trim()).filter(Boolean).map(l => `<p>${esc(l)}</p>`).join('')}</div>`).join('');
     } else html += '<div class="part"><p>Instrumental, ohne Text.</p></div>';
     if (s.prompt) html += `<div class="h-s">So hat Melodyn den Song bei Lyria bestellt</div>${s.intent ? `<p class="meta">Verstanden: ${esc(s.intent)}</p>` : ''}${s.target ? `<p class="meta">Ziel: ${esc(s.target)}</p>` : ''}<pre>${esc(s.prompt)}</pre>`;
     $('#lyrbody').innerHTML = html;
@@ -1480,6 +1494,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
         return;
       }
       if (d.chip) { talk({ text: d.chip }); return; }
+      if (d.wish) { unlockAudio(); openTalk('solo', { silent: true }); talk({ text: d.wish }); return; }
       if (d.opt !== undefined) {
         const o = ($('#msgs')._opts || [])[+d.opt];
         if (o) talk({ text: `${o.label}: ${o.description}` });
@@ -1593,6 +1608,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       feedback('complete'); nextSong('end');
     });
     window.addEventListener('resize', fit);
+    window.addEventListener('resize', () => { if (homeOrb) homeOrb.resize(); if (haloOrb) haloOrb.resize(); });
     if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
     setInterval(clockTick, 15000);
     setInterval(renderCosts, 5000);
@@ -1600,11 +1616,18 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
 
   // ------------------------------------------------------------ boot
   async function boot() {
-    buildWave();
     clockTick();
     fit();
     bind();
     requestAnimationFrame(() => paintStatic(document));
+    homeOrb = new Orb($('#orbcv'), { glow: 0.42, still: REDUCED });
+    paintOrb();
+    requestAnimationFrame(() => { homeOrb.resize(); orbsVisible(); });
+    const orbBtn = $('#orb');
+    orbBtn.addEventListener('pointerdown', () => homeOrb.setPressed(true));
+    for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) orbBtn.addEventListener(ev, () => homeOrb.setPressed(false));
+    orbBtn.addEventListener('click', () => homeOrb.ripple());
+    document.addEventListener('visibilitychange', orbsVisible);
     renderRecent(); renderTaste(false); renderSettings(); syncChrome();
     if (await DB.open()) {
       const rows = (await DB.all()) || [];
