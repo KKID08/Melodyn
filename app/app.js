@@ -2,9 +2,9 @@
    Real microphone -> Gemini (understands) -> Music-Spec -> Lyria (composes) -> real MP3.
    On GitHub Pages the browser talks to Google directly with the user's own key (kept in localStorage).
    On Vercel it goes through /api/* so the key stays on the server. */
-import * as Mix from './mix.js?v=8693204862';
-import * as Demo from './demo.js?v=8693204862';
-import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=8693204862';
+import * as Mix from './mix.js?v=0527c5e070';
+import * as Demo from './demo.js?v=0527c5e070';
+import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=0527c5e070';
 
 (() => {
   'use strict';
@@ -481,13 +481,33 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     if (!fillerUrl) fillerUrl = await tts('Gleich kommt die ganze Nummer. Bleib kurz dran.');
     return fillerUrl;
   }
+  // Tell the phone this is a music app: media volume and volume buttons apply. Only while the
+  // microphone records does it switch to play-and-record, and right back afterwards. Without this,
+  // iPhones keep using the "call" volume after a recording and ignore the music volume.
+  function audioSession(type) { try { if (navigator.audioSession) navigator.audioSession.type = type; } catch { /* not supported */ } }
+  // The Web Audio engine only runs while a transition or the chime needs it; a context left running
+  // on iPhones sits on a different volume channel than normal music.
+  let ctxT;
+  function sleepCtx(ms = 1200) {
+    clearTimeout(ctxT);
+    ctxT = setTimeout(() => { if (!mix && mixCtx && mixCtx.state === 'running') mixCtx.suspend().catch(() => {}); }, ms);
+  }
+  async function awake() {
+    const c = getMixCtx();
+    if (!c) return false;
+    clearTimeout(ctxT);
+    if (c.state !== 'running') { try { await c.resume(); } catch { /* blocked */ } }
+    return c.state === 'running';
+  }
   // Instant audible "got it" while Gemini is still thinking
   let chimeCtx;
   function chime() {
     try {
       chimeCtx = getMixCtx();
       if (!chimeCtx) return;
+      clearTimeout(ctxT);
       chimeCtx.resume();
+      sleepCtx(1500);
       const t = chimeCtx.currentTime;
       [[660, 0], [990, 0.12]].forEach(([f, d]) => {
         const o = chimeCtx.createOscillator(), g = chimeCtx.createGain();
@@ -551,7 +571,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
   let unlocked = false;
   function unlockAudio() {
     const ctx = getMixCtx();
-    if (ctx && ctx.state === 'suspended') ctx.resume();
+    // resuming inside the tap unlocks Web Audio for later; then it goes back to sleep
+    if (ctx && ctx.state === 'suspended' && !mix) { ctx.resume().then(() => sleepCtx(600)).catch(() => {}); }
     if (unlocked) return;
     unlocked = true;
     for (const el of S.cur ? [dj] : [audio, dj]) {
@@ -636,7 +657,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     if (!m.adopted) adoptTarget(m);
     audio.src = m.to.url;
     const go = () => {
-      if (paused) { audio.currentTime = m.h.fullPos(m.ctx.currentTime); m.h.stop(); mix = null; release(m); syncPlayIcons(); renderTime(); return; }
+      if (paused) { audio.currentTime = m.h.fullPos(m.ctx.currentTime); m.h.stop(); mix = null; release(m); syncPlayIcons(); renderTime(); sleepCtx(); return; }
       audio.currentTime = m.h.fullPos(m.ctx.currentTime + 0.2);
       const pr = audio.play();
       audio.addEventListener('playing', function onPlay() {
@@ -647,6 +668,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
         if (mix === m) mix = null;
         release(m);
         syncPlayIcons();
+        sleepCtx();
       });
       if (pr && pr.catch) pr.catch(() => { m.h.stop(); if (mix === m) mix = null; syncPlayIcons(); });
     };
@@ -658,6 +680,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     mix = null;
     m.h.stop();
     release(m);
+    sleepCtx();
     return m;
   }
   // Decoded songs take ~60 MB each: drop them as soon as a transition is over
@@ -931,7 +954,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const q = S.cur && S.cur.replay ? queueNext(S.cur) : null;
     if (q) {
       const c = S.cur;
-      if (reason === 'skip' && c.mixTo && c.mixTo.to === q && !document.hidden && !audio.paused) {
+      if (reason === 'skip' && c.mixTo && c.mixTo.to === q && !document.hidden && !audio.paused && await awake()) {
         const qp = Mix.quickPlan(c.mixTo.ia, c.mixTo.ib, audio.currentTime);
         if (qp && runMix(c, qp)) return;
       }
@@ -946,7 +969,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     if (S.next && S.nextState === 'ready') {
       const n = S.next, c = S.cur;
       // Skip with the next song already analysed: short echo-out on the next beat instead of a hard cut
-      if (reason === 'skip' && c && c.mixTo && c.mixTo.to === n && !document.hidden && !audio.paused) {
+      if (reason === 'skip' && c && c.mixTo && c.mixTo.to === n && !document.hidden && !audio.paused && await awake()) {
         const qp = Mix.quickPlan(c.mixTo.ia, c.mixTo.ib, audio.currentTime);
         if (qp && runMix(c, qp)) return;
       }
@@ -1129,6 +1152,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       this.stream.getTracks().forEach(t => t.stop());
       const sr = this.ctx.sampleRate;
       await this.ctx.close().catch(() => {});
+      audioSession('playback');
       const total = this.chunks.reduce((a, c) => a + c.length, 0);
       if (total < sr * 0.4) return null;
       const all = new Float32Array(total); let o = 0;
@@ -1151,12 +1175,14 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
       return { data: btoa(bin), mime: 'audio/wav', seconds: n / target };
     },
-    cancel() { if (this.on) { this.on = false; try { this.stream.getTracks().forEach(t => t.stop()); this.ctx.close(); } catch { /* ignore */ } } },
+    cancel() { if (this.on) { this.on = false; try { this.stream.getTracks().forEach(t => t.stop()); this.ctx.close(); } catch { /* ignore */ } } audioSession('playback'); },
   };
   async function micStart() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Dieser Browser erlaubt kein Mikrofon. Schreib stattdessen.');
+    audioSession('play-and-record');
     try { await Rec.start(); }
-    catch (e) { throw new Error(e && e.name === 'NotAllowedError' ? 'Mikrofon nicht erlaubt. Erlaube es in den Browser-Einstellungen oder schreib stattdessen.' : 'Mikrofon konnte nicht starten. Schreib stattdessen.'); }
+    catch (e) {
+      audioSession('playback'); throw new Error(e && e.name === 'NotAllowedError' ? 'Mikrofon nicht erlaubt. Erlaube es in den Browser-Einstellungen oder schreib stattdessen.' : 'Mikrofon konnte nicht starten. Schreib stattdessen.'); }
   }
 
   // ------------------------------------------------------------ listening screen
@@ -1608,6 +1634,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       const c = S.cur;
       if (!c || mix || document.hidden || audio.paused || !c.mixTo || !c.mixTo.plan) return;
       if (c.mixTo.to !== mixTarget(c)) return;
+      if (audio.currentTime >= c.mixTo.plan.takeover - 2 && mixCtx && mixCtx.state !== 'running') { awake(); return; }
       if (audio.currentTime >= c.mixTo.plan.takeover) runMix(c, c.mixTo.plan);
     });
     setInterval(() => { if (mix) renderTime(); }, 250);
@@ -1632,6 +1659,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
   // ------------------------------------------------------------ boot
   async function boot() {
     applyTheme();
+    audioSession('playback');
     clockTick();
     fit();
     bind();
