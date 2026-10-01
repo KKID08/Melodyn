@@ -2,11 +2,9 @@
    Real microphone -> Gemini (understands) -> Music-Spec -> Lyria (composes) -> real MP3.
    On GitHub Pages the browser talks to Google directly with the user's own key (kept in localStorage).
    On Vercel it goes through /api/* so the key stays on the server. */
-import * as Mix from './mix.js?v=9e03fb5620';
-import * as Demo from './demo.js?v=9e03fb5620';
-import { Orb } from './orb.js?v=9e03fb5620';
-import { Scene } from './scene.js?v=9e03fb5620';
-import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=9e03fb5620';
+import * as Mix from './mix.js?v=16af24aa46';
+import * as Demo from './demo.js?v=16af24aa46';
+import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST, TTS_MODEL, producerBody, readProducer, readUnderstand, speakBody, understandBody } from './prompt.js?v=16af24aa46';
 
 (() => {
   'use strict';
@@ -38,7 +36,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
   <symbol id="up" viewBox="0 0 24 24"><path d="M7 10.5V20H4.5A1.5 1.5 0 0 1 3 18.5V12a1.5 1.5 0 0 1 1.5-1.5H7zm0 0l3.6-6.6A1.9 1.9 0 0 1 14 5.3V9h4.9a2 2 0 0 1 2 2.4l-1.4 6.9a2 2 0 0 1-2 1.7H7"/></symbol>
   <symbol id="down" viewBox="0 0 24 24"><g transform="rotate(180 12 12)"><path d="M7 10.5V20H4.5A1.5 1.5 0 0 1 3 18.5V12a1.5 1.5 0 0 1 1.5-1.5H7zm0 0l3.6-6.6A1.9 1.9 0 0 1 14 5.3V9h4.9a2 2 0 0 1 2 2.4l-1.4 6.9a2 2 0 0 1-2 1.7H7"/></g></symbol>
   <symbol id="add" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></symbol>
-  <symbol id="added" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"/><path d="M8 12.3l2.7 2.7L16.2 9.5" stroke="#0a0a0c" stroke-width="2"/></symbol>
+  <symbol id="added" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="currentColor" stroke="none"/><path d="M8 12.3l2.7 2.7L16.2 9.5" stroke="#f2eee5" stroke-width="2"/></symbol>
   <symbol id="chev" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></symbol>
   <symbol id="chevr" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
   <symbol id="more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.7" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.7" fill="currentColor" stroke="none"/></symbol>
@@ -56,108 +54,86 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
 </svg>`);
   $('#sbicons').innerHTML = `<svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.8" fill="none" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="17" height="9" rx="2.4" fill="currentColor"/></svg>`;
 
-  // ------------------------------------------------------------ auras
+  // ------------------------------------------------------------ artwork
+  // Flat Bauhaus compositions: circles, half-discs, triangles and bars in a few printed colours per mood.
+  // Every song gets its own composition from its seed. The same shapes are drawn as SVG in the app and
+  // onto a canvas for the phone's lock screen (Path2D understands SVG path data).
+  // Palette order: paper ground, three shape colours, ink.
   const PAL = {
-    night:   { bg: '#0b1236', c: ['#ff7a2f', '#e23d6d', '#2a47b8', '#0f6f8f', '#ffb56b', '#3b1f7a'] },
-    tunnel:  { bg: '#0a0f2a', c: ['#ff9a3d', '#1d3fb0', '#c2366b', '#0a5f80', '#ffd08a'] },
-    kitchen: { bg: '#3a1408', c: ['#ffb23f', '#e8472b', '#7a8f2e', '#ff8a5b', '#f6d38a'] },
-    brass:   { bg: '#24120a', c: ['#ffb347', '#d9480f', '#8f3b76', '#ffd8a8', '#e8590c'] },
-    focus:   { bg: '#0f2a2a', c: ['#8fc7b5', '#3f7f74', '#d7e6df', '#4e6e9e', '#a9c9d6'] },
-    dusk:    { bg: '#120f2e', c: ['#6d5bd0', '#e79bb5', '#2c3a8c', '#b06ab3', '#f2c4ce'] },
-    run:     { bg: '#1a0630', c: ['#ff3d71', '#5b2eff', '#00b3ff', '#ff8a00', '#c23bff'] },
-    morning: { bg: '#2b2210', c: ['#ffd36b', '#ff9e7a', '#9fd3e6', '#f7efd8', '#e8b04b'] },
-    rain:    { bg: '#101a24', c: ['#6f8fa8', '#c6d3dc', '#3d5a73', '#9bb3a6', '#e2e8ec'] },
-    self:    { bg: '#0d0f2a', c: ['#ff7a2f', '#ffb23f', '#2a47b8', '#e23d6d', '#8fc7b5', '#6d5bd0'] },
+    night:   ['#1f3a5f', '#e86a3a', '#f2c14e', '#efe8d8', '#161513'],
+    tunnel:  ['#22304f', '#f0a43a', '#c9493b', '#efe8d8', '#161513'],
+    kitchen: ['#d9653b', '#f2c14e', '#7a8f4e', '#efe8d8', '#161513'],
+    brass:   ['#e3b23c', '#161513', '#b5482e', '#efe8d8', '#1f3a5f'],
+    focus:   ['#8aa37b', '#efe8d8', '#2f4858', '#d9a441', '#161513'],
+    dusk:    ['#6d5a9e', '#e7a6a1', '#f2c14e', '#efe8d8', '#161513'],
+    run:     ['#c9493b', '#1f3a5f', '#f2c14e', '#efe8d8', '#161513'],
+    morning: ['#f2c14e', '#e86a3a', '#8fb3c9', '#fbf6ea', '#161513'],
+    rain:    ['#5b7083', '#c7d0d6', '#2f3e4c', '#efe8d8', '#d9653b'],
+    self:    ['#1f3a5f', '#d9653b', '#e3b23c', '#8aa37b', '#161513'],
   };
-  const hexA = (h, a) => { const v = parseInt(h.slice(1), 16); return `rgba(${v >> 16 & 255},${v >> 8 & 255},${v & 255},${a})`; };
+  // The one colour that stands for a mood in the interface (buttons, the listening wave)
+  const ACCENT = { night: '#e86a3a', tunnel: '#f0a43a', kitchen: '#d9653b', brass: '#b5482e', focus: '#2f4858', dusk: '#6d5a9e', run: '#c9493b', morning: '#e86a3a', rain: '#2f3e4c', self: '#d9653b' };
   function rng(seed) {
     let a = 0;
     for (const ch of String(seed)) a = Math.imul(a ^ ch.charCodeAt(0), 2654435761) >>> 0;
     return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   }
-  function drawRings(c, W, H, seed, n, alpha) {
-    const r = rng('rings' + seed);
-    const cx = W * (0.3 + r() * 0.4), cy = H * (0.3 + r() * 0.4);
-    const maxR = Math.hypot(W, H) * 0.62;
-    const f1 = 2 + Math.floor(r() * 3), f2 = 4 + Math.floor(r() * 4), p1 = r() * 6.28, p2 = r() * 6.28;
-    c.lineWidth = Math.max(0.6, W / 420);
-    for (let i = 0; i < n; i++) {
-      const base = maxR * Math.pow((i + 1) / (n + 1), 1.15), amp = base * 0.07;
-      c.beginPath();
-      for (let a = 0; a <= Math.PI * 2 + 0.02; a += Math.PI / 120) {
-        const rr = base + amp * Math.sin(a * f1 + p1 + i * 0.28) + amp * 0.45 * Math.sin(a * f2 + p2 - i * 0.2);
-        const x = cx + rr * Math.cos(a), y = cy + rr * Math.sin(a);
-        if (a === 0) c.moveTo(x, y); else c.lineTo(x, y);
+  const circ = (cx, cy, r) => `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z`;
+  // Shapes on a 100 x 100 board: [{ d, fill } | { d, stroke, w }]
+  function shapes(seed, p) {
+    const pal = PAL[p] || PAL.self, r = rng(p + '/' + seed), pick = () => pal[1 + Math.floor(r() * 3)];
+    const out = [{ d: 'M0 0H100V100H0Z', fill: pal[0] }];
+    const kind = Math.floor(r() * 3);
+    if (kind === 0) {
+      // four cells, one figure each
+      for (let y = 0; y < 100; y += 50) for (let x = 0; x < 100; x += 50) {
+        const c = pick(), k = Math.floor(r() * 5);
+        if (k === 0) out.push({ d: circ(x + 25, y + 25, 25), fill: c });
+        else if (k === 1) { out.push({ d: `M${x} ${y + 50}A25 25 0 0 1 ${x + 50} ${y + 50}Z`, fill: c }); out.push({ d: `M${x + 6} ${y + 25}A19 19 0 0 1 ${x + 44} ${y + 25}`, stroke: pal[4], w: 3 }); }
+        else if (k === 2) out.push({ d: `M${x} ${y}H${x + 50}L${x} ${y + 50}Z`, fill: c });
+        else if (k === 3) out.push({ d: `M${x} ${y + 14}H${x + 50}V${y + 36}H${x}Z`, fill: c });
+        else out.push({ d: `M${x} ${y}A50 50 0 0 1 ${x + 50} ${y + 50}H${x}Z`, fill: c });
       }
-      c.closePath();
-      c.strokeStyle = `rgba(255,255,255,${alpha * (1 - i / n * 0.6)})`;
-      c.stroke();
+    } else if (kind === 1) {
+      // one big sun over a horizon
+      const c1 = pick(), c2 = pick(), cx = 30 + r() * 40;
+      out.push({ d: `M0 ${62 + r() * 10}H100V100H0Z`, fill: c1 });
+      out.push({ d: circ(cx, 46, 26 + r() * 6), fill: c2 });
+      out.push({ d: `M${cx - 34} 46A34 34 0 0 1 ${cx + 34} 46`, stroke: pal[4], w: 2.5 });
+      if (r() > 0.4) out.push({ d: circ(cx + (r() > 0.5 ? 22 : -22), 74, 9), fill: pal[4] });
+    } else {
+      // stripes and a disc
+      const n = 3 + Math.floor(r() * 2), h = 100 / (n * 2);
+      for (let i = 0; i < n; i++) out.push({ d: `M0 ${i * 2 * h + h / 2}H100V${i * 2 * h + h * 1.5}H0Z`, fill: i % 2 ? pick() : pal[4] });
+      const cx = 25 + r() * 50, cy = 25 + r() * 50;
+      out.push({ d: circ(cx, cy, 22), fill: pick() });
+      out.push({ d: `M${cx - 22} ${cy}A22 22 0 0 0 ${cx + 22} ${cy}Z`, fill: pal[0] });
     }
-    return [cx / W, cy / H];
+    return out;
   }
-  // Aura artwork. The soft colour field is painted once into a small canvas (it is blurry anyway) and
-  // the whole layer drifts with a cheap CSS transform. Live CSS blur on moving blobs looked the same
-  // but made phones re-blur the full screen on every frame.
-  function paint(el, p, seed, o = {}) {
+  function artSVG(seed, p) {
+    return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${shapes(seed, p).map(s => s.fill ? `<path d="${s.d}" fill="${s.fill}"/>` : `<path d="${s.d}" fill="none" stroke="${s.stroke}" stroke-width="${s.w}"/>`).join('')}</svg>`;
+  }
+  // Put a composition into an element (covers, thumbnails, cards)
+  function paint(el, p, seed) {
     if (!el) return;
-    el.classList.add('aura');
-    const pal = PAL[p] || PAL.night;
-    const W = el.clientWidth || 300, H = el.clientHeight || 300, M = Math.max(W, H);
-    const r = rng(p + seed), blur = o.blur ?? 0.16, n = o.n ?? 4;
-    const lay = document.createElement('div');
-    lay.className = 'lay';
-    lay.style.background = pal.bg;
-    const f = Math.min(1, 200 / M), cv = document.createElement('canvas');
-    // The field is drawn 24% larger than the element so the drift never shows an edge
-    const pad = 0.12, cw = Math.max(8, Math.round(W * (1 + 2 * pad) * f)), ch = Math.max(8, Math.round(H * (1 + 2 * pad) * f));
-    cv.width = cw; cv.height = ch; cv.className = 'field';
-    const c = cv.getContext('2d');
-    c.fillStyle = pal.bg; c.fillRect(0, 0, cw, ch);
-    c.setTransform(f, 0, 0, f, W * pad * f, H * pad * f);
-    for (let k = 0; k < n; k++) {
-      const s = M * (0.5 + r() * 0.5), x = r() * W, y = r() * H, b = M * blur;
-      const R0 = s / 2 + b, inner = Math.max(0, (s / 2 - b) / R0);
-      const g = c.createRadialGradient(x, y, 0, x, y, R0), col = pal.c[k % pal.c.length], a = 0.75 + r() * 0.25;
-      g.addColorStop(0, hexA(col, a)); g.addColorStop(inner, hexA(col, a * 0.92)); g.addColorStop(1, hexA(col, 0));
-      c.fillStyle = g; c.fillRect(x - R0, y - R0, R0 * 2, R0 * 2);
-      r(); r(); r(); r(); r(); // same number of draws per blob as before, so existing artwork keeps its look
-    }
-    cv.style.setProperty('--d', (14 + r() * 10).toFixed(1) + 's');
-    cv.style.setProperty('--dx', ((r() - 0.5) * 8).toFixed(1) + '%');
-    cv.style.setProperty('--dy', ((r() - 0.5) * 8).toFixed(1) + '%');
-    lay.appendChild(cv);
-    if (o.lines) {
-      const cv = document.createElement('canvas'), d = 2;
-      cv.width = Math.round(W * d); cv.height = Math.round(H * d);
-      const c = cv.getContext('2d'); c.scale(d, d);
-      const [ox, oy] = drawRings(c, W, H, p + seed, o.lines, o.la ?? 0.22);
-      cv.style.setProperty('--ox', ox * 100 + '%'); cv.style.setProperty('--oy', oy * 100 + '%');
-      lay.appendChild(cv);
-    }
-    const old = $$(':scope > .lay', el);
-    if (old.length && o.fade !== false && !REDUCED) {
-      lay.style.opacity = '0'; el.appendChild(lay);
-      requestAnimationFrame(() => requestAnimationFrame(() => { lay.style.opacity = '1'; }));
-      setTimeout(() => old.forEach(x => x.remove()), 1100);
-    } else { old.forEach(x => x.remove()); el.appendChild(lay); }
+    el.classList.add('art-bh');
+    el.innerHTML = artSVG(seed, p);
   }
   function paintStatic(root) {
-    $$('.aura[data-p]', root).forEach(el => {
-      if (el.dataset.done || !el.clientWidth) return;
-      el.dataset.done = '1';
-      paint(el, el.dataset.p, el.dataset.seed || '1', { blur: parseFloat(el.dataset.blur || '0.16'), lines: parseInt(el.dataset.lines || '0', 10), la: parseFloat(el.dataset.la || '0.22'), fade: false });
-    });
+    $$('[data-p]', root).forEach(el => { if (!el.dataset.done) { el.dataset.done = '1'; paint(el, el.dataset.p, el.dataset.seed || '1'); } });
   }
   // Square artwork as an image, for the phone's own lock screen via Media Session
   function coverDataURL(p, seed) {
     const W = 512, cv = document.createElement('canvas'); cv.width = cv.height = W;
-    const c = cv.getContext('2d'), pal = PAL[p] || PAL.night, r = rng(p + seed);
-    c.fillStyle = pal.bg; c.fillRect(0, 0, W, W);
-    c.filter = 'blur(70px)';
-    for (let k = 0; k < 4; k++) { const s = W * (0.5 + r() * 0.5); c.fillStyle = pal.c[k % pal.c.length]; c.beginPath(); c.arc(r() * W, r() * W, s / 2, 0, Math.PI * 2); c.fill(); }
-    c.filter = 'none';
-    drawRings(c, W, W, p + seed, 14, 0.22);
-    try { return cv.toDataURL('image/jpeg', 0.85); } catch { return ''; }
+    const c = cv.getContext('2d'); c.scale(W / 100, W / 100);
+    try {
+      for (const s of shapes(seed, p)) {
+        const path = new Path2D(s.d);
+        if (s.fill) { c.fillStyle = s.fill; c.fill(path); } else { c.strokeStyle = s.stroke; c.lineWidth = s.w; c.stroke(path); }
+      }
+      return cv.toDataURL('image/jpeg', 0.9);
+    } catch { return ''; }
   }
 
   // ------------------------------------------------------------ state
@@ -167,7 +143,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     session: null, stations: store.get('stations', []),
     chat: [], feedback: [],
     taste: store.get('taste', {}), rules: store.get('rules', []), reactions: store.get('reactions', 0), liked: new Set(),
-    settings: Object.assign({ len: 'full', pregen: true, quick: true, dj: true, deep: true, mode: 'live', look: 'wave', limit: 25, code: '', key: '' }, store.get('settings', {})),
+    settings: Object.assign({ len: 'full', pregen: true, quick: true, dj: true, deep: true, mode: 'live', limit: 25, code: '', key: '' }, store.get('settings', {})),
     total: store.get('costs', { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0 }),
     sess: { lyria: 0, gemini: 0, songs: 0, clips: 0, calls: 0, genMs: [], firstMs: [], audioSec: 0, genSec: 0 },
     day: store.get('day', { date: '', count: 0 }),
@@ -552,7 +528,6 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     $('#mini').classList.toggle('on', mini);
     $('#phone').classList.toggle('hasmini', mini);
     $('#tabbar').style.transform = full ? 'translateY(100%)' : '';
-    orbsVisible();
   }
   function showTab(t) {
     S.tab = t;
@@ -561,7 +536,6 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     if (t === 'lib') renderLib();
     if (t === 'taste') renderTaste(true);
     if (t === 'home') renderRecent();
-    orbsVisible();
   }
 
   // ------------------------------------------------------------ playback
@@ -743,9 +717,8 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     h('nexttrack', () => nextSong('skip')); h('previoustrack', prevSong);
   }
   function paintNow(s) {
-    paint($('#pbg'), s.palette, s.seed, { blur: 0.2 });
-    paint($('#pcoverart'), s.palette, s.seed, { blur: 0.1, lines: 16 });
-    paint($('#minith'), s.palette, s.seed, { blur: 0.14, fade: false });
+    paint($('#pcoverart'), s.palette, s.seed);
+    paint($('#minith'), s.palette, s.seed);
   }
   let waitTimer;
   function renderNow() {
@@ -838,37 +811,20 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     S.stations = [st, ...S.stations.filter(x => x.station !== st.station)].slice(0, 8);
     saveState(); renderTaste(false); renderRecent(); paintOrb();
   }
-  // The orb on the home screen takes on the colours of the current moment and pulses with the music
-  let homeOrb = null;
+  // The home sign and the interface accent take on the colours of the current moment;
+  // the little bars in the sign move on the beat of the playing song
   function paintOrb() {
-    if (!homeOrb) return;
     const c = S.cur && !S.composing ? S.cur : null;
-    homeOrb.setPalette(PAL[(c && c.palette) || (S.session && S.session.palette) || 'self'] || PAL.self);
-    homeOrb.setBpm(c && S.playing && c.spec ? c.spec.tempo_bpm : 0);
+    const p = (c && c.palette) || (S.session && S.session.palette) || 'self', pal = PAL[p] || PAL.self;
+    const orb = $('#orb'), phone = $('#phone');
+    orb.style.setProperty('--h1', pal[0]); orb.style.setProperty('--h2', ACCENT[p] || pal[1]);
+    orb.style.setProperty('--h3', pal[2] === (ACCENT[p] || pal[1]) ? pal[1] : pal[2]); orb.style.setProperty('--h4', pal[4]);
+    phone.style.setProperty('--acc', ACCENT[p] || '#d9653b');
+    const bpm = c && S.playing && c.spec ? c.spec.tempo_bpm : 0;
+    orb.classList.toggle('beat', !!bpm);
+    if (bpm) orb.style.setProperty('--beat', (60 / bpm).toFixed(3) + 's');
   }
-  // Home look: the orb, or one of the wide scenes (wave, aurora, pulse)
-  let orbV = null, sceneV = null;
-  function applyLook() {
-    const look = S.settings.look || 'wave', wide = look !== 'orb';
-    if (homeOrb) homeOrb.stop();
-    $('#orb').classList.toggle('wide', wide);
-    $('#orb').dataset.look = look;
-    if (wide) {
-      if (!sceneV) sceneV = new Scene($('#scenecv'), { theme: look, still: REDUCED });
-      sceneV.setTheme(look); homeOrb = sceneV;
-    } else {
-      if (!orbV) orbV = new Orb($('#orbcv'), { glow: 0.42, still: REDUCED });
-      homeOrb = orbV;
-    }
-    $$('#lookseg button').forEach(b => b.classList.toggle('on', b.dataset.look === look));
-    paintOrb();
-    requestAnimationFrame(() => { homeOrb.resize(); orbsVisible(); });
-  }
-  function orbsVisible() {
-    if (!homeOrb) return;
-    const covered = isOn('s-player') || isOn('s-listen') || isOn('s-key') || isOn('s-code') || (isOn('s-talk') && $('#s-talk').classList.contains('solo'));
-    if (S.tab === 'home' && !covered && !document.hidden) homeOrb.start(); else homeOrb.stop();
-  }
+
   function overLimit(retry) {
     if (DEMO() || S.day.count < S.settings.limit || S.limitOk) return false;
     toast(`Tageslimit von ${S.settings.limit} Songs erreicht`, false, retry ? { label: 'Trotzdem', fn: () => { S.limitOk = true; retry(); } } : null);
@@ -1136,6 +1092,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       const bpm = likes.length ? Math.round(likes.reduce((a, f) => a + f.bpm, 0) / likes.length) : null;
       $('#tastesum').textContent = `Am liebsten ${top.join(' und ')}${bpm ? `, meist um ${bpm} BPM` : ''}.`;
     }
+    paint($('.tart'), (S.session && S.session.palette) || 'self', 'taste' + (rows[0] ? rows[0][0] : ''));
     $('#learned').textContent = S.reactions ? `Gelernt aus ${S.reactions} ${S.reactions === 1 ? 'Reaktion' : 'Reaktionen'}` : '';
     $('#nowblk').innerHTML = S.session
       ? `<div class="nowcard"><b>Gerade: ${esc(S.session.station)}</b><span>Bleibt nur für diese Session</span><button class="forget" id="forget">Vergessen</button></div>`
@@ -1211,8 +1168,6 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     try { await micStart(); }
     catch (e) { duck(false); toast(e.message, false); openTalk('solo'); return; }
     const hear = DEMO() ? Demo.hearStart() : null;
-    paint($('#halo'), (S.session && S.session.palette) || 'self', 'halo' + id, { blur: 0.18, fade: false });
-    $('#halo').style.transform = '';
     waveColours((S.session && S.session.palette) || 'self');
     $('#said').innerHTML = '<span class="w in" style="color:var(--text-3)">Sprich jetzt …</span>';
     $('#got').innerHTML = '';
@@ -1283,7 +1238,6 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     $('#livelabel').textContent = 'Verstanden';
     // Music and DJ start working right now; the screen keeps showing what was understood meanwhile
     if (!res.ask) startSong(res, { delayOpen: REDUCED ? 300 : 2600 });
-    paint($('#halo'), res.palette || 'self', 'h' + id, { blur: 0.18 });
     waveColours(res.palette || 'self');
     const said = $('#said'); said.innerHTML = '';
     for (const word of String(res.transcript || '').split(/\s+/).filter(Boolean)) {
@@ -1297,7 +1251,6 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     $('#listenhint').textContent = res.ask ? 'Melodyn hat eine Frage' : 'Lyria komponiert schon';
     await sleep(REDUCED ? 200 : 700);
     if (id !== listenId) return;
-    $('#halo').style.transform = 'translateY(-160px) scale(1.2)';
     await sleep(300);
     if (res.ask) {
       duck(false); wishT0 = 0;
@@ -1312,10 +1265,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       setOn('s-listen', false);
     }
   }
-  function waveColours(p) {
-    const pal = PAL[p] || PAL.self, w = $('#wave');
-    w.style.setProperty('--w1', pal.c[0]); w.style.setProperty('--w2', pal.c[1] || pal.c[0]); w.style.setProperty('--w3', pal.c[2] || pal.c[0]);
-  }
+  function waveColours(p) { $('#s-listen').style.setProperty('--acc', ACCENT[p] || '#d9653b'); }
   function cancelListen() { listenId++; Rec.cancel(); if (sendNow) sendNow(); duck(false); setOn('s-listen', false); }
 
   // ------------------------------------------------------------ conversation sheet
@@ -1351,7 +1301,6 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     const s = $('#s-talk');
     s.classList.toggle('solo', mode === 'solo');
     if (mode === 'solo') {
-      paint($('#tbg'), S.session ? S.session.palette : 'self', 'talk', { blur: 0.2, fade: false });
       const cur = S.cur;
       paint($('#tminiart'), cur ? cur.palette : 'self', cur ? cur.seed : 'm', { blur: 0.12, fade: false });
       $('#tminititle').textContent = cur ? cur.title : 'Melodyn';
@@ -1496,7 +1445,6 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
   function renderSettings() {
     $$('#lenseg button').forEach(b => b.classList.toggle('on', b.dataset.len === S.settings.len));
     $$('#modeseg button').forEach(b => b.classList.toggle('on', b.dataset.mode === S.settings.mode));
-    $$('#lookseg button').forEach(b => b.classList.toggle('on', b.dataset.look === (S.settings.look || 'wave')));
     document.body.classList.toggle('demo', DEMO());
     $('#pregen').setAttribute('aria-checked', String(!!S.settings.pregen));
     $('#quick').setAttribute('aria-checked', String(!!S.settings.quick));
@@ -1564,6 +1512,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       }
     });
     $('#orb').addEventListener('click', listen);
+    $('#micbtn').addEventListener('click', listen);
     $('#typeinstead').addEventListener('click', () => { unlockAudio(); openTalk('solo'); setTimeout(() => $('#composein').focus(), 350); });
     $('#libplus').addEventListener('click', () => { showTab('home'); listen(); });
     $('#listenclose').addEventListener('click', cancelListen);
@@ -1662,8 +1611,6 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
       feedback('complete'); nextSong('end');
     });
     window.addEventListener('resize', fit);
-    window.addEventListener('resize', () => { if (homeOrb) homeOrb.resize(); });
-    $('#lookseg').addEventListener('click', e => { const b = e.target.closest('[data-look]'); if (!b) return; S.settings.look = b.dataset.look; saveState(); applyLook(); });
     if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
     setInterval(clockTick, 15000);
     setInterval(renderCosts, 5000);
@@ -1676,12 +1623,7 @@ import { API, GEMINI_MODEL, LYRIA_CLIP, LYRIA_FULL, PRODUCER_DEEP, PRODUCER_FAST
     bind();
     requestAnimationFrame(() => paintStatic(document));
     $('#wave').innerHTML = '<i></i>'.repeat(46);
-    applyLook();
-    const orbBtn = $('#orb');
-    orbBtn.addEventListener('pointerdown', () => homeOrb.setPressed(true));
-    for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) orbBtn.addEventListener(ev, () => homeOrb.setPressed(false));
-    orbBtn.addEventListener('click', () => homeOrb.ripple());
-    document.addEventListener('visibilitychange', orbsVisible);
+    paintOrb();
     renderRecent(); renderTaste(false); renderSettings(); syncChrome();
     if (await DB.open()) {
       const rows = (await DB.all()) || [];
