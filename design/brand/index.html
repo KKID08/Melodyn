@@ -1,0 +1,458 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"></head><body>
+<title>Melodyn Markenhandbuch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..800&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a brand book in bands. Each band shows one part of the system at full size, specimen first, rules second. */
+:root {
+  --coral: #ff5a36; --night: #1b2a4a; --sun: #ffc23d; --sage: #8aa37b; --ink: #121214; --paper: #f6f4ef; --white: #ffffff;
+  --bg: #fbfbfa; --fg: #121214; --fg-2: #4b4b52; --mute: #7c7c84; --line: #e6e5e1; --card: #ffffff; --tile: #f1f0ec;
+  --display: "Geist", "Helvetica Neue", Arial, sans-serif;
+  --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0f0f11; --fg: #f4f4f5; --fg-2: #c9c9cf; --mute: #8d8d95; --line: #26262b; --card: #18181b; --tile: #1e1e22; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #0f0f11; --fg: #f4f4f5; --fg-2: #c9c9cf; --mute: #8d8d95; --line: #26262b; --card: #18181b; --tile: #1e1e22; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 var(--display); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: clamp(16px, 4vw, 40px); }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+h2 { font-size: clamp(30px, 4vw, 46px); font-weight: 760; letter-spacing: -.04em; line-height: 1.05; }
+h3 { font-size: 19px; font-weight: 700; letter-spacing: -.02em; }
+p { margin: 0; }
+.lead { font-size: 18px; color: var(--fg-2); max-width: 62ch; margin-top: 14px; }
+.label { font: 500 11.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--mute); }
+.cap { font-size: 13.5px; color: var(--mute); margin-top: 10px; }
+section { padding-block: clamp(56px, 8vw, 96px); border-top: 1px solid var(--line); }
+.sec-head { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 24px; margin-bottom: 40px; }
+@media (max-width: 760px) { .sec-head { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 900px) { .g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g3 { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) { .g2, .g4 { grid-template-columns: minmax(0, 1fr); } }
+.tile { border-radius: 18px; background: var(--tile); padding: 28px; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 220px; position: relative; overflow: hidden; }
+.tile .label { position: absolute; left: 18px; top: 16px; }
+.on-coral { background: var(--coral); color: #fff; } .on-coral .label { color: rgba(255,255,255,.75); }
+.on-ink { background: var(--ink); color: #fff; } .on-ink .label { color: rgba(255,255,255,.6); }
+.on-night { background: var(--night); color: #fff; } .on-night .label { color: rgba(255,255,255,.6); }
+.on-white { background: #fff; color: var(--ink); border: 1px solid var(--line); } .on-white .label { color: #7c7c84; }
+.on-paper { background: var(--paper); color: var(--ink); } .on-paper .label { color: #7c7c84; }
+
+/* Logo */
+.mk { display: block; }
+.lock { display: inline-flex; align-items: center; gap: .26em; font-weight: 760; letter-spacing: -.05em; line-height: 1; }
+.lock svg { width: 1.08em; height: 1.08em; flex: none; }
+.lock.c-mark svg { color: var(--coral); }
+.stack { display: inline-flex; flex-direction: column; align-items: center; gap: .18em; font-weight: 760; letter-spacing: -.05em; line-height: 1; }
+.stack svg { width: 1.9em; height: 1.9em; }
+
+/* Nav */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.top .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
+.top nav { display: flex; gap: 18px; overflow-x: auto; font-size: 14px; color: var(--fg-2); scrollbar-width: none; min-width: 0; }
+.top nav a { color: inherit; text-decoration: none; white-space: nowrap; }
+.top nav a:hover { color: var(--fg); }
+.top .lock { font-size: 22px; flex: none; }
+
+/* Hero */
+.hero { background: var(--coral); color: #fff; padding-block: clamp(64px, 10vw, 120px); border-top: 0; position: relative; overflow: hidden; }
+.hero .lock { font-size: clamp(64px, 13vw, 168px); }
+.hero .lock svg { color: #fff; }
+.hero .meta { display: flex; flex-wrap: wrap; gap: 12px 40px; margin-top: 44px; font-size: 15px; }
+.hero .meta b { display: block; font-size: 22px; letter-spacing: -.02em; }
+.hero .meta span { opacity: .8; }
+.hero .tag { margin-top: 26px; font-size: clamp(22px, 3vw, 34px); font-weight: 600; letter-spacing: -.03em; max-width: 22ch; }
+.hero .bars { position: absolute; right: clamp(-40px, -2vw, 0px); bottom: -20px; width: min(46vw, 560px); opacity: .18; }
+
+/* Clear space */
+.clear { position: relative; display: inline-flex; padding: 34px; border: 1.5px dashed var(--mute); border-radius: 6px; }
+.clear::after { content: "x"; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); font: 12px var(--mono); color: var(--mute); }
+.dont { min-height: 170px; }
+.dont .x { position: absolute; right: 14px; top: 12px; width: 26px; height: 26px; border-radius: 50%; background: #e5484d; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 15px; }
+
+/* Colors */
+.sw { border-radius: 18px; overflow: hidden; background: var(--card); border: 1px solid var(--line); }
+.sw .chip { height: 150px; display: flex; align-items: flex-end; padding: 14px 16px; font-weight: 700; font-size: 15px; }
+.sw .info { padding: 14px 16px 16px; display: grid; gap: 2px; font: 12.5px/1.6 var(--mono); color: var(--fg-2); }
+.sw .info b { font: 700 16px var(--display); color: var(--fg); letter-spacing: -.01em; margin-bottom: 4px; }
+.sw.big .chip { height: 240px; }
+.ratio { display: flex; height: 64px; border-radius: 14px; overflow: hidden; margin-top: 18px; }
+.ratio div { display: flex; align-items: flex-end; padding: 8px 10px; font: 500 11.5px var(--mono); white-space: nowrap; overflow: hidden; min-width: 0; }
+
+/* Type */
+.spec { border-radius: 18px; background: var(--card); border: 1px solid var(--line); padding: clamp(20px, 3vw, 36px); }
+.spec .big { font-size: clamp(64px, 11vw, 140px); font-weight: 780; letter-spacing: -.055em; line-height: .9; }
+.scale { display: grid; gap: 14px; margin-top: 8px; }
+.scale div { display: grid; grid-template-columns: 120px minmax(0, 1fr); align-items: baseline; gap: 16px; border-top: 1px solid var(--line); padding-top: 14px; }
+.scale .label { margin: 0; }
+
+/* App icon */
+.icon { width: 120px; height: 120px; border-radius: 27px; display: grid; place-items: center; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 12px 30px -14px rgba(0,0,0,.4); }
+.icon svg { width: 62%; height: 62%; }
+.icons-row { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-end; }
+.icons-row figure { margin: 0; display: grid; justify-items: center; gap: 10px; font-size: 13px; color: var(--mute); }
+.home { width: min(100%, 330px); aspect-ratio: 330 / 600; border-radius: 44px; padding: 54px 24px 24px; background: #1b2a4a; position: relative; overflow: hidden; box-shadow: 0 0 0 9px #121214, 0 30px 60px -30px rgba(0,0,0,.5); }
+.home .apps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px 14px; }
+.home .app { display: grid; justify-items: center; gap: 5px; font-size: 10px; color: #fff; }
+.home .app i { width: 100%; aspect-ratio: 1; border-radius: 22%; background: rgba(255,255,255,.16); display: block; }
+.home .app .icon { width: 100%; height: auto; aspect-ratio: 1; border-radius: 22%; box-shadow: none; }
+.home .dock { position: absolute; left: 14px; right: 14px; bottom: 14px; height: 76px; border-radius: 28px; background: rgba(255,255,255,.18); display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 12px 16px; }
+.home .dock i { border-radius: 22%; background: rgba(255,255,255,.22); }
+.home .clock { position: absolute; top: 16px; left: 30px; color: #fff; font-weight: 600; font-size: 14px; }
+
+/* Covers */
+.covers { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 760px) { .covers { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.covers figure { margin: 0; }
+.covers svg { width: 100%; height: auto; aspect-ratio: 1; display: block; border-radius: 10px; }
+.covers figcaption { margin-top: 8px; font-size: 14px; font-weight: 650; }
+.covers figcaption span { display: block; font-weight: 400; color: var(--mute); font-size: 13px; }
+
+/* Merch */
+.merch { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 980px) { .merch { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .merch { grid-template-columns: minmax(0, 1fr); } }
+.merch .tile { aspect-ratio: 1; min-height: 0; padding: 18px; }
+.merch .tile svg { width: 100%; height: 100%; max-height: 100%; }
+.merch h3 { margin-top: 12px; font-size: 16px; }
+.merch .cap { margin-top: 2px; }
+
+/* Website preview */
+.browser { border-radius: 16px; overflow: hidden; border: 1px solid var(--line); background: #fff; color: #121214; box-shadow: 0 30px 60px -36px rgba(0,0,0,.35); }
+.browser .bar { height: 38px; background: #f1f0ec; display: flex; align-items: center; gap: 7px; padding: 0 14px; }
+.browser .bar i { width: 11px; height: 11px; border-radius: 50%; background: #d9d7d0; }
+.browser .bar span { margin-left: 14px; flex: 1; max-width: 340px; height: 22px; border-radius: 6px; background: #fff; font: 11.5px/22px var(--mono); color: #7c7c84; padding-left: 10px; }
+.site nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px clamp(16px, 4vw, 44px); }
+.site nav .lock { font-size: 24px; }
+.site nav .links { display: flex; gap: 22px; font-size: 14px; color: #4b4b52; }
+@media (max-width: 760px) { .site nav .links { display: none; } }
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 22px; background: var(--coral); color: #fff; font-weight: 650; font-size: 15px; border: 0; }
+.btn.ghost { background: #f1f0ec; color: #121214; }
+.site .hero2 { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 32px; align-items: center; padding: 30px clamp(16px, 4vw, 44px) 54px; }
+@media (max-width: 760px) { .site .hero2 { grid-template-columns: minmax(0, 1fr); } }
+.site h1 { font-size: clamp(36px, 5vw, 62px); font-weight: 780; letter-spacing: -.05em; line-height: 1; }
+.site h1 span { color: var(--coral); }
+.site .sub { margin-top: 16px; font-size: 17px; color: #4b4b52; max-width: 42ch; }
+.site .ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+.askpill { margin-top: 22px; display: flex; align-items: center; gap: 12px; max-width: 440px; height: 58px; border-radius: 29px; background: #fff; border: 1.5px solid #e6e5e1; padding: 0 6px 0 20px; color: #7c7c84; font-size: 15px; }
+.askpill b { margin-left: auto; width: 46px; height: 46px; border-radius: 50%; background: var(--coral); color: #fff; display: grid; place-items: center; }
+.mini-phone { width: min(100%, 270px); margin-inline: auto; aspect-ratio: 270 / 540; border-radius: 38px; box-shadow: 0 0 0 8px #121214, 0 30px 60px -26px rgba(0,0,0,.45); overflow: hidden; background: #fff; display: flex; flex-direction: column; padding: 34px 16px 12px; gap: 10px; }
+.mini-phone .h { font-weight: 760; font-size: 21px; letter-spacing: -.035em; }
+.mini-phone .ask { border-radius: 16px; background: var(--coral); color: #fff; padding: 14px; display: flex; align-items: center; gap: 10px; }
+.mini-phone .ask b { display: block; font-size: 15px; } .mini-phone .ask span { font-size: 11px; opacity: .9; }
+.mini-phone .ask i { margin-left: auto; width: 40px; height: 40px; border-radius: 50%; background: #fff; color: var(--coral); display: grid; place-items: center; flex: none; }
+.mini-phone .field { height: 34px; border-radius: 10px; background: #f1f0ec; font-size: 11px; color: #7c7c84; display: flex; align-items: center; padding-left: 12px; }
+.mini-phone .row { display: flex; gap: 10px; margin-top: 4px; }
+.mini-phone .row svg { width: 92px; height: 92px; border-radius: 8px; flex: none; }
+.mini-phone .np { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 12px; border: 1px solid #e6e5e1; font-size: 11px; }
+.mini-phone .np svg { width: 36px; height: 36px; border-radius: 6px; }
+.site .strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid #e6e5e1; }
+@media (max-width: 760px) { .site .strip { grid-template-columns: minmax(0, 1fr); } }
+.site .strip div { padding: 22px clamp(16px, 4vw, 44px); border-right: 1px solid #e6e5e1; }
+.site .strip b { display: block; font-size: 16px; letter-spacing: -.01em; }
+.site .strip span { font-size: 14px; color: #4b4b52; }
+
+/* Voice */
+.say { border-radius: 18px; padding: 22px; background: var(--card); border: 1px solid var(--line); }
+.say ul { margin: 12px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.say li { padding-left: 26px; position: relative; font-size: 15.5px; }
+.say li::before { position: absolute; left: 0; top: 0; font-weight: 800; }
+.say.yes li::before { content: "✓"; color: #2f9e5f; }
+.say.no li::before { content: "✕"; color: #e5484d; }
+footer .lock { color: var(--fg); }
+footer { padding-block: 40px 60px; border-top: 1px solid var(--line); color: var(--mute); font-size: 14px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; }
+@media (prefers-reduced-motion: no-preference) { .hero .bars rect { animation: bob 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; } }
+@keyframes bob { 50% { transform: scaleY(.55); } }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mk" viewBox="0 0 64 64"><path d="M12 50V28a8 8 0 0 1 16 0v22M28 38a8 8 0 0 1 16 0v12" fill="none" stroke="currentColor" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="54" cy="20" r="5" fill="currentColor"/></symbol>
+  <symbol id="mic" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11.5" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></g></symbol>
+</svg>
+
+<header class="top"><div class="wrap">
+  <span class="lock c-mark"><svg><use href="#mk"/></svg>melodyn</span>
+  <nav aria-label="Abschnitte"><a href="#logo">Logo</a><a href="#farben">Farben</a><a href="#schrift">Schrift</a><a href="#icon">App-Icon</a><a href="#cover">Cover</a><a href="#merch">Merch</a><a href="#website">Website</a><a href="#stimme">Tonfall</a></nav>
+</div></header>
+
+<section class="hero"><div class="wrap">
+  <p class="label" style="color:rgba(255,255,255,.75)">Markenhandbuch · Version 1.0 · Oktober 2026</p>
+  <h1 style="margin-top:22px"><span class="lock"><svg><use href="#mk"/></svg>melodyn</span></h1>
+  <p class="tag">Sag, wonach dir ist. Melodyn macht den Song dazu.</p>
+  <div class="meta">
+    <div><b>Musik für den Moment</b><span>Jeder Song entsteht, wenn du ihn brauchst.</span></div>
+    <div><b>Stimme zuerst</b><span>Sprechen statt suchen.</span></div>
+    <div><b>Warm, klar, geometrisch</b><span>So sieht und klingt die Marke.</span></div>
+  </div>
+  <svg class="bars" viewBox="0 0 560 300" aria-hidden="true"><g fill="#fff"></g></svg>
+</div></section>
+
+<main class="wrap">
+
+<section id="logo">
+  <div class="sec-head"><p class="label">01 · Logo</p><div><h2>Ein kleines m, das klingt.</h2>
+    <p class="lead">Das Zeichen ist ein „m“ aus einer durchgehenden Linie. Der zweite Bogen ist niedriger, wie ein Ton, der ausklingt. Der Punkt rechts oben ist der Funke: deine Stimme, mit der jeder Song beginnt.</p></div></div>
+  <div class="grid g2">
+    <div class="tile on-white" style="min-height:300px"><span class="label">Langform · Standard</span><span class="lock c-mark" style="font-size:clamp(48px,7vw,84px)"><svg><use href="#mk"/></svg>melodyn</span></div>
+    <div class="tile on-coral" style="min-height:300px"><span class="label">Langform · auf Koralle</span><span class="lock" style="font-size:clamp(48px,7vw,84px)"><svg><use href="#mk"/></svg>melodyn</span></div>
+  </div>
+  <div class="grid g4" style="margin-top:16px">
+    <div class="tile on-ink"><span class="label">Kurzform</span><svg class="mk" width="120" height="120" style="color:var(--coral)"><use href="#mk"/></svg></div>
+    <div class="tile on-paper"><span class="label">Kurzform · einfarbig</span><svg class="mk" width="120" height="120" style="color:var(--ink)"><use href="#mk"/></svg></div>
+    <div class="tile on-night"><span class="label">Gestapelt</span><span class="stack" style="font-size:40px"><svg style="color:var(--coral)"><use href="#mk"/></svg>melodyn</span></div>
+    <div class="tile on-white"><span class="label">Wortmarke</span><span class="lock" style="font-size:52px">melodyn</span></div>
+  </div>
+  <div class="grid g2" style="margin-top:40px; align-items:start">
+    <div>
+      <h3>Schutzraum und Mindestgröße</h3>
+      <p class="cap">Rund um das Logo bleibt mindestens so viel Platz frei, wie das Zeichen hoch ist (x). Kurzform ab 16 px, Langform ab 88 px Breite.</p>
+      <div style="margin-top:22px; display:flex; flex-wrap:wrap; gap:22px; align-items:center">
+        <span class="clear"><span class="lock c-mark" style="font-size:40px"><svg><use href="#mk"/></svg>melodyn</span></span>
+        <span style="display:flex; align-items:flex-end; gap:14px; color:var(--mute); font:12px var(--mono)">
+          <span style="display:grid; justify-items:center; gap:6px"><svg width="16" height="16" style="color:var(--coral)"><use href="#mk"/></svg>16 px</span>
+          <span style="display:grid; justify-items:center; gap:6px"><span class="lock c-mark" style="font-size:17px"><svg><use href="#mk"/></svg>melodyn</span>88 px</span>
+        </span>
+      </div>
+    </div>
+    <div>
+      <h3>So bitte nicht</h3>
+      <div class="grid g2" style="margin-top:14px">
+        <div class="tile on-white dont"><span class="x">✕</span><span class="lock c-mark" style="font-size:30px; transform:scaleX(1.5)"><svg><use href="#mk"/></svg>melodyn</span><p class="cap">Nicht verzerren</p></div>
+        <div class="tile on-white dont"><span class="x">✕</span><span class="lock" style="font-size:30px; background:linear-gradient(90deg,#7b5cff,#ff5a36); -webkit-background-clip:text; color:transparent"><svg style="color:#7b5cff"><use href="#mk"/></svg>melodyn</span><p class="cap">Keine Verläufe</p></div>
+        <div class="tile on-white dont"><span class="x">✕</span><span class="lock c-mark" style="font-size:30px; transform:rotate(-12deg)"><svg><use href="#mk"/></svg>melodyn</span><p class="cap">Nicht drehen</p></div>
+        <div class="tile dont" style="background:var(--sun)"><span class="x">✕</span><span class="lock c-mark" style="font-size:30px"><svg><use href="#mk"/></svg>melodyn</span><p class="cap" style="color:#5a4a1a">Koralle nicht auf Gelb</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="farben">
+  <div class="sec-head"><p class="label">02 · Farben</p><div><h2>Koralle führt, die Cover-Farben begleiten.</h2>
+    <p class="lead">Koralle ist die eine Markenfarbe: Logo, wichtigste Knöpfe, Hervorhebungen. Nachtblau, Sonne und Salbei kommen aus den Song-Covern und tragen die Stimmungen. Tinte und Papier halten alles ruhig.</p></div></div>
+  <div class="grid g2">
+    <div class="sw big"><div class="chip" style="background:var(--coral); color:#fff">Primär</div><div class="info"><b>Koralle</b>HEX #FF5A36<br>RGB 255 90 54<br>CMYK 0 75 85 0<br>Logo, Hauptknöpfe, „Sprechen“</div></div>
+    <div class="sw big"><div class="chip" style="background:var(--ink); color:#fff">Basis</div><div class="info"><b>Tinte</b>HEX #121214<br>RGB 18 18 20<br>CMYK 75 65 60 85<br>Text, dunkler Modus, Play-Knopf</div></div>
+  </div>
+  <div class="grid g4" style="margin-top:16px">
+    <div class="sw"><div class="chip" style="background:var(--night); color:#fff">Stimmung</div><div class="info"><b>Nachtblau</b>HEX #1B2A4A<br>RGB 27 42 74<br>Nacht, Ruhe, Fokus</div></div>
+    <div class="sw"><div class="chip" style="background:var(--sun); color:#121214">Stimmung</div><div class="info"><b>Sonne</b>HEX #FFC23D<br>RGB 255 194 61<br>Morgen, Energie, Demo-Hinweis</div></div>
+    <div class="sw"><div class="chip" style="background:var(--sage); color:#121214">Stimmung</div><div class="info"><b>Salbei</b>HEX #8AA37B<br>RGB 138 163 123<br>Natur, Lernen, Gelassenheit</div></div>
+    <div class="sw"><div class="chip" style="background:var(--paper); color:#121214; border-bottom:1px solid var(--line)">Basis</div><div class="info"><b>Papier</b>HEX #F6F4EF<br>RGB 246 244 239<br>Flächen, Druck, Taschen</div></div>
+  </div>
+  <h3 style="margin-top:40px">Mengenverhältnis</h3>
+  <p class="cap">Viel ruhige Fläche, wenig Koralle. Je seltener die Markenfarbe, desto stärker wirkt sie.</p>
+  <div class="ratio" role="img" aria-label="Weiß und Papier 60 Prozent, Tinte 25 Prozent, Koralle 10 Prozent, Cover-Farben 5 Prozent">
+    <div style="flex:60; background:var(--paper); color:#121214; border:1px solid var(--line)">Weiß · Papier 60 %</div>
+    <div style="flex:25; background:var(--ink); color:#fff">Tinte 25 %</div>
+    <div style="flex:10; background:var(--coral); color:#fff">10 %</div>
+    <div style="flex:5; background:linear-gradient(var(--night) 0 33%, var(--sun) 33% 66%, var(--sage) 66%)"></div>
+  </div>
+</section>
+
+<section id="schrift">
+  <div class="sec-head"><p class="label">03 · Schrift</p><div><h2>Eine Schrift, klar gesetzt.</h2>
+    <p class="lead">Geist für alles: Logo, Überschriften, Fließtext. Kräftige Gewichte mit enger Laufweite für Titel, normale Laufweite für Text. Geist Mono nur für Zahlen, Zeiten und Kennzeichnungen.</p></div></div>
+  <div class="grid g2">
+    <div class="spec"><p class="label">Geist · 780 · Laufweite −5 %</p><div class="big" style="margin-top:14px">Aa Gg</div><p class="cap" style="margin-top:18px">ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>abcdefghijklmnopqrstuvwxyzäöüß<br>0123456789 „“ – ?!</p></div>
+    <div class="spec"><p class="label">Hierarchie</p>
+      <div class="scale">
+        <div><span class="label">Display 48</span><span style="font-size:clamp(32px,4vw,48px); font-weight:780; letter-spacing:-.05em; line-height:1">Guten Abend</span></div>
+        <div><span class="label">Titel 24</span><span style="font-size:24px; font-weight:700; letter-spacing:-.03em">Wonach ist dir?</span></div>
+        <div><span class="label">Text 16</span><span>Sag es einfach. Melodyn macht den passenden Song.</span></div>
+        <div><span class="label">Klein 13</span><span style="font-size:13px; color:var(--mute)">Synthwave · 98 BPM · für dich komponiert</span></div>
+        <div><span class="label">Mono 12</span><span style="font:12px var(--mono)">1:02 / 3:03 · 0,08 $</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="icon">
+  <div class="sec-head"><p class="label">04 · App-Icon</p><div><h2>Auf dem Homescreen sofort zu finden.</h2>
+    <p class="lead">Weißes Zeichen auf Koralle, mittig, mit 62 % der Fläche. Für den dunklen Homescreen gibt es Koralle auf Tinte, für getönte Icons eine einfarbige Version.</p></div></div>
+  <div class="grid g2" style="align-items:center">
+    <div style="display:grid; gap:36px">
+      <div class="icons-row">
+        <figure><div class="icon" style="background:var(--coral); color:#fff"><svg><use href="#mk"/></svg></div>Standard</figure>
+        <figure><div class="icon" style="background:var(--ink); color:var(--coral)"><svg><use href="#mk"/></svg></div>Dunkel</figure>
+        <figure><div class="icon" style="background:#2c2c30; color:#d8d8dc"><svg><use href="#mk"/></svg></div>Getönt</figure>
+      </div>
+      <div class="icons-row">
+        <figure><div class="icon" style="width:84px;height:84px;border-radius:19px;background:var(--coral);color:#fff"><svg><use href="#mk"/></svg></div>180 px</figure>
+        <figure><div class="icon" style="width:58px;height:58px;border-radius:13px;background:var(--coral);color:#fff"><svg><use href="#mk"/></svg></div>120 px</figure>
+        <figure><div class="icon" style="width:40px;height:40px;border-radius:9px;background:var(--coral);color:#fff"><svg><use href="#mk"/></svg></div>80 px</figure>
+        <figure><div class="icon" style="width:24px;height:24px;border-radius:6px;background:var(--coral);color:#fff;box-shadow:none"><svg><use href="#mk"/></svg></div>Favicon</figure>
+      </div>
+    </div>
+    <div class="home" role="img" aria-label="Melodyn-Icon auf einem Homescreen">
+      <span class="clock">9:41</span>
+      <div class="apps" id="apps"></div>
+      <div class="dock"><i></i><i></i><i></i><i></i></div>
+    </div>
+  </div>
+</section>
+
+<section id="cover">
+  <div class="sec-head"><p class="label">05 · Cover-System</p><div><h2>Jeder Song bekommt sein eigenes Bild.</h2>
+    <p class="lead">Flache Formen wie im Bauhaus: Kreis, Halbkreis, Dreieck, Streifen. Die Farben kommen aus der Stimmung des Songs, die Anordnung aus seinem Titel. So sieht kein Cover aus wie das andere, und trotzdem erkennt man jedes als Melodyn.</p></div></div>
+  <div class="covers" id="covers"></div>
+</section>
+
+<section id="merch">
+  <div class="sec-head"><p class="label">06 · Merch</p><div><h2>Die Marke zum Mitnehmen.</h2>
+    <p class="lead">Auf Stoff funktioniert das Zeichen am besten groß und einfarbig. Die Langform steht klein darunter oder auf der Rückseite.</p></div></div>
+  <div class="merch" id="merchgrid"></div>
+</section>
+
+<section id="website">
+  <div class="sec-head"><p class="label">07 · Website</p><div><h2>Die Startseite spricht wie die App.</h2>
+    <p class="lead">Gleiche Schrift, gleiche Knöpfe, gleiche Sprache. Die Website zeigt sofort, was Melodyn macht, und führt mit einem Satz zum ersten Song.</p></div></div>
+  <div class="browser">
+    <div class="bar"><i></i><i></i><i></i><span>melodyn.app</span></div>
+    <div class="site">
+      <nav><span class="lock c-mark"><svg><use href="#mk"/></svg>melodyn</span><span class="links"><span>So funktioniert’s</span><span>Momente</span><span>Preise</span></span><button class="btn" type="button">App öffnen</button></nav>
+      <div class="hero2">
+        <div>
+          <h1>Musik, die genau jetzt <span>für dich</span> entsteht.</h1>
+          <p class="sub">Sag Melodyn, wo du bist und wie du dich fühlst. Ein paar Sekunden später läuft ein Song, den es vorher nicht gab.</p>
+          <div class="askpill">„Nachtfahrt nach Hause, ruhig …“<b><svg width="22" height="22"><use href="#mic"/></svg></b></div>
+          <div class="ctas"><button class="btn" type="button">Kostenlos ausprobieren</button><button class="btn ghost" type="button">Beispiele hören</button></div>
+        </div>
+        <div class="mini-phone" aria-hidden="true">
+          <div class="h">Guten Abend</div>
+          <div class="ask"><div><b>Wonach ist dir?</b><span>Sag es einfach.</span></div><i><svg width="20" height="20"><use href="#mic"/></svg></i></div>
+          <div class="field">Oder schreib, wonach dir ist …</div>
+          <div style="font-weight:700; font-size:13px; margin-top:4px">Weiter hören</div>
+          <div class="row" id="phonecovers"></div>
+          <div class="np" id="np"></div>
+        </div>
+      </div>
+      <div class="strip">
+        <div><b>Sprechen statt suchen</b><span>Ein Satz reicht. Melodyn versteht Situation, Stimmung und Genre.</span></div>
+        <div><b>Neu, nicht aus dem Regal</b><span>Jeder Song wird für deinen Moment komponiert.</span></div>
+        <div><b>Lernt mit</b><span>Like, Skip und Speichern formen dein Profil.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="stimme">
+  <div class="sec-head"><p class="label">08 · Tonfall</p><div><h2>Wie ein Freund mit gutem Musikgeschmack.</h2>
+    <p class="lead">Melodyn duzt, spricht kurz und warm, und erklärt nie mehr als nötig. Keine Technikwörter, keine Ausrufezeichen-Ketten, keine Emojis.</p></div></div>
+  <div class="grid g2">
+    <div class="say yes"><h3>So klingt Melodyn</h3><ul><li>„Nachtfahrt also. Ich bau dir was Ruhiges.“</li><li>„Gemerkt: kein Autotune, ab jetzt immer.“</li><li>„Gleich kommt die ganze Nummer. Bleib kurz dran.“</li><li>„Weniger davon. Der nächste Song wird anders.“</li></ul></div>
+    <div class="say no"><h3>So nicht</h3><ul><li>„Deine Anfrage wird verarbeitet …“</li><li>„WOW!!! Dein perfekter Track ist da 🔥“</li><li>„Generierung via Lyria-Modell gestartet.“</li><li>„Leider ist ein unerwarteter Fehler aufgetreten.“</li></ul></div>
+  </div>
+</section>
+
+<footer><span class="lock c-mark" style="font-size:20px"><svg><use href="#mk"/></svg>melodyn</span><span>Markenhandbuch 1.0 · Logo, Farben, Schrift, Icon, Cover, Merch, Website, Tonfall</span></footer>
+</main>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  // Cover compositions: the same generator the app uses for every song
+  const PAL = {
+    night: ['#1f3a5f', '#e86a3a', '#f2c14e', '#efe8d8', '#161513'], tunnel: ['#22304f', '#f0a43a', '#c9493b', '#efe8d8', '#161513'],
+    kitchen: ['#d9653b', '#f2c14e', '#7a8f4e', '#efe8d8', '#161513'], brass: ['#e3b23c', '#161513', '#b5482e', '#efe8d8', '#1f3a5f'],
+    focus: ['#8aa37b', '#efe8d8', '#2f4858', '#d9a441', '#161513'], dusk: ['#6d5a9e', '#e7a6a1', '#f2c14e', '#efe8d8', '#161513'],
+    run: ['#c9493b', '#1f3a5f', '#f2c14e', '#efe8d8', '#161513'], morning: ['#f2c14e', '#e86a3a', '#8fb3c9', '#fbf6ea', '#161513'],
+  };
+  function rng(seed) { let a = 0; for (const ch of String(seed)) a = Math.imul(a ^ ch.charCodeAt(0), 2654435761) >>> 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const circ = (cx, cy, r) => `M${cx - r} ${cy}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0Z`;
+  function shapes(seed, p) {
+    const pal = PAL[p], r = rng(p + '/' + seed), pick = () => pal[1 + Math.floor(r() * 3)];
+    const out = [{ d: 'M0 0H100V100H0Z', fill: pal[0] }], kind = Math.floor(r() * 3);
+    if (kind === 0) {
+      for (let y = 0; y < 100; y += 50) for (let x = 0; x < 100; x += 50) {
+        const c = pick(), k = Math.floor(r() * 5);
+        if (k === 0) out.push({ d: circ(x + 25, y + 25, 25), fill: c });
+        else if (k === 1) { out.push({ d: `M${x} ${y + 50}A25 25 0 0 1 ${x + 50} ${y + 50}Z`, fill: c }); out.push({ d: `M${x + 6} ${y + 25}A19 19 0 0 1 ${x + 44} ${y + 25}`, stroke: pal[4], w: 3 }); }
+        else if (k === 2) out.push({ d: `M${x} ${y}H${x + 50}L${x} ${y + 50}Z`, fill: c });
+        else if (k === 3) out.push({ d: `M${x} ${y + 14}H${x + 50}V${y + 36}H${x}Z`, fill: c });
+        else out.push({ d: `M${x} ${y}A50 50 0 0 1 ${x + 50} ${y + 50}H${x}Z`, fill: c });
+      }
+    } else if (kind === 1) {
+      const c1 = pick(), c2 = pick(), cx = 30 + r() * 40;
+      out.push({ d: `M0 ${62 + r() * 10}H100V100H0Z`, fill: c1 }, { d: circ(cx, 46, 26 + r() * 6), fill: c2 }, { d: `M${cx - 34} 46A34 34 0 0 1 ${cx + 34} 46`, stroke: pal[4], w: 2.5 });
+      if (r() > 0.4) out.push({ d: circ(cx + (r() > 0.5 ? 22 : -22), 74, 9), fill: pal[4] });
+    } else {
+      const n = 3 + Math.floor(r() * 2), h = 100 / (n * 2);
+      for (let i = 0; i < n; i++) out.push({ d: `M0 ${i * 2 * h + h / 2}H100V${i * 2 * h + h * 1.5}H0Z`, fill: i % 2 ? pick() : pal[4] });
+      const cx = 25 + r() * 50, cy = 25 + r() * 50;
+      out.push({ d: circ(cx, cy, 22), fill: pick() }, { d: `M${cx - 22} ${cy}A22 22 0 0 0 ${cx + 22} ${cy}Z`, fill: pal[0] });
+    }
+    return out;
+  }
+  const art = (seed, p, extra = '') => `<svg viewBox="0 0 100 100" ${extra} aria-hidden="true">${shapes(seed, p).map(s => s.fill ? `<path d="${s.d}" fill="${s.fill}"/>` : `<path d="${s.d}" fill="none" stroke="${s.stroke}" stroke-width="${s.w}"/>`).join('')}</svg>`;
+
+  const covers = [['Tunnel Lights', 'night', 'Synthwave · Heimfahrt'], ['Sunset Boulevard', 'brass', '90er West Coast'], ['Stille Seiten', 'focus', 'Lo-Fi · Fokus'], ['Pfeffer & Gold', 'kitchen', 'Neo-Soul · Kochen'],
+    ['Halbe Wahrheit', 'dusk', 'Indie-Ballade · Abend'], ['Kilometer Null', 'run', 'Drum & Bass · Laufen'], ['Erster Kaffee', 'morning', 'Indie-Pop · Morgen'], ['Exit 41', 'tunnel', 'Synthwave · Nacht']];
+  $('#covers').innerHTML = covers.map(([t, p, g]) => `<figure>${art(t, p)}<figcaption>${t}<span>${g}</span></figcaption></figure>`).join('');
+  $('#phonecovers').innerHTML = art('Tunnel Lights', 'night') + art('Sunset Boulevard', 'brass');
+  $('#np').innerHTML = art('Exit 41', 'tunnel') + '<div><b style="display:block">Exit 41</b><span style="color:#7c7c84">Heimfahrt, nachts</span></div>';
+
+  // Home screen: neutral app tiles around the Melodyn icon
+  const names = ['Kalender', 'Fotos', 'Karten', 'Wetter', 'Notizen', 'Uhr', 'Melodyn', 'Mail', 'Kamera', 'Podcasts', 'Bank', 'Rezepte'];
+  $('#apps').innerHTML = names.map(n => n === 'Melodyn'
+    ? `<span class="app"><span class="icon" style="background:var(--coral);color:#fff"><svg><use href="#mk"/></svg></span>Melodyn</span>`
+    : `<span class="app"><i></i>${n}</span>`).join('');
+
+  // Hero: a quiet row of sound bars
+  const g = document.querySelector('.hero .bars g');
+  let bars = '';
+  for (let i = 0; i < 18; i++) { const h = 40 + 220 * Math.abs(Math.sin(i * 0.7 + 1)) * (0.4 + 0.6 * Math.sin(Math.PI * (i + 0.5) / 18)); bars += `<rect x="${i * 31}" y="${150 - h / 2}" width="16" height="${h}" rx="8" style="animation-delay:${(-i * 0.13).toFixed(2)}s"/>`; }
+  g.innerHTML = bars;
+
+  // Merch, drawn flat
+  const mark = (x, y, s, c) => `<g transform="translate(${x} ${y}) scale(${s / 64})"><path d="M12 50V28a8 8 0 0 1 16 0v22M28 38a8 8 0 0 1 16 0v12" fill="none" stroke="${c}" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="54" cy="20" r="5" fill="${c}"/></g>`;
+  const word = (x, y, size, c, anchor = 'middle') => `<text x="${x}" y="${y}" font-family="Geist, Arial, sans-serif" font-weight="760" font-size="${size}" letter-spacing="${-size * 0.05}" fill="${c}" text-anchor="${anchor}">melodyn</text>`;
+  const tote = (bag, ink, mk) => `<svg viewBox="0 0 280 300" aria-hidden="true">
+      <path d="M92 92V62a48 48 0 0 1 96 0v30" fill="none" stroke="${bag}" stroke-width="14" stroke-linecap="round"/>
+      <path d="M92 92V62a48 48 0 0 1 96 0v30" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="14" stroke-linecap="round"/>
+      <path d="M52 88h176l12 196H40z" fill="${bag}"/><path d="M52 88h176l1.5 18H50.5z" fill="rgba(0,0,0,.07)"/>
+      ${mark(96, 130, 88, mk)}${word(140, 262, 26, ink)}</svg>`;
+  const cap = (crown, mk, brim) => `<svg viewBox="0 0 280 220" aria-hidden="true">
+      <path d="M40 150c0-62 44-104 104-104s100 38 104 98z" fill="${crown}"/>
+      <path d="M144 46c-14 30-18 66-16 104M144 46c36 22 58 56 66 100" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="2"/>
+      <circle cx="144" cy="46" r="6" fill="${crown}" stroke="rgba(0,0,0,.2)" stroke-width="2"/>
+      <path d="M36 148c60-14 150-14 214-2 14 3 22 14 20 22-60-12-160-12-234 2z" fill="${brim}"/>
+      <path d="M40 150c62-12 148-12 210-4" fill="none" stroke="rgba(0,0,0,.2)" stroke-width="2"/>
+      ${mark(70, 78, 56, mk)}</svg>`;
+  const tee = (shirt, mk) => `<svg viewBox="0 0 280 280" aria-hidden="true">
+      <path d="M100 30c10 16 70 16 80 0l62 26 26 56-40 18-12-24v152H64V106l-12 24-40-18 26-56z" fill="${shirt}"/>
+      <path d="M100 30c10 16 70 16 80 0" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="4"/>
+      ${mark(150, 84, 36, mk)}</svg>`;
+  const sticker = () => `<svg viewBox="0 0 280 280" aria-hidden="true">
+      <circle cx="100" cy="104" r="72" fill="#ff5a36"/>${mark(58, 62, 84, '#fff')}
+      <g transform="rotate(9 200 120)"><rect x="146" y="66" width="108" height="108" rx="26" fill="#121214"/>${mark(166, 86, 68, '#ff5a36')}</g>
+      <rect x="38" y="204" width="204" height="40" rx="20" fill="#ffc23d"/>
+      <text x="140" y="230" font-family="Geist, Arial, sans-serif" font-weight="700" font-size="15" fill="#121214" text-anchor="middle">Sag, wonach dir ist.</text></svg>`;
+  const card = () => `<svg viewBox="0 0 280 280" aria-hidden="true">
+      <g transform="rotate(-7 140 110)"><rect x="40" y="46" width="200" height="124" rx="10" fill="#f6f4ef" stroke="#e2dfd6"/>
+        <text x="58" y="78" font-family="Geist, Arial, sans-serif" font-weight="700" font-size="13" fill="#121214">Lena Hartmann</text>
+        <text x="58" y="95" font-family="Geist Mono, monospace" font-size="9.5" fill="#7c7c84">Sound Design</text>
+        <text x="58" y="150" font-family="Geist Mono, monospace" font-size="9.5" fill="#7c7c84">lena@melodyn.app</text></g>
+      <rect x="44" y="132" width="200" height="124" rx="10" fill="#ff5a36"/>
+      ${mark(62, 148, 36, '#fff')}${word(62, 236, 24, '#fff', 'start')}</svg>`;
+  const phonecase = () => `<svg viewBox="0 0 280 280" aria-hidden="true">
+      <rect x="86" y="22" width="108" height="236" rx="24" fill="#1b2a4a"/>
+      <rect x="98" y="34" width="44" height="58" rx="14" fill="#15213b"/><circle cx="114" cy="52" r="8" fill="#0b1222"/><circle cx="128" cy="76" r="8" fill="#0b1222"/>
+      ${mark(108, 132, 64, '#ff5a36')}${word(140, 230, 16, '#ffffff')}</svg>`;
+  const items = [
+    ['Tasche, Natur', 'Baumwolle in Papier, Zeichen in Koralle', '#f6f4ef', tote('#e9e2d2', '#121214', '#ff5a36')],
+    ['Tasche, Koralle', 'Zeichen und Wortmarke in Weiß', '#fdece6', tote('#ff5a36', '#ffffff', '#ffffff')],
+    ['Cap, Nachtblau', 'Zeichen gestickt in Koralle', '#e8ebf2', cap('#1b2a4a', '#ff5a36', '#15213b')],
+    ['Cap, Papier', 'Zeichen gestickt in Tinte', '#f1f0ec', cap('#efe8d8', '#121214', '#e2d9c6')],
+    ['Shirt, Tinte', 'Kleines Zeichen auf der Brust', '#ececee', tee('#121214', '#ff5a36')],
+    ['Handyhülle', 'Nachtblau mit Zeichen in Koralle', '#e8ebf2', phonecase()],
+    ['Sticker', 'Für Laptop, Gitarrenkoffer, Kamera', '#f1f0ec', sticker()],
+    ['Visitenkarte', 'Vorderseite Koralle, Rückseite Papier', '#ecebe7', card()],
+  ];
+  $('#merchgrid').innerHTML = items.map(([t, c, bg, svg]) => `<div><div class="tile" style="background:${bg}">${svg}</div><h3>${t}</h3><p class="cap">${c}</p></div>`).join('');
+})();
+</script>
+</body></html>
