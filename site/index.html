@@ -55,9 +55,7 @@ button { font: inherit; cursor: pointer; }
   linear-gradient(0deg, color-mix(in srgb, var(--hero-bg) 55%, transparent) 0%, transparent 34%); }
 @media (max-width: 760px) { .stagep .fade { background: linear-gradient(0deg, var(--hero-bg) 0%, var(--hero-bg) 30%, color-mix(in srgb, var(--hero-bg) 70%, transparent) 52%, transparent 78%); } }
 .stagep .in { width: 100%; padding-block: 120px clamp(36px, 6vw, 76px); }
-.pill { display: inline-flex; align-items: center; gap: 10px; padding: 5px 14px 5px 5px; border-radius: 99px; background: color-mix(in srgb, var(--card) 80%, transparent); backdrop-filter: blur(8px); box-shadow: 0 0 0 1px var(--line); font-size: 13.5px; color: var(--fg-2); }
-.pill b { background: var(--coral); color: #fff; font-size: 11.5px; padding: 3px 9px; border-radius: 99px; font-weight: 700; letter-spacing: .02em; }
-.hero h1 { margin-top: 20px; font-size: clamp(44px, 5.8vw, 86px); font-weight: 780; letter-spacing: -.055em; line-height: .98; max-width: 11ch; }
+.hero h1 { margin-top: 0; font-size: clamp(44px, 5.8vw, 86px); font-weight: 780; letter-spacing: -.055em; line-height: .98; max-width: 11ch; }
 .hero h1 em { font-style: normal; color: var(--coral); }
 .hero .sub { margin-top: 20px; font-size: clamp(16.5px, 1.4vw, 19px); color: var(--fg-2); max-width: 40ch; }
 .hero .ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
@@ -234,7 +232,6 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
   <div class="stagep">
     <canvas id="aura" aria-hidden="true"></canvas><div class="fade"></div>
     <div class="in wrap">
-      <span class="pill"><b>Neu</b>Melodyn 1.0 ist da</span>
       <h1>Musik, die genau <em>jetzt</em> für dich entsteht.</h1>
       <p class="sub">Sag, wo du bist und wie es dir geht. Sekunden später läuft ein Song, den es vorher nicht gab.</p>
       <div class="ctas"><a class="btn" href="#top">Kostenlos ausprobieren</a><a class="btn ghost" href="#momente">Beispiele hören</a></div>
