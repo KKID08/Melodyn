@@ -125,16 +125,17 @@ button { font: inherit; cursor: pointer; }
 @keyframes bar { 0%, 100% { height: 5px; } 50% { height: 22px; } }
 
 /* Coral panel */
-.panel { border-radius: 28px; background: var(--coral); color: #fff; padding: clamp(28px, 5vw, 64px); position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px clamp(24px, 4vw, 64px); }
-@media (max-width: 860px) { .panel { grid-template-columns: minmax(0, 1fr); } }
+.panel { border-radius: 28px; background: var(--coral); color: #fff; padding: clamp(28px, 5vw, 64px); position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(28px, 4vw, 44px); }
 .panel .eyebrow { color: rgba(255,255,255,.8); }
 .panel h2 { margin-top: 16px; font-size: clamp(34px, 4.6vw, 60px); font-weight: 780; letter-spacing: -.05em; line-height: 1.02; }
-.panel .feats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 32px; align-content: start; }
-@media (max-width: 480px) { .panel .feats { grid-template-columns: minmax(0, 1fr); } }
-.panel .feats b { display: block; font-size: 17px; letter-spacing: -.02em; margin-bottom: 6px; }
-.panel .feats p { font-size: 15px; opacity: .92; }
-.panel .foot { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 18px; }
-.panel .foot p { max-width: 52ch; font-size: 15.5px; opacity: .92; }
+.panel .phead { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 760px) { .steps { grid-template-columns: minmax(0, 1fr); } .steps li { grid-template-columns: 48px minmax(0, 1fr); column-gap: 16px; row-gap: 4px; padding: 18px 20px; } .steps li i { grid-row: span 2; width: 48px; height: 48px; margin: 0; } .steps .n { top: 18px; right: 20px; } .steps b { font-size: 24px; } }
+.steps li { position: relative; display: grid; gap: 8px; align-content: start; padding: 24px; border-radius: 20px; background: rgba(255,255,255,.13); }
+.steps i { width: 56px; height: 56px; border-radius: 50%; background: #fff; color: var(--coral); display: grid; place-items: center; margin-bottom: 10px; }
+.steps .n { position: absolute; top: 24px; right: 24px; font: 500 13px var(--mono); letter-spacing: .08em; opacity: .7; }
+.steps b { font-size: clamp(26px, 2.6vw, 34px); font-weight: 780; letter-spacing: -.045em; line-height: 1.05; }
+.steps p { font-size: 16px; line-height: 1.45; opacity: .92; max-width: 30ch; }
 .panel .shapes { grid-column: 1 / -1; margin: 0 calc(-1 * clamp(28px, 5vw, 64px)) calc(-1 * clamp(28px, 5vw, 64px)); }
 .panel .shapes svg { width: 100%; height: auto; display: block; }
 
@@ -216,6 +217,7 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
   <symbol id="home" viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
   <symbol id="lib" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="4" y="8" width="12" height="12" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v10"/></g></symbol>
   <symbol id="user" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/></g></symbol>
+  <symbol id="heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z" fill="currentColor"/></symbol>
   <symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
 
@@ -280,14 +282,12 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
 
 <section class="wrap">
   <div class="panel">
-    <div><p class="eyebrow">So funktioniert Melodyn</p><h2>Sag es. Hör es. Behalt es.</h2></div>
-    <div class="feats">
-      <div><b>Sprechen statt suchen</b><p>Ein Satz reicht, ganz ohne Suchen.</p></div>
-      <div><b>In Sekunden statt Minuten</b><p>Der Song läuft fast sofort.</p></div>
-      <div><b>Du lenkst mit</b><p>„Etwas schneller“ reicht, und der nächste Song hört darauf.</p></div>
-      <div><b>Deins für immer</b><p>Gespeicherte Songs hörst du kostenlos wieder.</p></div>
-    </div>
-    <div class="foot"><a class="btn white" href="#momente">Momente ansehen <svg width="18" height="18"><use href="#arrow"/></svg></a></div>
+    <div class="phead"><div><p class="eyebrow">So funktioniert Melodyn</p><h2>Drei Schritte zu deinem Song.</h2></div><a class="btn white" href="#momente">Momente ansehen <svg width="18" height="18"><use href="#arrow"/></svg></a></div>
+    <ol class="steps">
+      <li><i><svg width="26" height="26"><use href="#mic"/></svg></i><span class="n">01</span><b>Sag es.</b><p>Ein Satz reicht, zum Beispiel „Nachtfahrt, ruhig“.</p></li>
+      <li><i><svg width="26" height="26"><use href="#play"/></svg></i><span class="n">02</span><b>Hör es.</b><p>Sekunden später läuft dein neuer Song.</p></li>
+      <li><i><svg width="26" height="26"><use href="#heart"/></svg></i><span class="n">03</span><b>Behalt es.</b><p>Speichern und jederzeit kostenlos wiederhören.</p></li>
+    </ol>
     <div class="shapes" aria-hidden="true"><svg id="band" viewBox="0 0 1200 120" preserveAspectRatio="xMidYMax slice"></svg></div>
   </div>
 </section>
