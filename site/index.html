@@ -12,11 +12,11 @@
   --display: "Geist", "Helvetica Neue", Arial, sans-serif;
   --mono: "Geist Mono", ui-monospace, Menlo, monospace;
   --a-bg: #0f0f11; --a-side: #141417; --a-line: #222226; --a-fg: #f5f4f2; --a-strong: #fff; --a-dim: #b4b2ba; --a-mute: #8e8c95; --a-field: #1d1d21; --a-track: #2c2c32; --a-btn: #fff; --a-btnfg: #121214; --frame: #16161a;
-  --k-night: #1b2a4a; --k-ink: #161513;
+  --k-night: #1b2a4a; --k-ink: #161513; --hero-bg: #fbfaf6;
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0f0f11; --fg: #f5f4f2; --fg-2: #cbc9cf; --mute: #8e8c95; --line: #26262b; --card: #18181b; --soft: #1d1d21; --a-bg: #ffffff; --a-side: #f6f4ef; --a-line: #e7e4dc; --a-fg: #121214; --a-strong: #121214; --a-dim: #4b4a52; --a-mute: #807e86; --a-field: #f1efea; --a-track: #e2dfd8; --a-btn: #121214; --a-btnfg: #fff; --frame: #e9e6df; --k-night: #4a6bb0; --k-ink: #f3ecdc; color-scheme: dark; } }
-:root[data-theme="dark"] { --bg: #0f0f11; --fg: #f5f4f2; --fg-2: #cbc9cf; --mute: #8e8c95; --line: #26262b; --card: #18181b; --soft: #1d1d21; --a-bg: #ffffff; --a-side: #f6f4ef; --a-line: #e7e4dc; --a-fg: #121214; --a-strong: #121214; --a-dim: #4b4a52; --a-mute: #807e86; --a-field: #f1efea; --a-track: #e2dfd8; --a-btn: #121214; --a-btnfg: #fff; --frame: #e9e6df; --k-night: #4a6bb0; --k-ink: #f3ecdc; color-scheme: dark; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0f0f11; --fg: #f5f4f2; --fg-2: #cbc9cf; --mute: #8e8c95; --line: #26262b; --card: #18181b; --soft: #1d1d21; --a-bg: #ffffff; --a-side: #f6f4ef; --a-line: #e7e4dc; --a-fg: #121214; --a-strong: #121214; --a-dim: #4b4a52; --a-mute: #807e86; --a-field: #f1efea; --a-track: #e2dfd8; --a-btn: #121214; --a-btnfg: #fff; --frame: #e9e6df; --k-night: #4a6bb0; --k-ink: #f3ecdc; --hero-bg: #0f0f11; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #0f0f11; --fg: #f5f4f2; --fg-2: #cbc9cf; --mute: #8e8c95; --line: #26262b; --card: #18181b; --soft: #1d1d21; --a-bg: #ffffff; --a-side: #f6f4ef; --a-line: #e7e4dc; --a-fg: #121214; --a-strong: #121214; --a-dim: #4b4a52; --a-mute: #807e86; --a-field: #f1efea; --a-track: #e2dfd8; --a-btn: #121214; --a-btnfg: #fff; --frame: #e9e6df; --k-night: #4a6bb0; --k-ink: #f3ecdc; --hero-bg: #0f0f11; color-scheme: dark; }
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 var(--display); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
@@ -46,19 +46,23 @@ button { font: inherit; cursor: pointer; }
 .nav .right { margin-left: auto; display: flex; align-items: center; gap: 16px; font-size: 14.5px; }
 @media (max-width: 860px) { .nav .links, .nav .right .login { display: none; } }
 
-/* Hero */
-.hero { padding-block: clamp(32px, 5vw, 64px) 0; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px clamp(32px, 5vw, 80px); align-items: end; }
-@media (max-width: 860px) { .hero { grid-template-columns: minmax(0, 1fr); } }
-.pill { display: inline-flex; align-items: center; gap: 10px; padding: 5px 14px 5px 5px; border-radius: 99px; background: var(--soft); font-size: 13.5px; color: var(--fg-2); }
+/* Hero: a rounded stage with a soft, slowly drifting colour field on the right and the words bottom-left */
+.hero { padding: 0 clamp(8px, 1vw, 14px); }
+.stagep { position: relative; overflow: hidden; border-radius: clamp(20px, 2.4vw, 32px); background: var(--hero-bg); min-height: clamp(560px, 84vh, 820px); display: flex; align-items: flex-end; isolation: isolate; }
+.stagep canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; }
+.stagep .fade { position: absolute; inset: 0; z-index: -1; background:
+  linear-gradient(90deg, var(--hero-bg) 0%, color-mix(in srgb, var(--hero-bg) 88%, transparent) 26%, color-mix(in srgb, var(--hero-bg) 30%, transparent) 50%, transparent 66%),
+  linear-gradient(0deg, color-mix(in srgb, var(--hero-bg) 55%, transparent) 0%, transparent 34%); }
+@media (max-width: 760px) { .stagep .fade { background: linear-gradient(0deg, var(--hero-bg) 0%, var(--hero-bg) 30%, color-mix(in srgb, var(--hero-bg) 70%, transparent) 52%, transparent 78%); } }
+.stagep .in { width: 100%; padding-block: 120px clamp(36px, 6vw, 76px); }
+.pill { display: inline-flex; align-items: center; gap: 10px; padding: 5px 14px 5px 5px; border-radius: 99px; background: color-mix(in srgb, var(--card) 80%, transparent); backdrop-filter: blur(8px); box-shadow: 0 0 0 1px var(--line); font-size: 13.5px; color: var(--fg-2); }
 .pill b { background: var(--coral); color: #fff; font-size: 11.5px; padding: 3px 9px; border-radius: 99px; font-weight: 700; letter-spacing: .02em; }
-.hero h1 { margin-top: 20px; font-size: clamp(44px, 6.2vw, 92px); font-weight: 780; letter-spacing: -.055em; line-height: .98; max-width: 12ch; }
+.hero h1 { margin-top: 20px; font-size: clamp(44px, 5.8vw, 86px); font-weight: 780; letter-spacing: -.055em; line-height: .98; max-width: 11ch; }
 .hero h1 em { font-style: normal; color: var(--coral); }
-.hero .hr { padding-bottom: .4em; }
-.hero .sub { font-size: clamp(17px, 1.5vw, 20px); color: var(--fg-2); max-width: 36ch; }
-.hero .ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
-
+.hero .sub { margin-top: 20px; font-size: clamp(16.5px, 1.4vw, 19px); color: var(--fg-2); max-width: 40ch; }
+.hero .ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
 /* Moments ticker */
-.ticker { margin-top: clamp(32px, 4vw, 52px); border-block: 1px solid var(--line); overflow: hidden; }
+.ticker { margin-top: clamp(20px, 3vw, 36px); border-block: 1px solid var(--line); overflow: hidden; }
 .ticker .row { display: flex; gap: 40px; width: max-content; padding-block: 18px; animation: tick 40s linear infinite; font-size: 18px; font-weight: 650; letter-spacing: -.02em; color: var(--fg-2); }
 .ticker .row span { display: inline-flex; align-items: center; gap: 12px; white-space: nowrap; }
 .ticker .row i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
@@ -226,14 +230,15 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
 </div></header>
 
 <main id="top">
-<section class="hero wrap">
-  <div class="hl">
-    <span class="pill"><b>Neu</b>Melodyn 1.0 ist da</span>
-    <h1>Musik, die genau <em>jetzt</em> für dich entsteht.</h1>
-  </div>
-  <div class="hr">
-    <p class="sub">Sag, wo du bist und wie es dir geht. Sekunden später läuft ein Song, den es vorher nicht gab.</p>
-    <div class="ctas"><a class="btn" href="#top">Kostenlos ausprobieren</a><a class="btn ghost" href="#momente">Beispiele hören</a></div>
+<section class="hero">
+  <div class="stagep">
+    <canvas id="aura" aria-hidden="true"></canvas><div class="fade"></div>
+    <div class="in wrap">
+      <span class="pill"><b>Neu</b>Melodyn 1.0 ist da</span>
+      <h1>Musik, die genau <em>jetzt</em> für dich entsteht.</h1>
+      <p class="sub">Sag, wo du bist und wie es dir geht. Sekunden später läuft ein Song, den es vorher nicht gab.</p>
+      <div class="ctas"><a class="btn" href="#top">Kostenlos ausprobieren</a><a class="btn ghost" href="#momente">Beispiele hören</a></div>
+    </div>
   </div>
 </section>
 
@@ -429,6 +434,48 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
   const drawWords = () => { giantWord($('#giant'), 'Jetzt.', 1200, 400, 330, -0.045); giantWord($('#closeword'), 'Hör rein.', 1200, 280, 240, -0.04, 3); };
   drawWords();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWords);
+
+  // Hero colour field: soft radial blobs painted on a tiny canvas (about 1/10 of the screen) and scaled up by CSS,
+  // which blurs them for free. Drifts slowly and breathes gently at 92 BPM; pauses off-screen and for reduced motion.
+  (() => {
+    const cv = $('#aura'), g = cv.getContext('2d'), stage = cv.parentElement;
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const B = [
+      { c: '#1b2a4a', x: .84, y: .30, r: .42, ax: .04, ay: .05, s: .05, p: 0 },
+      { c: '#6d5a9e', x: .62, y: .62, r: .34, ax: .06, ay: .04, s: .07, p: 1.3 },
+      { c: '#8fb3c9', x: .95, y: .72, r: .30, ax: .03, ay: .06, s: .06, p: 2.1 },
+      { c: '#ff5a36', x: .70, y: .34, r: .30, ax: .05, ay: .05, s: .08, p: 3.4, beat: 1 },
+      { c: '#e7a6a1', x: .52, y: .28, r: .22, ax: .05, ay: .03, s: .09, p: 4.2 },
+      { c: '#ffc23d', x: .66, y: .30, r: .16, ax: .04, ay: .02, s: .1, p: 5.0, sx: 2.6, beat: 1.6 },
+      { c: '#fff6e0', x: .64, y: .30, r: .07, ax: .04, ay: .02, s: .1, p: 5.0, sx: 3.2, beat: 2 },
+    ];
+    let w = 0, h = 0, bg = '#fbfaf6', vis = true, last = 0;
+    const size = () => {
+      const r = stage.getBoundingClientRect(), k = innerWidth < 760 ? 6 : 10;
+      w = cv.width = Math.max(40, Math.round(r.width / k)); h = cv.height = Math.max(40, Math.round(r.height / k));
+      bg = getComputedStyle(stage).getPropertyValue('--hero-bg').trim() || bg;
+    };
+    const draw = t => {
+      const sec = t / 1000, beat = Math.pow(0.5 + 0.5 * Math.cos(sec * Math.PI * 2 * 92 / 60), 6);
+      g.globalCompositeOperation = 'source-over'; g.fillStyle = bg; g.fillRect(0, 0, w, h);
+      const narrow = w < h, m = Math.max(w, h);
+      for (const b of B) {
+        const x = (narrow ? .5 + (b.x - .7) * 1.4 : b.x) * w + Math.sin(sec * b.s + b.p) * b.ax * w;
+        const y = (narrow ? b.y * .75 : b.y) * h + Math.cos(sec * b.s * 1.3 + b.p) * b.ay * h;
+        const r = b.r * m * (1 + (b.beat || 0) * 0.05 * beat);
+        g.save(); g.translate(x, y); g.scale(b.sx || 1, 1);
+        const gr = g.createRadialGradient(0, 0, 0, 0, 0, r);
+        gr.addColorStop(0, b.c); gr.addColorStop(.45, b.c + 'cc'); gr.addColorStop(1, b.c + '00');
+        g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill(); g.restore();
+      }
+    };
+    const loop = t => { if (vis && t - last > 33) { last = t; draw(t); } requestAnimationFrame(loop); };
+    size(); draw(8000);
+    new ResizeObserver(() => { size(); draw(performance.now() + 8000); }).observe(stage);
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { size(); draw(performance.now() + 8000); });
+    new IntersectionObserver(([e]) => { vis = e.isIntersecting; }).observe(stage);
+    if (!still) requestAnimationFrame(loop);
+  })();
 
   // Moments ticker (doubled so the loop is seamless)
   const tick = [['Nachtfahrt nach Hause', '#1b2a4a'], ['Ich koche für Freunde', '#ff5a36'], ['Konzentrieren, ohne Gesang', '#8aa37b'], ['90er West Coast, chillig', '#ffc23d'], ['Laufen, 170 BPM', '#c9493b'], ['Sonntagmorgen, Kaffee', '#f2c14e'], ['Regen am Fenster', '#5b7083'], ['Heute Abend, leise', '#6d5a9e']];
