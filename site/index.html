@@ -519,13 +519,14 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWords);
 
   // Hero ribbons: six tapered sound-wave ribbons in the brand colours. They start as a thin bundle beside the
-  // headline, fan out to the right and cross like a twisting cable; on phones they run across the top instead.
+  // headline, fan out to the right and twist over and under each other like a cable; on phones they run across the top instead.
   // Painted on a canvas at up to 1.5x pixel density, flowing slowly and breathing at 92 BPM; paused off-screen
   // and drawn once for reduced motion.
   (() => {
     const cv = $('#aura'), g = cv.getContext('2d'), stage = cv.parentElement;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const COLS = ['#ff5a36', '#ffc23d', '#6d5a9e', '#8fb3c9', '#8aa37b', '#e7a6a1'];
+    const RGB = COLS.map(h => [1, 3, 5].map(o => parseInt(h.slice(o, o + 2), 16)));
     let W = 0, H = 0, dpr = 1, vis = true, last = 0, dark = false;
     const size = () => {
       const r = stage.getBoundingClientRect(); dpr = Math.min(1.5, devicePixelRatio || 1);
@@ -537,20 +538,40 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
       const narrow = W < 760, x0 = narrow ? -20 : W * .47, cy = narrow ? H * .25 : H * .47, span = narrow ? H * .4 : H * .78;
       const k = narrow ? .017 : .0085, wMax = narrow ? 13 : 24, gap = narrow ? 8 : 12;
       g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
-      g.globalCompositeOperation = dark ? 'source-over' : 'multiply';
+      // Depth like a twisted cable: a ribbon is in front where its wave rises and behind where it falls. Every ribbon is
+      // cut into short opaque slices, all slices are sorted back to front, and each one gets a soft shadow on what lies
+      // behind it, so crossings read as over/under instead of tinted overlaps.
+      const segs = [];
       COLS.forEach((c, i) => {
-        const top = [], bot = [];
+        const pts = [];
         for (let x = x0 - 40; x <= W + 30; x += 6) {
-          const u = Math.min(1, Math.max(0, (x - x0) / (W - x0))), e = Math.pow(u, 1.15);
-          const y = cy + (i - 2.5) * gap * (1 - u * .7) + Math.sin(x * k + i * 1.05 - sec * .55) * span * .3 * e * (1 + .05 * beat);
-          const w = 2 + (wMax - 2) * Math.pow(u, .7);
-          top.push([x, y - w / 2]); bot.push([x, y + w / 2]);
+          const u = Math.min(1, Math.max(0, (x - x0) / (W - x0))), e = Math.pow(u, 1.15), ph = x * k + i * 1.05 - sec * .55;
+          const d = Math.cos(ph) * Math.min(1, u * 3);
+          const y = cy + (i - 2.5) * gap * (1 - u * .7) + Math.sin(ph) * span * .3 * e * (1 + .05 * beat);
+          const w = (2 + (wMax - 2) * Math.pow(u, .7)) * (1 + .16 * d);
+          pts.push([x, y, w / 2, d]);
         }
-        g.beginPath(); g.moveTo(top[0][0], top[0][1]);
-        for (const [x, y] of top) g.lineTo(x, y);
-        for (let j = bot.length - 1; j >= 0; j--) g.lineTo(bot[j][0], bot[j][1]);
-        g.closePath(); g.globalAlpha = dark ? .9 : .92; g.fillStyle = c; g.fill();
+        // split only where the ribbon passes from back to front, so each piece is one smooth path
+        let st = 0;
+        for (let j = 1; j <= pts.length; j++) {
+          if (j === pts.length || Math.sign(pts[j][3]) !== Math.sign(pts[j - 1][3])) {
+            const run = pts.slice(Math.max(0, st - 1), Math.min(pts.length, j + 1));
+            const dm = run.reduce((v, p) => v + p[3], 0) / run.length;
+            segs.push([dm + i * 1e-3, RGB[i], run]); st = j;
+          }
+        }
       });
+      segs.sort((p, q) => p[0] - q[0]);
+      g.globalCompositeOperation = 'source-over';
+      const shade = (rgb, d) => { const f = v => Math.max(0, Math.min(255, Math.round(d >= 0 ? v + (255 - v) * d * .12 : v * (1 + d * .2)))); return `rgb(${f(rgb[0])},${f(rgb[1])},${f(rgb[2])})`; };
+      const outline = (run, pad) => { g.beginPath(); g.moveTo(run[0][0], run[0][1] - run[0][2] - pad); for (const p of run) g.lineTo(p[0], p[1] - p[2] - pad); for (let j = run.length - 1; j >= 0; j--) g.lineTo(run[j][0], run[j][1] + run[j][2] + pad); g.closePath(); };
+      for (const [, rgb, run] of segs) {
+        outline(run, 2.5); g.fillStyle = dark ? 'rgba(0,0,0,.35)' : 'rgba(40,30,70,.09)'; g.fill();
+        const a0 = run[0][0], a1 = run[run.length - 1][0], gr = g.createLinearGradient(a0, 0, a1, 0), stp = Math.max(1, Math.floor(run.length / 8));
+        for (let j = 0; j < run.length; j += stp) gr.addColorStop(Math.min(1, (run[j][0] - a0) / (a1 - a0 || 1)), shade(rgb, run[j][3]));
+        gr.addColorStop(1, shade(rgb, run[run.length - 1][3]));
+        outline(run, 0); g.fillStyle = gr; g.fill();
+      }
       g.globalAlpha = 1; g.globalCompositeOperation = 'destination-out';
       const fade = narrow ? g.createLinearGradient(0, H * .62, 0, H * .38) : g.createLinearGradient(x0 - 40, 0, x0 + W * .12, 0);
       fade.addColorStop(0, 'rgba(0,0,0,1)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
