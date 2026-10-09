@@ -11,10 +11,11 @@
   --bg: #fbfaf6; --fg: #121214; --fg-2: #4b4a52; --mute: #807e86; --line: #e7e4dc; --card: #ffffff; --soft: #f3f0e8;
   --display: "Geist", "Helvetica Neue", Arial, sans-serif;
   --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+  --a-bg: #0f0f11; --a-side: #141417; --a-line: #222226; --a-fg: #f5f4f2; --a-strong: #fff; --a-dim: #b4b2ba; --a-mute: #8e8c95; --a-field: #1d1d21; --a-track: #2c2c32; --a-btn: #fff; --a-btnfg: #121214; --frame: #16161a;
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0f0f11; --fg: #f5f4f2; --fg-2: #cbc9cf; --mute: #8e8c95; --line: #26262b; --card: #18181b; --soft: #1d1d21; color-scheme: dark; } }
-:root[data-theme="dark"] { --bg: #0f0f11; --fg: #f5f4f2; --fg-2: #cbc9cf; --mute: #8e8c95; --line: #26262b; --card: #18181b; --soft: #1d1d21; color-scheme: dark; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0f0f11; --fg: #f5f4f2; --fg-2: #cbc9cf; --mute: #8e8c95; --line: #26262b; --card: #18181b; --soft: #1d1d21; --a-bg: #ffffff; --a-side: #f6f4ef; --a-line: #e7e4dc; --a-fg: #121214; --a-strong: #121214; --a-dim: #4b4a52; --a-mute: #807e86; --a-field: #f1efea; --a-track: #e2dfd8; --a-btn: #121214; --a-btnfg: #fff; --frame: #e9e6df; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #0f0f11; --fg: #f5f4f2; --fg-2: #cbc9cf; --mute: #8e8c95; --line: #26262b; --card: #18181b; --soft: #1d1d21; --a-bg: #ffffff; --a-side: #f6f4ef; --a-line: #e7e4dc; --a-fg: #121214; --a-strong: #121214; --a-dim: #4b4a52; --a-mute: #807e86; --a-field: #f1efea; --a-track: #e2dfd8; --a-btn: #121214; --a-btnfg: #fff; --frame: #e9e6df; color-scheme: dark; }
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 var(--display); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
@@ -74,36 +75,36 @@ button { font: inherit; cursor: pointer; }
 .player-bar .t { flex: 1; height: 3px; border-radius: 2px; background: var(--line); position: relative; overflow: hidden; }
 .player-bar .t i { position: absolute; inset: 0 auto 0 0; width: 34%; background: var(--coral); animation: prog 30s linear infinite; }
 @keyframes prog { from { width: 0; } to { width: 100%; } }
-.frame { max-width: 1040px; margin: 0 auto; border-radius: 18px; background: #16161a; padding: 10px; box-shadow: 0 40px 80px -40px rgba(20,10,0,.55), 0 0 0 1px rgba(255,255,255,.06); }
-.app { border-radius: 10px; overflow: hidden; background: #0f0f11; color: #f5f4f2; display: grid; grid-template-columns: 200px minmax(0, 1fr); min-height: 460px; font-size: 13px; }
-.app aside { background: #141417; padding: 18px 14px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid #222226; }
-.app aside .lock { font-size: 19px; margin: 0 6px 18px; color: #fff; }
-.app aside a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: #a9a7b0; }
-.app aside a.on { background: #222226; color: #fff; }
+.frame { max-width: 1040px; margin: 0 auto; border-radius: 18px; background: var(--frame); padding: 10px; box-shadow: 0 40px 80px -40px rgba(20,10,0,.55), 0 0 0 1px rgba(255,255,255,.06); }
+.app { border-radius: 10px; overflow: hidden; background: var(--a-bg); color: var(--a-fg); display: grid; grid-template-columns: 200px minmax(0, 1fr); min-height: 460px; font-size: 13px; }
+.app aside { background: var(--a-side); padding: 18px 14px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid var(--a-line); }
+.app aside .lock { font-size: 19px; margin: 0 6px 18px; color: var(--a-strong); }
+.app aside a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: var(--a-dim); }
+.app aside a.on { background: var(--a-line); color: var(--a-strong); }
 .app aside svg { width: 18px; height: 18px; }
-.app aside .moments { margin-top: 18px; display: grid; gap: 8px; padding: 0 6px; font-size: 12px; color: #8e8c95; }
-.app aside .moments div { display: flex; align-items: center; gap: 9px; color: #cbc9cf; }
+.app aside .moments { margin-top: 18px; display: grid; gap: 8px; padding: 0 6px; font-size: 12px; color: var(--a-mute); }
+.app aside .moments div { display: flex; align-items: center; gap: 9px; color: var(--a-dim); }
 .app aside .moments svg { width: 26px; height: 26px; border-radius: 5px; }
 .app main { padding: 22px 26px 0; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .app .top { display: flex; justify-content: space-between; align-items: center; }
 .app .top b { font-size: 26px; letter-spacing: -.04em; font-weight: 760; }
-.app .ask { display: flex; align-items: center; gap: 14px; padding: 18px; border-radius: 14px; background: var(--coral); }
+.app .ask { color: #fff; display: flex; align-items: center; gap: 14px; padding: 18px; border-radius: 14px; background: var(--coral); }
 .app .ask b { font-size: 18px; letter-spacing: -.03em; display: block; }
 .app .ask span { opacity: .9; font-size: 12.5px; }
 .app .ask i { margin-left: auto; width: 46px; height: 46px; border-radius: 50%; background: #fff; color: var(--coral); display: grid; place-items: center; flex: none; }
-.app .field { height: 38px; border-radius: 10px; background: #1d1d21; color: #8e8c95; display: flex; align-items: center; padding-left: 14px; }
+.app .field { height: 38px; border-radius: 10px; background: var(--a-field); color: var(--a-mute); display: flex; align-items: center; padding-left: 14px; }
 .app h4 { margin: 4px 0 0; font-size: 15px; letter-spacing: -.02em; }
 .app .shelf { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 .app .shelf figure { margin: 0; min-width: 0; }
 .app .shelf svg { width: 100%; height: auto; aspect-ratio: 1; border-radius: 8px; display: block; }
 .app .shelf b { display: block; margin-top: 6px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.app .shelf span { font-size: 11px; color: #8e8c95; }
-.app .np { margin: auto -26px 0; padding: 12px 26px; border-top: 1px solid #222226; background: #141417; display: grid; grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr); gap: 14px; align-items: center; }
+.app .shelf span { font-size: 11px; color: var(--a-mute); }
+.app .np { margin: auto -26px 0; padding: 12px 26px; border-top: 1px solid var(--a-line); background: var(--a-side); display: grid; grid-template-columns: 44px minmax(0, 1fr) auto minmax(0, 1fr); gap: 14px; align-items: center; }
 .app .np svg.c { width: 44px; height: 44px; border-radius: 6px; }
 .app .np .ctl { display: flex; align-items: center; gap: 16px; }
-.app .np .ctl b { width: 38px; height: 38px; border-radius: 50%; background: #fff; color: #121214; display: grid; place-items: center; }
-.app .np .bar { height: 3px; border-radius: 2px; background: #2c2c32; position: relative; }
-.app .np .bar i { position: absolute; inset: 0 auto 0 0; width: 38%; background: #fff; border-radius: 2px; }
+.app .np .ctl b { width: 38px; height: 38px; border-radius: 50%; background: var(--a-btn); color: var(--a-btnfg); display: grid; place-items: center; }
+.app .np .bar { height: 3px; border-radius: 2px; background: var(--a-track); position: relative; }
+.app .np .bar i { position: absolute; inset: 0 auto 0 0; width: 38%; background: var(--a-btn); border-radius: 2px; }
 @media (max-width: 760px) { .app { grid-template-columns: minmax(0, 1fr); } .app aside { display: none; } .app .shelf { grid-template-columns: repeat(3, minmax(0, 1fr)); } .app .shelf figure:nth-child(n+4) { display: none; } .app .np { grid-template-columns: 44px minmax(0, 1fr) auto; } .app .np .bar { display: none; } }
 
 /* Statement */
@@ -242,7 +243,6 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
     <svg id="giant" viewBox="0 0 1200 380"></svg>
   </div>
   <div class="product">
-    <div class="player-bar"><span>Heimfahrt, nachts</span><span class="t"><i></i></span><span>„Tunnel Lights“ · 98 BPM</span></div>
     <div class="frame"><div class="app" role="img" aria-label="Die Melodyn App mit Startseite, Wunschkarte, Songs und Player">
       <aside>
         <span class="lock"><svg><use href="#mk"/></svg>melodyn</span>
@@ -250,7 +250,7 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
         <div class="moments" id="sidemoments"><span style="font:500 10.5px var(--mono);letter-spacing:.1em;text-transform:uppercase">Deine Momente</span></div>
       </aside>
       <main>
-        <div class="top"><b>Guten Abend</b><span style="color:#8e8c95">Demo</span></div>
+        <div class="top"><b>Guten Abend</b><span style="color:var(--a-mute)">Demo</span></div>
         <div class="ask"><div><b>Wonach ist dir?</b><span>Sag es einfach. Melodyn macht den passenden Song.</span></div><i><svg width="22" height="22"><use href="#mic"/></svg></i></div>
         <div class="field">Oder schreib, wonach dir ist …</div>
         <h4>Weiter hören</h4>
@@ -393,7 +393,7 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
   // Product screenshot
   $('#sidemoments').insertAdjacentHTML('beforeend', [['Heimfahrt, nachts', 'tunnel'], ['Kochen mit Freunden', 'kitchen'], ['Fokus', 'focus']].map(([t, p]) => `<div>${art(t, p)}${t}</div>`).join(''));
   $('#shelf').innerHTML = [['Tunnel Lights', 'night', 'Synthwave'], ['Sunset Boulevard', 'brass', '90er West Coast'], ['Stille Seiten', 'focus', 'Lo-Fi'], ['Pfeffer & Gold', 'kitchen', 'Neo-Soul'], ['Erster Kaffee', 'morning', 'Indie-Pop']].map(([t, p, g]) => `<figure>${art(t, p)}<b>${t}</b><span>${g}</span></figure>`).join('');
-  $('#np').innerHTML = `${art('Exit 41', 'tunnel', 'c')}<div style="min-width:0"><b style="display:block">Exit 41</b><span style="color:#8e8c95">Heimfahrt, nachts</span></div><div class="ctl"><svg width="18" height="18" style="transform:scaleX(-1)"><use href="#next"/></svg><b><svg width="18" height="18"><use href="#pause"/></svg></b><svg width="18" height="18"><use href="#next"/></svg></div><div class="bar"><i></i></div>`;
+  $('#np').innerHTML = `${art('Exit 41', 'tunnel', 'c')}<div style="min-width:0"><b style="display:block">Exit 41</b><span style="color:var(--a-mute)">Heimfahrt, nachts</span></div><div class="ctl"><svg width="18" height="18" style="transform:scaleX(-1)"><use href="#next"/></svg><b><svg width="18" height="18"><use href="#pause"/></svg></b><svg width="18" height="18"><use href="#next"/></svg></div><div class="bar"><i></i></div>`;
 
   // Coral panel: a row of flat shapes along the bottom
   let band = '';
