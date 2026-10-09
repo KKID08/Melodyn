@@ -73,10 +73,6 @@ button { font: inherit; cursor: pointer; }
 .s4 { right: 22%; bottom: 20%; background: var(--sage); color: var(--ink); transform: rotate(-5deg); }
 .product { position: relative; z-index: 4; margin-top: clamp(-60px, -4.5vw, -18px); }
 @media (max-width: 760px) { .sticker { font-size: 11px; padding: 5px 9px; border-radius: 7px; } .s2, .s4 { display: none; } .s1 { left: 0; top: -8%; } .s3 { right: 0; top: -6%; } .product { margin-top: 14px; } }
-.player-bar { display: flex; align-items: center; gap: 14px; margin: 0 auto 10px; max-width: 980px; font: 500 12px var(--mono); color: var(--mute); }
-.player-bar .t { flex: 1; height: 3px; border-radius: 2px; background: var(--line); position: relative; overflow: hidden; }
-.player-bar .t i { position: absolute; inset: 0 auto 0 0; width: 34%; background: var(--coral); animation: prog 30s linear infinite; }
-@keyframes prog { from { width: 0; } to { width: 100%; } }
 .frame { max-width: 1040px; margin: 0 auto; border-radius: 18px; background: var(--frame); padding: 10px; box-shadow: 0 40px 80px -40px rgba(20,10,0,.55), 0 0 0 1px rgba(255,255,255,.06); }
 .app { border-radius: 10px; overflow: hidden; background: var(--a-bg); color: var(--a-fg); display: grid; grid-template-columns: 200px minmax(0, 1fr); min-height: 460px; font-size: 13px; }
 .app aside { background: var(--a-side); padding: 18px 14px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid var(--a-line); }
@@ -261,7 +257,6 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
         <div class="np" id="np"></div>
       </main>
     </div></div>
-    <div class="player-bar" style="margin-top:10px"><span>1:02</span><span class="t"><i style="animation-delay:-10s"></i></span><span>3:03</span></div>
   </div>
 </section>
 
