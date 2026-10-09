@@ -48,16 +48,11 @@ button { font: inherit; cursor: pointer; }
 /* Hero: a rounded stage with a soft, slowly drifting colour field on the right and the words bottom-left */
 .hero { padding: 0 clamp(8px, 1vw, 14px); }
 .stagep { position: relative; overflow: hidden; border-radius: clamp(20px, 2.4vw, 32px); background: var(--hero-bg); min-height: clamp(560px, 84vh, 820px); display: flex; align-items: flex-end; isolation: isolate; }
-.stagep > canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -3; }
-.stagep .fade { position: absolute; inset: 0; z-index: -2; background:
+.stagep canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; }
+.stagep .fade { position: absolute; inset: 0; z-index: -1; background:
   linear-gradient(90deg, var(--hero-bg) 0%, color-mix(in srgb, var(--hero-bg) 88%, transparent) 26%, color-mix(in srgb, var(--hero-bg) 30%, transparent) 50%, transparent 66%),
   linear-gradient(0deg, color-mix(in srgb, var(--hero-bg) 55%, transparent) 0%, transparent 34%); }
-.clef { position: absolute; z-index: -1; left: 53%; top: 33%; height: 150%; aspect-ratio: 140 / 220; transform: translate(-50%, -50%) rotate(-60deg); -webkit-mask: var(--clef) center / contain no-repeat; mask: var(--clef) center / contain no-repeat; }
-.clef canvas { width: 100%; height: 100%; display: block; }
-@media (max-width: 760px) {
-  .stagep .fade { background: linear-gradient(0deg, var(--hero-bg) 0%, var(--hero-bg) 30%, color-mix(in srgb, var(--hero-bg) 70%, transparent) 52%, transparent 78%); }
-  .clef { left: 58%; top: 20%; height: 72%; }
-}
+@media (max-width: 760px) { .stagep .fade { background: linear-gradient(0deg, var(--hero-bg) 0%, var(--hero-bg) 30%, color-mix(in srgb, var(--hero-bg) 70%, transparent) 52%, transparent 78%); } }
 .stagep .in { width: 100%; padding-block: 120px clamp(36px, 6vw, 76px); }
 .hero h1 { margin-top: 0; font-size: clamp(44px, 5.8vw, 86px); font-weight: 780; letter-spacing: -.055em; line-height: .98; max-width: 11ch; }
 .hero h1 em { font-style: normal; color: var(--coral); }
@@ -234,7 +229,7 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
 <main id="top">
 <section class="hero">
   <div class="stagep">
-    <canvas id="aura" aria-hidden="true"></canvas><div class="fade"></div><div class="clef" aria-hidden="true"><canvas id="clefc"></canvas></div>
+    <canvas id="aura" aria-hidden="true"></canvas><div class="fade"></div>
     <div class="in wrap">
       <h1>Musik, die genau <em>jetzt</em> für dich entsteht.</h1>
       <p class="sub">Sag, wo du bist und wie es dir geht. Sekunden später läuft ein Song, den es vorher nicht gab.</p>
@@ -433,44 +428,12 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
   drawWords();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWords);
 
-  // Hero: a soft colour field behind the whole stage (fading out towards the text), and on top of it a large treble
-  // clef lying diagonally from the middle right up into the top-left corner. The clef is a mask (one thick round
-  // stroke, like the logo, with a faint glow) over a second, stronger field. Both fields are painted on tiny canvases
-  // and scaled up by CSS, which blurs them for free. They drift slowly and breathe at 92 BPM; paused off-screen.
+  // Hero colour field: soft radial blobs painted on a tiny canvas (about 1/10 of the screen) and scaled up by CSS,
+  // which blurs them for free. Drifts slowly and breathes gently at 92 BPM; pauses off-screen and for reduced motion.
   (() => {
+    const cv = $('#aura'), g = cv.getContext('2d'), stage = cv.parentElement;
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const stage = $('.stagep'), clef = $('.clef');
-    const CLEF = 'M60 182L52 40C51 20 68 16 67 34C66 52 42 64 32 82C20 104 20 140 40 156C58 170 82 160 80 138C78 118 56 112 46 124C38 134 46 148 58 144';
-    const TAIL = 'M40 182C40 196 60 198 60 182';
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -10 140 220"><defs><filter id="h" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8"/></filter><filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation=".7"/></filter></defs><g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round"><g opacity=".25" filter="url(#h)" stroke-width="24"><path d="${CLEF}"/><path d="${TAIL}"/></g><g filter="url(#s)" stroke-width="10.5"><path d="${CLEF}"/><path d="${TAIL}"/></g></g><circle cx="40" cy="181" r="9.5" filter="url(#s)"/></svg>`;
-    clef.style.setProperty('--clef', `url("data:image/svg+xml,${encodeURIComponent(svg)}")`);
-    const field = (cv, el, blobs, base, k, adapt) => {
-      const g = cv.getContext('2d');
-      let w = 0, h = 0, bg = base;
-      const o = {
-        size() {
-          const r = el.getBoundingClientRect(), d = k();
-          w = cv.width = Math.max(24, Math.round(r.width / d)); h = cv.height = Math.max(24, Math.round(r.height / d));
-          if (!base) bg = getComputedStyle(stage).getPropertyValue('--hero-bg').trim() || '#fbfaf6';
-        },
-        draw(t) {
-          const sec = t / 1000, beat = Math.pow(0.5 + 0.5 * Math.cos(sec * Math.PI * 2 * 92 / 60), 6), m = Math.max(w, h);
-          const narrow = adapt && w < h;
-          g.fillStyle = bg; g.fillRect(0, 0, w, h);
-          for (const b of blobs) {
-            const x = (narrow ? .5 + (b.x - .7) * 1.4 : b.x) * w + Math.sin(sec * b.s + b.p) * b.ax * w;
-            const y = (narrow ? b.y * .75 : b.y) * h + Math.cos(sec * b.s * 1.3 + b.p) * b.ay * h;
-            const r = b.r * m * (1 + (b.beat || 0) * 0.05 * beat);
-            g.save(); g.translate(x, y); g.scale(b.sx || 1, 1);
-            const gr = g.createRadialGradient(0, 0, 0, 0, 0, r);
-            gr.addColorStop(0, b.c); gr.addColorStop(.45, b.c + 'cc'); gr.addColorStop(1, b.c + '00');
-            g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill(); g.restore();
-          }
-        },
-      };
-      return o;
-    };
-    const back = field($('#aura'), stage, [
+    const B = [
       { c: '#1b2a4a', x: .84, y: .30, r: .42, ax: .04, ay: .05, s: .05, p: 0 },
       { c: '#6d5a9e', x: .62, y: .62, r: .34, ax: .06, ay: .04, s: .07, p: 1.3 },
       { c: '#8fb3c9', x: .95, y: .72, r: .30, ax: .03, ay: .06, s: .06, p: 2.1 },
@@ -478,24 +441,32 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
       { c: '#e7a6a1', x: .52, y: .28, r: .22, ax: .05, ay: .03, s: .09, p: 4.2 },
       { c: '#ffc23d', x: .66, y: .30, r: .16, ax: .04, ay: .02, s: .1, p: 5.0, sx: 2.6, beat: 1.6 },
       { c: '#fff6e0', x: .64, y: .30, r: .07, ax: .04, ay: .02, s: .1, p: 5.0, sx: 3.2, beat: 2 },
-    ], null, () => innerWidth < 760 ? 6 : 10, true);
-    const front = field($('#clefc'), clef, [
-      { c: '#1b2a4a', x: .55, y: .10, r: .55, ax: .06, ay: .04, s: .05, p: 0 },
-      { c: '#e7a6a1', x: .80, y: .30, r: .38, ax: .05, ay: .05, s: .09, p: 4.2 },
-      { c: '#6d5a9e', x: .45, y: .78, r: .50, ax: .06, ay: .04, s: .07, p: 1.3 },
-      { c: '#8fb3c9', x: .15, y: .92, r: .40, ax: .04, ay: .05, s: .06, p: 2.1 },
-      { c: '#ff5a36', x: .42, y: .46, r: .46, ax: .06, ay: .06, s: .08, p: 3.4, beat: 1 },
-      { c: '#ffc23d', x: .50, y: .40, r: .24, ax: .05, ay: .04, s: .1, p: 5.0, sx: 2.2, beat: 1.6 },
-      { c: '#fff6e0', x: .50, y: .40, r: .10, ax: .05, ay: .04, s: .1, p: 5.0, sx: 2.8, beat: 2 },
-    ], '#c9493b', () => 6, false);
-    let vis = true, last = 0;
-    const all = t => { back.draw(t); front.draw(t); };
-    const resize = () => { back.size(); front.size(); all(performance.now() + 8000); };
-    resize();
-    new ResizeObserver(resize).observe(stage);
-    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', resize);
+    ];
+    let w = 0, h = 0, bg = '#fbfaf6', vis = true, last = 0;
+    const size = () => {
+      const r = stage.getBoundingClientRect(), k = innerWidth < 760 ? 6 : 10;
+      w = cv.width = Math.max(40, Math.round(r.width / k)); h = cv.height = Math.max(40, Math.round(r.height / k));
+      bg = getComputedStyle(stage).getPropertyValue('--hero-bg').trim() || bg;
+    };
+    const draw = t => {
+      const sec = t / 1000, beat = Math.pow(0.5 + 0.5 * Math.cos(sec * Math.PI * 2 * 92 / 60), 6);
+      g.globalCompositeOperation = 'source-over'; g.fillStyle = bg; g.fillRect(0, 0, w, h);
+      const narrow = w < h, m = Math.max(w, h);
+      for (const b of B) {
+        const x = (narrow ? .5 + (b.x - .7) * 1.4 : b.x) * w + Math.sin(sec * b.s + b.p) * b.ax * w;
+        const y = (narrow ? b.y * .75 : b.y) * h + Math.cos(sec * b.s * 1.3 + b.p) * b.ay * h;
+        const r = b.r * m * (1 + (b.beat || 0) * 0.05 * beat);
+        g.save(); g.translate(x, y); g.scale(b.sx || 1, 1);
+        const gr = g.createRadialGradient(0, 0, 0, 0, 0, r);
+        gr.addColorStop(0, b.c); gr.addColorStop(.45, b.c + 'cc'); gr.addColorStop(1, b.c + '00');
+        g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill(); g.restore();
+      }
+    };
+    const loop = t => { if (vis && t - last > 33) { last = t; draw(t); } requestAnimationFrame(loop); };
+    size(); draw(8000);
+    new ResizeObserver(() => { size(); draw(performance.now() + 8000); }).observe(stage);
+    matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { size(); draw(performance.now() + 8000); });
     new IntersectionObserver(([e]) => { vis = e.isIntersecting; }).observe(stage);
-    const loop = t => { if (vis && t - last > 33) { last = t; all(t + 8000); } requestAnimationFrame(loop); };
     if (!still) requestAnimationFrame(loop);
   })();
 
