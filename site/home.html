@@ -78,7 +78,7 @@ button { font: inherit; cursor: pointer; }
 .app { border-radius: 10px; overflow: hidden; background: var(--a-bg); color: var(--a-fg); display: grid; grid-template-columns: 200px minmax(0, 1fr); min-height: 460px; font-size: 13px; }
 .app aside { background: var(--a-side); padding: 18px 14px; display: flex; flex-direction: column; gap: 4px; border-right: 1px solid var(--a-line); }
 .app aside .wordmark { margin: 2px 6px 20px; color: var(--a-strong); }
-.app aside .wordmark svg { height: 18px; }
+.app aside .wordmark svg { height: 18px; width: auto; }
 .app aside a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: var(--a-dim); }
 .app aside a.on { background: var(--a-line); color: var(--a-strong); }
 .app aside svg { width: 18px; height: 18px; }
@@ -389,25 +389,49 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
     ['coral', 'night', 'sun'], ['sun', 'coral', 'night'], ['sage', 'night', 'coral'], ['plum', 'sun', 'pink'],
     ['sky', 'night', 'coral'], ['red', 'sun', 'sky'], ['coral', 'sun', 'plum'], ['sun', 'night', 'sage'],
   ];
+  const TUNED = [['coral', 'night', 'sun'], ['sun', 'coral', 'night'], ['night', 'sun', 'pink'], ['pink', 'night', 'coral'], ['coral', 'sun', 'night'], ['sun', 'night', 'pink']];
   const f = n => n.toFixed(1);
   const rect = (x, y, w, h, c) => `<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" style="fill:${c}"/>`;
   const disc = (cx, cy, r, c) => `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" style="fill:${c}"/>`;
   const ring = (cx, cy, r, c, w) => `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" style="fill:none;stroke:${c}" stroke-width="${f(w)}"/>`;
   const arc = (cx, cy, r, c, w) => `<path d="M${f(cx - r)} ${f(cy)}A${f(r)} ${f(r)} 0 0 1 ${f(cx + r)} ${f(cy)}" style="fill:none;stroke:${c}" stroke-width="${f(w)}" stroke-linecap="round"/>`;
+  // Tuning for the bold look: ink lines on/off, motif chosen by letter shape, a smaller palette, fewer/larger shapes.
+  const LOOK = Object.assign({ style: 'bold', ink: true, shape: false, pal: 'all', big: false }, window.__LOOK || {});
+  let INK = C.ink;
   const MOTIFS = [
     // sun over a horizon
-    (x, y, w, h, [a, b, c], u) => rect(x, y + h * .64, w, h * .36, C[b]) + disc(x + w * .5, y + h * .5, Math.min(w * .42, h * .3), C[c]) + arc(x + w * .5, y + h * .5, Math.min(w * .42, h * .3) + u * 1.6, C.ink, u * .55) + disc(x + w * .78, y + h * .82, u * 1.1, C.ink),
+    (x, y, w, h, [a, b, c], u) => rect(x, y + h * .64, w, h * .36, C[b]) + disc(x + w * .5, y + h * .5, Math.min(w * .42, h * .3), C[c]) + arc(x + w * .5, y + h * .5, Math.min(w * .42, h * .3) + u * 1.6, INK, u * .55) + disc(x + w * .78, y + h * .82, u * 1.1, INK),
     // stripes with a half-cut disc
-    (x, y, w, h, [a, b, c], u) => { let o = ''; for (let i = 0; i < 9; i++) if (i % 2) o += rect(x, y + i * h / 9, w, h / 9, i % 4 === 1 ? C[b] : C.ink); const r = Math.min(w, h) * .32; return o + disc(x + w * .5, y + h * .42, r, C[c]) + `<path d="M${f(x + w * .5 - r)} ${f(y + h * .42)}A${f(r)} ${f(r)} 0 0 0 ${f(x + w * .5 + r)} ${f(y + h * .42)}Z" style="fill:${C[b]}"/>`; },
+    (x, y, w, h, [a, b, c], u) => { let o = ''; const N = LOOK.big ? 5 : 9; for (let i = 0; i < N; i++) if (i % 2) o += rect(x, y + i * h / N, w, h / N, i % 4 === 1 ? C[b] : INK); const r = Math.min(w, h) * .32; return o + disc(x + w * .5, y + h * .42, r, C[c]) + `<path d="M${f(x + w * .5 - r)} ${f(y + h * .42)}A${f(r)} ${f(r)} 0 0 0 ${f(x + w * .5 + r)} ${f(y + h * .42)}Z" style="fill:${C[b]}"/>`; },
     // two quarter circles from opposite corners
-    (x, y, w, h, [a, b, c], u) => `<path d="M${f(x)} ${f(y)}h${f(w * .85)}A${f(w * .85)} ${f(w * .85)} 0 0 1 ${f(x)} ${f(y + w * .85)}Z" style="fill:${C[b]}"/><path d="M${f(x + w)} ${f(y + h)}h${f(-w * .75)}A${f(w * .75)} ${f(w * .75)} 0 0 1 ${f(x + w)} ${f(y + h - w * .75)}Z" style="fill:${C[c]}"/>` + disc(x + w * .62, y + h * .45, u * 1.2, C.ink),
+    (x, y, w, h, [a, b, c], u) => `<path d="M${f(x)} ${f(y)}h${f(w * .85)}A${f(w * .85)} ${f(w * .85)} 0 0 1 ${f(x)} ${f(y + w * .85)}Z" style="fill:${C[b]}"/><path d="M${f(x + w)} ${f(y + h)}h${f(-w * .75)}A${f(w * .75)} ${f(w * .75)} 0 0 1 ${f(x + w)} ${f(y + h - w * .75)}Z" style="fill:${C[c]}"/>` + disc(x + w * .62, y + h * .45, u * 1.2, INK),
     // diagonal split with a ringed disc
-    (x, y, w, h, [a, b, c], u) => `<path d="M${f(x + w)} ${f(y)}L${f(x)} ${f(y + h)}H${f(x + w)}Z" style="fill:${C[b]}"/>` + disc(x + w * .5, y + h * .5, Math.min(w, h) * .26, C[c]) + ring(x + w * .5, y + h * .5, Math.min(w, h) * .26 + u * 1.4, C.ink, u * .5),
+    (x, y, w, h, [a, b, c], u) => `<path d="M${f(x + w)} ${f(y)}L${f(x)} ${f(y + h)}H${f(x + w)}Z" style="fill:${C[b]}"/>` + disc(x + w * .5, y + h * .5, Math.min(w, h) * .26, C[c]) + ring(x + w * .5, y + h * .5, Math.min(w, h) * .26 + u * 1.4, INK, u * .5),
     // concentric arcs rising from the bottom
-    (x, y, w, h, [a, b, c], u) => { const R = Math.max(w, h) * .9, cols = [C[b], C[c], C.ink, C[b], C[c]]; let o = ''; for (let i = 0; i < 5; i++) o += disc(x + w * .5, y + h, R * (1 - i * .19), cols[i]); return o; },
+    (x, y, w, h, [a, b, c], u) => { const R = Math.max(w, h) * .9, cols = [C[b], C[c], INK, C[b], C[c]]; let o = ''; for (let i = 0; i < 5; i++) o += disc(x + w * .5, y + h, R * (1 - i * .19), cols[i]); return o; },
     // a vertical split with a disc sitting on the seam
-    (x, y, w, h, [a, b, c], u) => rect(x + w * .5, y, w * .5, h, C[b]) + rect(x, y + h * .74, w, h * .08, C.ink) + disc(x + w * .5, y + h * .36, Math.min(w * .36, h * .24), C[c]),
+    (x, y, w, h, [a, b, c], u) => rect(x + w * .5, y, w * .5, h, C[b]) + rect(x, y + h * .74, w, h * .08, INK) + disc(x + w * .5, y + h * .36, Math.min(w * .36, h * .24), C[c]),
   ];
+  // Looks for the giant words. 'calm' gives every letter two colours split along its own shape (round letters get
+  // an inner ring, letters with an ascender change colour at the x-height, z splits along its diagonal); 'bold' is the
+  // earlier busier artwork above. Switch back by setting LETTER_STYLE = 'bold'.
+  const LETTER_STYLE = LOOK.style;
+  const PAIRS = [['coral', 'sun'], ['night', 'sky'], ['sun', 'coral'], ['plum', 'pink'], ['sage', 'sun'], ['sky', 'night'], ['red', 'sun'], ['coral', 'plum']];
+  function calmArt(ch, x0, x1, t, b, baseline, size, base, acc) {
+    const w = x1 - x0, xh = size * .53, xTop = baseline - xh, mx = (x0 + x1) / 2, capH = size * .71;
+    const ascTop = (y) => rect(x0, t, w, y - t, acc);
+    if ('eoöa'.includes(ch)) {
+      const cy = baseline - xh / 2;
+      return disc(mx, cy, xh * .37, acc) + (ch === 'ö' ? ascTop(xTop - size * .02) : '');
+    }
+    if (ch === 'z') return `<path d="M${f(x0)} ${f(t)}H${f(x1)}L${f(x0)} ${f(b)}Z" style="fill:${acc}"/>`;
+    if ('nrmu'.includes(ch)) return rect(x0, t, w, xh * .42 + (xTop - t), acc);
+    if (ch === 'i' || ch === 'j') return ascTop(xTop - size * .02);
+    if (ch === 't') return ascTop(xTop - size * .025);
+    if (ch === 'H') return rect(x0, baseline - capH * .625, w, capH * .23, acc);
+    if ('tlJdhkbf'.includes(ch)) return ascTop(xTop);
+    return '';
+  }
   function giantWord(svg, word, w, size, baseline, tracking, offset = 0) {
     ctx.font = `900 ${size}px ${FONT}`;
     const ls = size * tracking, u = size / 40;
@@ -422,10 +446,16 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
     let defs = '', body = '';
     glyphs.forEach((g, i) => {
       const x = g.x + shift, l = g.l + shift - 2, r = g.r + shift + 2, t = baseline - g.top - 2, b = baseline + g.bot + 2;
-      const k = i + offset, scheme = SCHEMES[k % SCHEMES.length], motif = MOTIFS[(k * 5) % MOTIFS.length];
+      const k = i + offset, pal = LOOK.pal === 'tuned' ? TUNED : SCHEMES, scheme = pal[k % pal.length];
+      const SHAPE = { J: 0, e: 4, o: 4, 'ö': 3, z: 3, t: 5, l: 5, i: 1, r: 1, n: 2, H: 1, '.': 0 };
+      const motif = MOTIFS[LOOK.shape && SHAPE[g.ch] !== undefined ? SHAPE[g.ch] : (k * 5) % MOTIFS.length];
+      INK = LOOK.ink ? C.ink : C[scheme[0]];
       const glyph = `<text x="${f(x)}" y="${baseline}" font-family='${FONT}' font-weight="900" font-size="${size}">${g.ch}</text>`;
       defs += `<clipPath id="g${uid}${i}">${glyph}</clipPath>`;
-      body += `<g clip-path="url(#g${uid}${i})">${rect(l, t, r - l, b - t, C[scheme[0]])}${motif(l, t, r - l, b - t, scheme, u)}</g>`;
+      const art = LETTER_STYLE === 'calm'
+        ? (([bs, ac]) => rect(l, t, r - l, b - t, C[bs]) + calmArt(g.ch, l, r, t, b, baseline, size, C[bs], C[ac]))(PAIRS[k % PAIRS.length])
+        : rect(l, t, r - l, b - t, C[scheme[0]]) + motif(l, t, r - l, b - t, scheme, u);
+      body += `<g clip-path="url(#g${uid}${i})">${art}</g>`;
     });
     svg.innerHTML = `<defs>${defs}</defs>${body}`;
   }
