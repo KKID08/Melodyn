@@ -64,13 +64,14 @@ button { font: inherit; cursor: pointer; }
 /* Giant word + product */
 .stage { position: relative; padding-top: clamp(30px, 5vw, 60px); }
 .giant { position: relative; }
-.giant svg { width: 100%; height: auto; display: block; }
+.giant > svg { width: 100%; height: auto; display: block; color: var(--fg); }
 .sticker { position: absolute; z-index: 3; padding: 8px 14px; border-radius: 10px; font-weight: 750; font-size: clamp(12px, 1.3vw, 16px); letter-spacing: -.01em; box-shadow: 0 6px 18px -8px rgba(0,0,0,.35); white-space: nowrap; }
 .s1 { left: 6%; top: 14%; background: var(--sun); color: var(--ink); transform: rotate(-8deg); }
 .s2 { left: 44%; top: 2%; background: var(--night); color: #fff; transform: rotate(4deg); }
 .s3 { right: 5%; top: 18%; background: #fff; color: var(--ink); transform: rotate(9deg); }
 .s4 { right: 22%; bottom: 20%; background: var(--sage); color: var(--ink); transform: rotate(-5deg); }
-.product { position: relative; z-index: 4; margin-top: clamp(-150px, -11vw, -40px); }
+.product { position: relative; z-index: 4; margin-top: clamp(-60px, -4.5vw, -18px); }
+@media (max-width: 760px) { .sticker { font-size: 11px; padding: 5px 9px; border-radius: 7px; } .s2, .s4 { display: none; } .s1 { left: 0; top: -8%; } .s3 { right: 0; top: -6%; } .product { margin-top: 14px; } }
 .player-bar { display: flex; align-items: center; gap: 14px; margin: 0 auto 10px; max-width: 980px; font: 500 12px var(--mono); color: var(--mute); }
 .player-bar .t { flex: 1; height: 3px; border-radius: 2px; background: var(--line); position: relative; overflow: hidden; }
 .player-bar .t i { position: absolute; inset: 0 auto 0 0; width: 34%; background: var(--coral); animation: prog 30s linear infinite; }
@@ -186,11 +187,12 @@ button { font: inherit; cursor: pointer; }
 .cardx b { font-size: 19px; letter-spacing: -.025em; line-height: 1.2; }
 .cardx p { font-size: 15px; opacity: .88; }
 .cardx .ill { margin-top: auto; width: 96px; }
+@media (max-width: 520px) { .cardx { min-height: 0; } .cardx .ill { margin-top: 14px; width: 72px; } }
 .cardx .ill svg { width: 100%; height: auto; display: block; border-radius: 10px; }
 
 /* Closing */
 .close { padding-block: clamp(70px, 9vw, 120px) clamp(60px, 8vw, 100px); text-align: center; }
-.close svg.word { width: 100%; height: auto; display: block; }
+.close svg.word { width: 100%; height: auto; display: block; color: var(--fg); }
 .close p { margin: 18px auto 0; max-width: 40ch; font-size: 17.5px; color: var(--fg-2); }
 .close .ctas { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 24px; }
 
@@ -287,7 +289,7 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
       <div><b>Deins für immer</b><p>Gespeicherte Songs laufen ohne neue Kosten, mit DJ-Übergängen von Song zu Song.</p></div>
     </div>
     <div class="foot"><p>Melodyn arbeitet mit Googles Musikmodell Lyria. Jeder Song ist neu, keiner ist geklaut, alles gehört in deine Bibliothek.</p><a class="btn white" href="#momente">Momente ansehen <svg width="18" height="18"><use href="#arrow"/></svg></a></div>
-    <div class="shapes" aria-hidden="true"><svg id="band" viewBox="0 0 1200 150" preserveAspectRatio="xMidYMax slice"></svg></div>
+    <div class="shapes" aria-hidden="true"><svg id="band" viewBox="0 0 1200 120" preserveAspectRatio="xMidYMax slice"></svg></div>
   </div>
 </section>
 
@@ -372,16 +374,40 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
   const moods = Object.keys(PAL);
   document.querySelectorAll('[data-cover]').forEach(el => { const [t, p] = el.dataset.cover.split('|'); el.innerHTML = art(t, p); });
 
-  // A big word filled with a grid of covers, outlined in ink
-  function giantWord(svg, word, w, h, size, tile, baseline) {
-    const id = 'clip' + Math.random().toString(36).slice(2, 7);
-    let tiles = '';
-    for (let y = 0, k = 0; y < h; y += tile) for (let x = 0; x < w; x += tile, k++) tiles += `<g transform="translate(${x} ${y}) scale(${tile / 100})">${paths(word + k, moods[(k * 7 + Math.floor(y / tile)) % moods.length])}</g>`;
-    svg.innerHTML = `<defs><clipPath id="${id}"><text x="50%" y="${baseline}" text-anchor="middle" font-family="Geist, Helvetica Neue, Arial, sans-serif" font-weight="900" font-size="${size}" letter-spacing="${-size * 0.055}">${word}</text></clipPath></defs>
-      <g clip-path="url(#${id})">${tiles}</g>
-      <text x="50%" y="${baseline}" text-anchor="middle" font-family="Geist, Helvetica Neue, Arial, sans-serif" font-weight="900" font-size="${size}" letter-spacing="${-size * 0.055}" fill="none" stroke="currentColor" stroke-width="3" style="color:var(--fg)">${word}</text>`;
+  // A big word built from small covers, like a leaded window: each letter is first filled solid in the text colour,
+  // then covered with a grid of covers whose thin gaps let that colour show through, so the letter always reads.
+  // Rows sit on the baseline, columns are fitted to each letter's width so stems hold whole covers.
+  const FONT = 'Geist, "Helvetica Neue", Arial, sans-serif';
+  const ctx = document.createElement('canvas').getContext('2d');
+  function giantWord(svg, word, w, size, baseline, tracking) {
+    ctx.font = `900 ${size}px ${FONT}`;
+    const cap = ctx.measureText('H').actualBoundingBoxAscent || size * 0.7;
+    const th = cap / 4, gap = Math.max(2, th * 0.075), ls = size * tracking;
+    let pen = 0;
+    const glyphs = [...word].map(ch => {
+      const m = ctx.measureText(ch), g = { ch, x: pen, l: pen - m.actualBoundingBoxLeft, r: pen + m.actualBoundingBoxRight, top: m.actualBoundingBoxAscent, bot: m.actualBoundingBoxDescent };
+      pen += m.width + ls;
+      return g;
+    }).filter(g => g.ch.trim());
+    const shift = w / 2 - (glyphs[0].l + glyphs[glyphs.length - 1].r) / 2;
+    const uid = Math.random().toString(36).slice(2, 7);
+    let defs = '', body = '', k = 0;
+    glyphs.forEach((g, gi) => {
+      const x = g.x + shift, l = g.l + shift, r = g.r + shift;
+      const cols = Math.max(1, Math.round((r - l) / th)), tw = (r - l) / cols;
+      const up = Math.ceil(g.top / th - 0.08), down = Math.ceil(g.bot / th - 0.25);
+      const glyph = `<text x="${x.toFixed(1)}" y="${baseline}" font-family='${FONT}' font-weight="900" font-size="${size}">${g.ch}</text>`;
+      defs += `<clipPath id="g${uid}${gi}">${glyph}</clipPath>`;
+      let tiles = '';
+      for (let j = -up; j < Math.max(down, 0); j++) for (let c = 0; c < cols; c++, k++) {
+        const tx = l + c * tw + gap / 2, ty = baseline + j * th + gap / 2;
+        tiles += `<svg x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" width="${(tw - gap).toFixed(1)}" height="${(th - gap).toFixed(1)}" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">${paths(word + k, moods[(k * 5 + gi * 3) % moods.length])}</svg>`;
+      }
+      body += `<g fill="currentColor">${glyph}</g><g clip-path="url(#g${uid}${gi})">${tiles}</g>`;
+    });
+    svg.innerHTML = `<defs>${defs}</defs>${body}`;
   }
-  const drawWords = () => { giantWord($('#giant'), 'Jetzt.', 1200, 380, 400, 56, 330); giantWord($('#closeword'), 'Hör rein.', 1200, 300, 280, 50, 240); };
+  const drawWords = () => { giantWord($('#giant'), 'Jetzt.', 1200, 400, 330, -0.045); giantWord($('#closeword'), 'Hör rein.', 1200, 280, 240, -0.04); };
   drawWords();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWords);
 
@@ -397,7 +423,7 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
 
   // Coral panel: a row of flat shapes along the bottom
   let band = '';
-  for (let i = 0; i < 16; i++) band += `<g transform="translate(${i * 75} 0) scale(.75 1.5)">${paths('band' + i, moods[i % moods.length])}</g>`;
+  for (let i = 0; i < 10; i++) band += `<g transform="translate(${i * 120} 0) scale(1.2)">${paths('band' + i, moods[i % moods.length])}</g>`;
   $('#band').innerHTML = band;
 
   // Moment tabs
