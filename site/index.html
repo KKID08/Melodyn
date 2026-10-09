@@ -538,39 +538,34 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
       const narrow = W < 760, x0 = narrow ? -20 : W * .47, cy = narrow ? H * .25 : H * .47, span = narrow ? H * .4 : H * .78;
       const k = narrow ? .017 : .0085, wMax = narrow ? 13 : 24, gap = narrow ? 8 : 12;
       g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
-      // Depth like a twisted cable: a ribbon is in front where its wave rises and behind where it falls. Every ribbon is
-      // cut into short opaque slices, all slices are sorted back to front, and each one gets a soft shadow on what lies
-      // behind it, so crossings read as over/under instead of tinted overlaps.
-      const segs = [];
-      COLS.forEach((c, i) => {
+      // Depth like a twisted cable: a ribbon is in front where its wave rises and behind where it falls. The stage is
+      // cut into narrow vertical strips and in every strip the ribbons are stacked by their local depth, so each
+      // crossing is decided right where it happens. Front parts are a touch lighter and wider and cast a soft shadow.
+      const R = COLS.map((c, i) => {
         const pts = [];
         for (let x = x0 - 40; x <= W + 30; x += 6) {
           const u = Math.min(1, Math.max(0, (x - x0) / (W - x0))), e = Math.pow(u, 1.15), ph = x * k + i * 1.05 - sec * .55;
           const d = Math.cos(ph) * Math.min(1, u * 3);
           const y = cy + (i - 2.5) * gap * (1 - u * .7) + Math.sin(ph) * span * .3 * e * (1 + .05 * beat);
           const w = (2 + (wMax - 2) * Math.pow(u, .7)) * (1 + .16 * d);
-          pts.push([x, y, w / 2, d]);
+          pts.push([x, y, w / 2, d, Math.cos(ph)]);
         }
-        // split only where the ribbon passes from back to front, so each piece is one smooth path
-        let st = 0;
-        for (let j = 1; j <= pts.length; j++) {
-          if (j === pts.length || Math.sign(pts[j][3]) !== Math.sign(pts[j - 1][3])) {
-            const run = pts.slice(Math.max(0, st - 1), Math.min(pts.length, j + 1));
-            const dm = run.reduce((v, p) => v + p[3], 0) / run.length;
-            segs.push([dm + i * 1e-3, RGB[i], run]); st = j;
-          }
-        }
+        return pts;
       });
-      segs.sort((p, q) => p[0] - q[0]);
+      const n = R[0].length, shade = (rgb, d) => { const f = v => Math.max(0, Math.min(255, Math.round(d >= 0 ? v + (255 - v) * d * .06 : v * (1 + d * .1)))); return `rgb(${f(rgb[0])},${f(rgb[1])},${f(rgb[2])})`; };
+      const piece = (pts, j0, j1, pad) => { g.beginPath(); g.moveTo(pts[j0][0], pts[j0][1] - pts[j0][2] - pad); for (let j = j0 + 1; j <= j1; j++) g.lineTo(pts[j][0], pts[j][1] - pts[j][2] - pad); for (let j = j1; j >= j0; j--) g.lineTo(pts[j][0], pts[j][1] + pts[j][2] + pad); g.closePath(); };
       g.globalCompositeOperation = 'source-over';
-      const shade = (rgb, d) => { const f = v => Math.max(0, Math.min(255, Math.round(d >= 0 ? v + (255 - v) * d * .12 : v * (1 + d * .2)))); return `rgb(${f(rgb[0])},${f(rgb[1])},${f(rgb[2])})`; };
-      const outline = (run, pad) => { g.beginPath(); g.moveTo(run[0][0], run[0][1] - run[0][2] - pad); for (const p of run) g.lineTo(p[0], p[1] - p[2] - pad); for (let j = run.length - 1; j >= 0; j--) g.lineTo(run[j][0], run[j][1] + run[j][2] + pad); g.closePath(); };
-      for (const [, rgb, run] of segs) {
-        outline(run, 2.5); g.fillStyle = dark ? 'rgba(0,0,0,.35)' : 'rgba(40,30,70,.09)'; g.fill();
-        const a0 = run[0][0], a1 = run[run.length - 1][0], gr = g.createLinearGradient(a0, 0, a1, 0), stp = Math.max(1, Math.floor(run.length / 8));
-        for (let j = 0; j < run.length; j += stp) gr.addColorStop(Math.min(1, (run[j][0] - a0) / (a1 - a0 || 1)), shade(rgb, run[j][3]));
-        gr.addColorStop(1, shade(rgb, run[run.length - 1][3]));
-        outline(run, 0); g.fillStyle = gr; g.fill();
+      const SH = dark ? 'rgba(0,0,0,.32)' : 'rgba(40,30,70,.08)';
+      const px = v => Math.round(v * dpr) / dpr;   // strip edges on whole device pixels: no seams, no double shadow
+      for (let j = 0; j < n - 1; j += 3) {
+        const jn = Math.min(n - 1, j + 3), a0 = Math.max(0, j - 1), a1 = Math.min(n - 1, jn + 1), xa = px(R[0][j][0]);
+        g.save(); g.beginPath(); g.rect(xa, -10, px(R[0][jn][0]) - xa, H + 20); g.clip();
+        const order = R.map((pts, i) => [(pts[j][4] + pts[jn][4]) / 2, i, (pts[j][3] + pts[jn][3]) / 2]).sort((p, q) => p[0] - q[0]);
+        for (const [, i, d] of order) {
+          piece(R[i], a0, a1, 2.5); g.fillStyle = SH; g.fill();
+          piece(R[i], a0, a1, 0); g.fillStyle = shade(RGB[i], d); g.fill();
+        }
+        g.restore();
       }
       g.globalAlpha = 1; g.globalCompositeOperation = 'destination-out';
       const fade = narrow ? g.createLinearGradient(0, H * .62, 0, H * .38) : g.createLinearGradient(x0 - 40, 0, x0 + W * .12, 0);
