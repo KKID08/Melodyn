@@ -555,12 +555,42 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
       const piece = (pts, j0, j1, pad) => { g.beginPath(); g.moveTo(pts[j0][0], pts[j0][1] - pts[j0][2] - pad); for (let j = j0 + 1; j <= j1; j++) g.lineTo(pts[j][0], pts[j][1] - pts[j][2] - pad); for (let j = j1; j >= j0; j--) g.lineTo(pts[j][0], pts[j][1] + pts[j][2] + pad); g.closePath(); };
       g.globalCompositeOperation = 'source-over';
       const SH = dark ? 'rgba(0,0,0,.32)' : 'rgba(40,30,70,.08)';
+      // For every pair of ribbons, each stretch where they overlap gets ONE winner (the one in front at their closest
+      // point), so a crossing can never flip halfway. Order only changes where two ribbons don't touch at all.
+      const NR = R.length, win = [];
+      for (let a = 0; a < NR; a++) for (let b = a + 1; b < NR; b++) {
+        const A = R[a], B = R[b], wv = new Int8Array(n).fill(-1);
+        for (let j = 0; j < n;) {
+          const ov = q => Math.abs(A[q][1] - B[q][1]) < A[q][2] + B[q][2] + 3;
+          if (!ov(j)) { j++; continue; }
+          let e = j, best = j;
+          while (e < n && ov(e)) { if (Math.abs(A[e][1] - B[e][1]) < Math.abs(A[best][1] - B[best][1])) best = e; e++; }
+          const front = A[best][4] >= B[best][4] ? a : b;
+          for (let q = j; q < e; q++) wv[q] = front;
+          j = e;
+        }
+        win.push([a, b, wv]);
+      }
       const px = v => Math.round(v * dpr) / dpr;   // strip edges on whole device pixels: no seams, no double shadow
       for (let j = 0; j < n - 1; j += 3) {
         const jn = Math.min(n - 1, j + 3), a0 = Math.max(0, j - 1), a1 = Math.min(n - 1, jn + 1), xa = px(R[0][j][0]);
+        // back-to-front order: decided pairs first (topological), everything else by depth
+        const key = i => (R[i][j][4] + R[i][jn][4]) / 2, above = Array.from({ length: NR }, () => []), indeg = new Array(NR).fill(0);
+        for (const [a, b, wv] of win) {
+          let f = -1; for (let q = a0; q <= a1 && f < 0; q++) f = wv[q];
+          if (f < 0) continue;
+          const back = f === a ? b : a; above[back].push(f); indeg[f]++;
+        }
+        const order = [], left = new Set(R.keys());
+        while (left.size) {
+          let pick = -1;
+          for (const i of left) if (!indeg[i] && (pick < 0 || key(i) < key(pick))) pick = i;
+          if (pick < 0) for (const i of left) if (pick < 0 || key(i) < key(pick)) pick = i;   // rare cycle: fall back to depth
+          left.delete(pick); order.push(pick); for (const f of above[pick]) indeg[f]--;
+        }
         g.save(); g.beginPath(); g.rect(xa, -10, px(R[0][jn][0]) - xa, H + 20); g.clip();
-        const order = R.map((pts, i) => [(pts[j][4] + pts[jn][4]) / 2, i, (pts[j][3] + pts[jn][3]) / 2]).sort((p, q) => p[0] - q[0]);
-        for (const [, i, d] of order) {
+        for (const i of order) {
+          const d = (R[i][j][3] + R[i][jn][3]) / 2;
           piece(R[i], a0, a1, 2.5); g.fillStyle = SH; g.fill();
           piece(R[i], a0, a1, 0); g.fillStyle = shade(RGB[i], d); g.fill();
         }
