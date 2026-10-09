@@ -40,7 +40,8 @@ button { font: inherit; cursor: pointer; }
 /* Nav */
 .nav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(12px); }
 .nav .wrap { display: flex; align-items: center; gap: 28px; height: 66px; }
-.nav .lock { font-size: 25px; }
+.wordmark { display: inline-flex; align-items: baseline; font-size: 27px; font-weight: 780; letter-spacing: -.05em; line-height: 1; }
+.wordmark svg { height: .66em; width: auto; color: var(--coral); margin-right: .01em; flex: none; align-self: baseline; transform: translateY(.075em); }
 .nav .links { display: flex; gap: 24px; font-size: 14.5px; color: var(--fg-2); }
 .nav .links a:hover { color: var(--fg); }
 .nav .right { margin-left: auto; display: flex; align-items: center; gap: 16px; font-size: 14.5px; }
@@ -222,7 +223,7 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
 </svg>
 
 <header class="nav"><div class="wrap">
-  <a href="#top" class="lock" aria-label="Melodyn Startseite"><svg><use href="#mk"/></svg>melodyn</a>
+  <a href="#top" class="wordmark" aria-label="Melodyn Startseite"><svg viewBox="7.5 14.5 52 40.5" aria-hidden="true"><use href="#mk" width="64" height="64"/></svg>elodyn</a>
   <nav class="links" aria-label="Hauptnavigation"><a href="#so">So funktioniert’s</a><a href="#momente">Momente</a><a href="#warum">Warum Melodyn</a><a href="#preise">Preise</a></nav>
   <div class="right"><a class="login" href="#top">Anmelden</a><a class="btn small" href="#top">App öffnen</a></div>
 </div></header>
