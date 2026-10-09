@@ -47,16 +47,18 @@ button { font: inherit; cursor: pointer; }
 @media (max-width: 860px) { .nav .links, .nav .right .login { display: none; } }
 
 /* Hero */
-.hero { padding-block: clamp(36px, 6vw, 72px) 28px; }
+.hero { padding-block: clamp(32px, 5vw, 64px) 0; display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px clamp(32px, 5vw, 80px); align-items: end; }
+@media (max-width: 860px) { .hero { grid-template-columns: minmax(0, 1fr); } }
 .pill { display: inline-flex; align-items: center; gap: 10px; padding: 5px 14px 5px 5px; border-radius: 99px; background: var(--soft); font-size: 13.5px; color: var(--fg-2); }
 .pill b { background: var(--coral); color: #fff; font-size: 11.5px; padding: 3px 9px; border-radius: 99px; font-weight: 700; letter-spacing: .02em; }
-.hero h1 { margin-top: 22px; font-size: clamp(40px, 6.4vw, 82px); font-weight: 760; letter-spacing: -.05em; line-height: 1.0; max-width: 16ch; }
-.hero h1 span { display: block; color: var(--coral); }
-.hero .sub { margin-top: 22px; font-size: clamp(17px, 1.6vw, 20px); color: var(--fg-2); max-width: 54ch; }
-.hero .ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.hero h1 { margin-top: 20px; font-size: clamp(44px, 6.2vw, 92px); font-weight: 780; letter-spacing: -.055em; line-height: .98; max-width: 12ch; }
+.hero h1 em { font-style: normal; color: var(--coral); }
+.hero .hr { padding-bottom: .4em; }
+.hero .sub { font-size: clamp(17px, 1.5vw, 20px); color: var(--fg-2); max-width: 36ch; }
+.hero .ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
 
 /* Moments ticker */
-.ticker { margin-top: 44px; border-block: 1px solid var(--line); overflow: hidden; }
+.ticker { margin-top: clamp(32px, 4vw, 52px); border-block: 1px solid var(--line); overflow: hidden; }
 .ticker .row { display: flex; gap: 40px; width: max-content; padding-block: 18px; animation: tick 40s linear infinite; font-size: 18px; font-weight: 650; letter-spacing: -.02em; color: var(--fg-2); }
 .ticker .row span { display: inline-flex; align-items: center; gap: 12px; white-space: nowrap; }
 .ticker .row i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
@@ -225,10 +227,14 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
 
 <main id="top">
 <section class="hero wrap">
-  <span class="pill"><b>Neu</b>Melodyn 1.0 ist da: Songs in 10 Sekunden</span>
-  <h1>Du hörst Musik, die schon fertig war. <span>Ab jetzt entsteht sie für dich.</span></h1>
-  <p class="sub">Sag Melodyn, wo du bist und wie es dir geht. Ein paar Sekunden später läuft ein Song, den es vorher nicht gab, gemacht für genau diesen Moment.</p>
-  <div class="ctas"><a class="btn" href="#top">Kostenlos ausprobieren</a><a class="btn ghost" href="#momente">Beispiele hören</a></div>
+  <div class="hl">
+    <span class="pill"><b>Neu</b>Melodyn 1.0 ist da</span>
+    <h1>Musik, die genau <em>jetzt</em> für dich entsteht.</h1>
+  </div>
+  <div class="hr">
+    <p class="sub">Sag, wo du bist und wie es dir geht. Sekunden später läuft ein Song, den es vorher nicht gab.</p>
+    <div class="ctas"><a class="btn" href="#top">Kostenlos ausprobieren</a><a class="btn ghost" href="#momente">Beispiele hören</a></div>
+  </div>
 </section>
 
 <div class="ticker" aria-label="Beispiele für Momente"><div class="row" id="ticker"></div></div>
