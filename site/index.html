@@ -12,10 +12,11 @@
   --display: "Geist", "Helvetica Neue", Arial, sans-serif;
   --mono: "Geist Mono", ui-monospace, Menlo, monospace;
   --a-bg: #0f0f11; --a-side: #141417; --a-line: #222226; --a-fg: #f5f4f2; --a-strong: #fff; --a-dim: #b4b2ba; --a-mute: #8e8c95; --a-field: #1d1d21; --a-track: #2c2c32; --a-btn: #fff; --a-btnfg: #121214; --frame: #16161a;
+  --k-night: #1b2a4a; --k-ink: #161513;
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0f0f11; --fg: #f5f4f2; --fg-2: #cbc9cf; --mute: #8e8c95; --line: #26262b; --card: #18181b; --soft: #1d1d21; --a-bg: #ffffff; --a-side: #f6f4ef; --a-line: #e7e4dc; --a-fg: #121214; --a-strong: #121214; --a-dim: #4b4a52; --a-mute: #807e86; --a-field: #f1efea; --a-track: #e2dfd8; --a-btn: #121214; --a-btnfg: #fff; --frame: #e9e6df; color-scheme: dark; } }
-:root[data-theme="dark"] { --bg: #0f0f11; --fg: #f5f4f2; --fg-2: #cbc9cf; --mute: #8e8c95; --line: #26262b; --card: #18181b; --soft: #1d1d21; --a-bg: #ffffff; --a-side: #f6f4ef; --a-line: #e7e4dc; --a-fg: #121214; --a-strong: #121214; --a-dim: #4b4a52; --a-mute: #807e86; --a-field: #f1efea; --a-track: #e2dfd8; --a-btn: #121214; --a-btnfg: #fff; --frame: #e9e6df; color-scheme: dark; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0f0f11; --fg: #f5f4f2; --fg-2: #cbc9cf; --mute: #8e8c95; --line: #26262b; --card: #18181b; --soft: #1d1d21; --a-bg: #ffffff; --a-side: #f6f4ef; --a-line: #e7e4dc; --a-fg: #121214; --a-strong: #121214; --a-dim: #4b4a52; --a-mute: #807e86; --a-field: #f1efea; --a-track: #e2dfd8; --a-btn: #121214; --a-btnfg: #fff; --frame: #e9e6df; --k-night: #4a6bb0; --k-ink: #f3ecdc; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #0f0f11; --fg: #f5f4f2; --fg-2: #cbc9cf; --mute: #8e8c95; --line: #26262b; --card: #18181b; --soft: #1d1d21; --a-bg: #ffffff; --a-side: #f6f4ef; --a-line: #e7e4dc; --a-fg: #121214; --a-strong: #121214; --a-dim: #4b4a52; --a-mute: #807e86; --a-field: #f1efea; --a-track: #e2dfd8; --a-btn: #121214; --a-btnfg: #fff; --frame: #e9e6df; --k-night: #4a6bb0; --k-ink: #f3ecdc; color-scheme: dark; }
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 var(--display); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
@@ -374,15 +375,38 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
   const moods = Object.keys(PAL);
   document.querySelectorAll('[data-cover]').forEach(el => { const [t, p] = el.dataset.cover.split('|'); el.innerHTML = art(t, p); });
 
-  // A big word built from small covers, like a leaded window: each letter is first filled solid in the text colour,
-  // then covered with a grid of covers whose thin gaps let that colour show through, so the letter always reads.
-  // Rows sit on the baseline, columns are fitted to each letter's width so stems hold whole covers.
+  // A big word where every letter carries its own artwork: one flat composition laid out on that letter's box and
+  // clipped to the glyph. Motifs and base colours rotate so neighbours never match; bases are always vivid so the
+  // letter shape reads on light and dark backgrounds.
   const FONT = 'Geist, "Helvetica Neue", Arial, sans-serif';
   const ctx = document.createElement('canvas').getContext('2d');
-  function giantWord(svg, word, w, size, baseline, tracking) {
+  const C = { coral: '#ff5a36', night: 'var(--k-night)', sun: '#ffc23d', sage: '#8aa37b', plum: '#6d5a9e', ink: 'var(--k-ink)', sky: '#8fb3c9', red: '#c9493b', pink: '#e7a6a1' };
+  const SCHEMES = [
+    ['coral', 'night', 'sun'], ['sun', 'coral', 'night'], ['sage', 'night', 'coral'], ['plum', 'sun', 'pink'],
+    ['sky', 'night', 'coral'], ['red', 'sun', 'sky'], ['coral', 'sun', 'plum'], ['sun', 'night', 'sage'],
+  ];
+  const f = n => n.toFixed(1);
+  const rect = (x, y, w, h, c) => `<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" style="fill:${c}"/>`;
+  const disc = (cx, cy, r, c) => `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" style="fill:${c}"/>`;
+  const ring = (cx, cy, r, c, w) => `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" style="fill:none;stroke:${c}" stroke-width="${f(w)}"/>`;
+  const arc = (cx, cy, r, c, w) => `<path d="M${f(cx - r)} ${f(cy)}A${f(r)} ${f(r)} 0 0 1 ${f(cx + r)} ${f(cy)}" style="fill:none;stroke:${c}" stroke-width="${f(w)}" stroke-linecap="round"/>`;
+  const MOTIFS = [
+    // sun over a horizon
+    (x, y, w, h, [a, b, c], u) => rect(x, y + h * .64, w, h * .36, C[b]) + disc(x + w * .5, y + h * .5, Math.min(w * .42, h * .3), C[c]) + arc(x + w * .5, y + h * .5, Math.min(w * .42, h * .3) + u * 1.6, C.ink, u * .55) + disc(x + w * .78, y + h * .82, u * 1.1, C.ink),
+    // stripes with a half-cut disc
+    (x, y, w, h, [a, b, c], u) => { let o = ''; for (let i = 0; i < 9; i++) if (i % 2) o += rect(x, y + i * h / 9, w, h / 9, i % 4 === 1 ? C[b] : C.ink); const r = Math.min(w, h) * .32; return o + disc(x + w * .5, y + h * .42, r, C[c]) + `<path d="M${f(x + w * .5 - r)} ${f(y + h * .42)}A${f(r)} ${f(r)} 0 0 0 ${f(x + w * .5 + r)} ${f(y + h * .42)}Z" style="fill:${C[b]}"/>`; },
+    // two quarter circles from opposite corners
+    (x, y, w, h, [a, b, c], u) => `<path d="M${f(x)} ${f(y)}h${f(w * .85)}A${f(w * .85)} ${f(w * .85)} 0 0 1 ${f(x)} ${f(y + w * .85)}Z" style="fill:${C[b]}"/><path d="M${f(x + w)} ${f(y + h)}h${f(-w * .75)}A${f(w * .75)} ${f(w * .75)} 0 0 1 ${f(x + w)} ${f(y + h - w * .75)}Z" style="fill:${C[c]}"/>` + disc(x + w * .62, y + h * .45, u * 1.2, C.ink),
+    // diagonal split with a ringed disc
+    (x, y, w, h, [a, b, c], u) => `<path d="M${f(x + w)} ${f(y)}L${f(x)} ${f(y + h)}H${f(x + w)}Z" style="fill:${C[b]}"/>` + disc(x + w * .5, y + h * .5, Math.min(w, h) * .26, C[c]) + ring(x + w * .5, y + h * .5, Math.min(w, h) * .26 + u * 1.4, C.ink, u * .5),
+    // concentric arcs rising from the bottom
+    (x, y, w, h, [a, b, c], u) => { const R = Math.max(w, h) * .9, cols = [C[b], C[c], C.ink, C[b], C[c]]; let o = ''; for (let i = 0; i < 5; i++) o += disc(x + w * .5, y + h, R * (1 - i * .19), cols[i]); return o; },
+    // a vertical split with a disc sitting on the seam
+    (x, y, w, h, [a, b, c], u) => rect(x + w * .5, y, w * .5, h, C[b]) + rect(x, y + h * .74, w, h * .08, C.ink) + disc(x + w * .5, y + h * .36, Math.min(w * .36, h * .24), C[c]),
+  ];
+  function giantWord(svg, word, w, size, baseline, tracking, offset = 0) {
     ctx.font = `900 ${size}px ${FONT}`;
-    const cap = ctx.measureText('H').actualBoundingBoxAscent || size * 0.7;
-    const th = cap / 4, gap = Math.max(2, th * 0.075), ls = size * tracking;
+    const ls = size * tracking, u = size / 40;
     let pen = 0;
     const glyphs = [...word].map(ch => {
       const m = ctx.measureText(ch), g = { ch, x: pen, l: pen - m.actualBoundingBoxLeft, r: pen + m.actualBoundingBoxRight, top: m.actualBoundingBoxAscent, bot: m.actualBoundingBoxDescent };
@@ -391,23 +415,17 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
     }).filter(g => g.ch.trim());
     const shift = w / 2 - (glyphs[0].l + glyphs[glyphs.length - 1].r) / 2;
     const uid = Math.random().toString(36).slice(2, 7);
-    let defs = '', body = '', k = 0;
-    glyphs.forEach((g, gi) => {
-      const x = g.x + shift, l = g.l + shift, r = g.r + shift;
-      const cols = Math.max(1, Math.round((r - l) / th)), tw = (r - l) / cols;
-      const up = Math.ceil(g.top / th - 0.08), down = Math.ceil(g.bot / th - 0.25);
-      const glyph = `<text x="${x.toFixed(1)}" y="${baseline}" font-family='${FONT}' font-weight="900" font-size="${size}">${g.ch}</text>`;
-      defs += `<clipPath id="g${uid}${gi}">${glyph}</clipPath>`;
-      let tiles = '';
-      for (let j = -up; j < Math.max(down, 0); j++) for (let c = 0; c < cols; c++, k++) {
-        const tx = l + c * tw + gap / 2, ty = baseline + j * th + gap / 2;
-        tiles += `<svg x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" width="${(tw - gap).toFixed(1)}" height="${(th - gap).toFixed(1)}" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">${paths(word + k, moods[(k * 5 + gi * 3) % moods.length])}</svg>`;
-      }
-      body += `<g fill="currentColor">${glyph}</g><g clip-path="url(#g${uid}${gi})">${tiles}</g>`;
+    let defs = '', body = '';
+    glyphs.forEach((g, i) => {
+      const x = g.x + shift, l = g.l + shift - 2, r = g.r + shift + 2, t = baseline - g.top - 2, b = baseline + g.bot + 2;
+      const k = i + offset, scheme = SCHEMES[k % SCHEMES.length], motif = MOTIFS[(k * 5) % MOTIFS.length];
+      const glyph = `<text x="${f(x)}" y="${baseline}" font-family='${FONT}' font-weight="900" font-size="${size}">${g.ch}</text>`;
+      defs += `<clipPath id="g${uid}${i}">${glyph}</clipPath>`;
+      body += `<g clip-path="url(#g${uid}${i})">${rect(l, t, r - l, b - t, C[scheme[0]])}${motif(l, t, r - l, b - t, scheme, u)}</g>`;
     });
     svg.innerHTML = `<defs>${defs}</defs>${body}`;
   }
-  const drawWords = () => { giantWord($('#giant'), 'Jetzt.', 1200, 400, 330, -0.045); giantWord($('#closeword'), 'Hör rein.', 1200, 280, 240, -0.04); };
+  const drawWords = () => { giantWord($('#giant'), 'Jetzt.', 1200, 400, 330, -0.045); giantWord($('#closeword'), 'Hör rein.', 1200, 280, 240, -0.04, 3); };
   drawWords();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWords);
 
