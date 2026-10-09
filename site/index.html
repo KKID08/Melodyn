@@ -527,6 +527,7 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const COLS = ['#ff5a36', '#ffc23d', '#6d5a9e', '#8fb3c9', '#8aa37b', '#e7a6a1'];
     const RGB = COLS.map(h => [1, 3, 5].map(o => parseInt(h.slice(o, o + 2), 16)));
+    const MEM = new Map();   // pair -> winner per point from the previous frame
     let W = 0, H = 0, dpr = 1, vis = true, last = 0, dark = false;
     const size = () => {
       const r = stage.getBoundingClientRect(); dpr = Math.min(1.5, devicePixelRatio || 1);
@@ -566,10 +567,16 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
           if (!ov(j)) { j++; continue; }
           let e = j, best = j;
           while (e < n && ov(e)) { if (Math.abs(A[e][1] - B[e][1]) < Math.abs(A[best][1] - B[best][1])) best = e; e++; }
-          const front = A[best][4] >= B[best][4] ? a : b;
+          // keep last frame's decision for this overlap (looked up along its whole length, the ribbons drift only a few
+          // px per frame) and only switch when the depth clearly says otherwise: no flicker on long parallel overlaps
+          const dk = A[best][4] - B[best][4], pw = MEM.get(a * 8 + b);
+          let pa = 0, pb = 0;
+          if (pw && pw.length === n) for (let q = j; q < e; q++) { if (pw[q] === a) pa++; else if (pw[q] === b) pb++; }
+          const front = (pa || pb) && Math.abs(dk) < .8 ? (pa >= pb ? a : b) : (dk >= 0 ? a : b);
           for (let q = j; q < e; q++) wv[q] = front;
           j = e;
         }
+        MEM.set(a * 8 + b, wv);
         win.push([a, b, wv]);
       }
       const px = v => Math.round(v * dpr) / dpr;   // strip edges on whole device pixels: no seams, no double shadow
