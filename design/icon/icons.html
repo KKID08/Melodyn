@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#fff}svg{display:block}</style></head><body>
+<script>
+const MK='M12 50V28a8 8 0 0 1 16 0v22M28 38a8 8 0 0 1 16 0v12';
+const COLS=['#ff5a36','#ffc23d','#6d5a9e','#8fb3c9','#8aa37b','#e7a6a1'];
+function ribbons(x0,x1,cy,amp,wMax,k,mix){let o='';COLS.forEach((c,i)=>{const t=[],b=[];for(let x=x0;x<=x1;x+=4){const u=Math.min(1,Math.max(0,(x-x0)/(x1-x0))),y=cy+(i-2.5)*14*(1-u*.7)+Math.sin(x*k+i*1.05)*amp*Math.pow(u,1.15),w=3+(wMax-3)*Math.pow(u,.7);t.push([x,y-w/2]);b.push([x,y+w/2]);}o+=`<path d="M${t.map(p=>p.join(' ')).join('L')}L${b.reverse().map(p=>p.join(' ')).join('L')}Z" fill="${c}" opacity=".93" style="mix-blend-mode:${mix}"/>`;});return o;}
+const V={
+ // 1: coral, white m (brand classic)
+ klassik:`<rect width="1024" height="1024" fill="#ff5a36"/><g transform="translate(192 200) scale(10)"><path d="${MK}" fill="none" stroke="#fff" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="54" cy="20" r="5" fill="#ffc23d"/></g>`,
+ // 2: lavender gradient + ribbons
+ baender:`<defs><linearGradient id="g2" x1="0" x2="1"><stop offset="0" stop-color="#fbfaf6"/><stop offset=".45" stop-color="#e6e1ee"/><stop offset="1" stop-color="#b3a9cf"/></linearGradient></defs><rect width="1024" height="1024" fill="url(#g2)"/>${ribbons(-40,1080,512,250,64,.0085,'multiply')}`,
+ // 3: lavender gradient, ribbons flow out of the m
+ mBaender:`<defs><linearGradient id="g3" x1="0" x2="1"><stop offset="0" stop-color="#fbfaf6"/><stop offset="1" stop-color="#b9afd3"/></linearGradient></defs><rect width="1024" height="1024" fill="url(#g3)"/>${ribbons(470,1080,560,230,58,.011,'multiply')}<g transform="translate(110 260) scale(8.2)"><path d="${MK}" fill="none" stroke="#121214" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="54" cy="20" r="5" fill="#ff5a36"/></g>`,
+ // 4: night, neon ribbons + m
+ nacht:`<defs><linearGradient id="g4" x1="0" x2="1"><stop offset="0" stop-color="#0f0f11"/><stop offset="1" stop-color="#3a3060"/></linearGradient></defs><rect width="1024" height="1024" fill="url(#g4)"/>${ribbons(-40,1080,800,120,48,.009,'screen')}<g transform="translate(232 130) scale(8.6)"><path d="${MK}" fill="none" stroke="#fff" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="54" cy="20" r="5" fill="#ff5a36"/></g>`,
+ // 5: white m on coral with ribbon band at bottom
+ korallBand:`<rect width="1024" height="1024" fill="#ff5a36"/><g transform="translate(224 150) scale(9)"><path d="${MK}" fill="none" stroke="#fff" stroke-width="8.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="54" cy="20" r="5" fill="#ffc23d"/></g>${ribbons(-40,1080,860,70,40,.012,'normal').replaceAll('#ff5a36','#fff')}`,
+ // 6: lavender, the m built from ribbons (stroke stack)
+ regenbogenM:`<defs><linearGradient id="g6" x1="0" x2="1"><stop offset="0" stop-color="#fbfaf6"/><stop offset="1" stop-color="#c3bad9"/></linearGradient></defs><rect width="1024" height="1024" fill="url(#g6)"/><g transform="translate(180 240) scale(10)" fill="none" stroke-linecap="round" stroke-linejoin="round">${COLS.map((c,i)=>`<path d="${MK}" stroke="${c}" stroke-width="2.2" transform="translate(${(i-2.5)*2.3} ${(i-2.5)*-1.2})"/>`).join('')}<circle cx="54" cy="20" r="5" fill="#ff5a36" stroke="none"/></g>`,
+};
+const name=location.hash.slice(1);
+document.body.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">${V[name]}</svg>`;
+</script></body></html>
