@@ -109,7 +109,7 @@ def d(g):
 W=last-20
 body=(f'<g transform="translate(0 720) scale(1 -1)"><path d="{d(M)}" fill="#ff5a36"/>'
       f'<path d="{d(TEXT)}" fill="currentColor"/><circle cx="{cx:.1f}" cy="{cy:.1f}" r="{rd}" fill="#ff5a36"/></g>')
-vb=f'-90 0 {W+110:.1f} 880'
+vb=f'-90 -40 {W+110:.1f} 920'
 open('melodyn-wordmark.svg','w').write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vb}">{body}</svg>')
 json.dump({'vb':vb,'body':body},open('wm.json','w'))
 print('ok',len(body))
