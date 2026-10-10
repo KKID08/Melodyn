@@ -395,7 +395,7 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
 (() => {
   const $ = s => document.querySelector(s);
   const NS = 'http://www.w3.org/2000/svg';
-  // Song covers: the same flat Bauhaus generator the app uses
+  // Seeded random numbers (kept from the earlier abstract cover generator, which is still below but unused)
   const PAL = {
     night: ['#1f3a5f', '#e86a3a', '#f2c14e', '#efe8d8', '#161513'], tunnel: ['#22304f', '#f0a43a', '#c9493b', '#efe8d8', '#161513'],
     kitchen: ['#d9653b', '#f2c14e', '#7a8f4e', '#efe8d8', '#161513'], brass: ['#e3b23c', '#161513', '#b5482e', '#efe8d8', '#1f3a5f'],
@@ -428,7 +428,66 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
     }
     return out;
   }
-  const paths = (seed, p) => shapes(seed, p).map(s => s.fill ? `<path d="${s.d}" fill="${s.fill}"/>` : `<path d="${s.d}" fill="none" stroke="${s.stroke}" stroke-width="${s.w}"/>`).join('');
+  // Song covers as small flat illustrations of real things (a night drive, a coffee, a pot on the stove, palms at
+  // sunset ...) instead of abstract shapes. Every scene is drawn in a 100x100 box from the brand colours.
+  const K = { coral: '#ff5a36', sun: '#ffc23d', night: 'var(--k-night)', deep: '#121a30', plum: '#6d5a9e', sage: '#8aa37b', sky: '#8fb3c9', pink: '#e7a6a1', red: '#c9493b', cream: '#f3ecdc', ink: '#161513', road: '#36405c', brown: '#6b3f2a' };
+  const R_ = (x, y, w, h, c, rx = 0) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" style="fill:${c}"/>`;
+  const C_ = (x, y, r, c) => `<circle cx="${x}" cy="${y}" r="${r}" style="fill:${c}"/>`;
+  const P_ = (d, c) => `<path d="${d}" style="fill:${c}"/>`;
+  const L_ = (d, c, w) => `<path d="${d}" style="fill:none;stroke:${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const stars = (r, n, y1) => { let o = ''; for (let i = 0; i < n; i++) o += C_((r() * 100).toFixed(1), (r() * y1).toFixed(1), (.5 + r() * .7).toFixed(2), K.cream); return o; };
+  const SCENES = {
+    road: r => R_(0, 0, 100, 100, K.night) + stars(r, 9, 40) + C_(76, 20, 8, K.cream) + C_(80, 17, 7, K.night)
+      + [[0, 12, 14], [12, 8, 22], [20, 12, 9], [66, 10, 17], [76, 14, 26], [90, 10, 12]].map(([x, w, h]) => R_(x, 60 - h, w, h, K.deep)).join('')
+      + [[3, 50], [15, 42], [16, 50], [70, 47], [80, 38], [84, 46], [93, 52]].map(([x, y]) => R_(x, y, 2, 2, K.sun)).join('')
+      + R_(0, 60, 100, 40, K.deep) + P_('M28 100L72 100L53 60L47 60Z', K.road)
+      + L_('M47 60L28 100M53 60L72 100', K.cream, .8) + P_('M49.6 63h.8l.3 4h-1.4ZM49.2 71h1.6l.5 7h-2.6ZM48.5 84h3l.8 12h-4.6Z', K.sun),
+    city: r => R_(0, 0, 100, 100, K.pink) + C_(64, 34, 14, K.sun)
+      + [[2, 14, 36, K.plum], [16, 12, 50, K.night], [28, 16, 30, K.plum], [44, 10, 44, K.night], [54, 18, 26, K.plum], [72, 12, 54, K.night], [84, 14, 34, K.plum]].map(([x, w, h, c]) => {
+        let o = R_(x, 100 - h, w, h, c);
+        for (let y = 100 - h + 5; y < 96; y += 7) for (let xx = x + 3; xx < x + w - 3; xx += 5) if (r() > .45) o += R_(xx, y, 2, 3, r() > .3 ? K.sun : K.cream);
+        return o;
+      }).join(''),
+    citynight: r => R_(0, 0, 100, 100, K.night) + stars(r, 8, 35) + C_(24, 22, 9, K.cream)
+      + [[0, 16, 40, K.plum], [16, 12, 58, K.deep], [28, 18, 34, K.plum], [46, 12, 64, K.deep], [58, 16, 30, K.plum], [74, 14, 50, K.deep], [88, 12, 38, K.plum]].map(([x, w, h, c]) => {
+        let o = R_(x, 100 - h, w, h, c);
+        for (let y = 100 - h + 5; y < 96; y += 7) for (let xx = x + 3; xx < x + w - 3; xx += 5) if (r() > .4) o += R_(xx, y, 2, 3, K.sun);
+        return o;
+      }).join(''),
+    coffee: r => R_(0, 0, 100, 100, K.sun) + R_(14, 8, 50, 30, K.sky, 3) + C_(54, 16, 5, K.sun)
+      + L_('M39 8V38M14 23H64', K.cream, 2.5) + L_('M14 8H64V38H14Z', K.cream, 3) + R_(0, 76, 100, 24, K.coral)
+      + `<ellipse cx="50" cy="80" rx="22" ry="3.5" style="fill:${K.cream}"/>` + P_('M34 48H66V70a9 9 0 0 1-9 9H43a9 9 0 0 1-9-9Z', K.cream)
+      + L_('M66 54a7 7 0 0 1 0 14', K.cream, 4) + `<ellipse cx="50" cy="48" rx="16" ry="3" style="fill:${K.brown}"/>`
+      + L_('M44 41c-3-4 3-6 0-10M52 41c-3-4 3-6 0-10', K.cream, 2),
+    kitchen: r => R_(0, 0, 100, 100, K.coral) + L_('M0 25H100M0 50H100M25 0V76M50 0V76M75 0V76', '#ff7a5c', 1) + R_(0, 76, 100, 24, K.night)
+      + R_(18, 54, 10, 4, K.ink, 2) + R_(72, 54, 10, 4, K.ink, 2) + P_('M26 50H74V68a9 9 0 0 1-9 9H35a9 9 0 0 1-9-9Z', K.sage)
+      + R_(23, 45, 54, 6, K.cream, 3) + C_(50, 43, 3.5, K.ink) + L_('M38 36c-3-4 3-7 0-11M50 34c-3-4 3-7 0-11M62 36c-3-4 3-7 0-11', K.cream, 2.2)
+      + C_(84, 72, 5, K.red) + P_('M84 66c2-3 5-3 6-2c-2 1-4 2-6 2Z', K.sage),
+    palm: r => R_(0, 0, 100, 100, K.sun) + R_(0, 0, 100, 34, '#ffd36b') + C_(50, 66, 24, K.coral) + R_(0, 66, 100, 34, K.plum)
+      + L_('M30 72H70M38 79H62M44 86H56', K.pink, 2) + P_('M72 100c-1-22 1-40 9-56l3 1c-7 16-8 34-6 55Z', K.ink)
+      + P_('M82 44c-10-6-22-4-28 4c8-4 18-4 28-2ZM82 44c-2-10-10-16-20-16c8 4 14 9 19 17ZM82 44c6-8 16-10 22-6c-8 0-15 3-21 8ZM82 44c10-2 18 4 20 12c-6-5-13-8-20-10ZM82 44c-12 2-18 10-18 18c4-8 11-14 18-16Z', K.ink),
+    sea: r => R_(0, 0, 100, 100, K.plum) + R_(0, 0, 100, 30, '#5b4b8a') + P_('M24 62a26 26 0 0 1 52 0Z', K.sun) + R_(0, 62, 100, 38, K.night)
+      + P_('M34 68h32v3H34ZM40 76h20v3H40ZM45 84h10v3H45Z', K.sun) + L_('M20 26l4 3 4-3M30 20l3 2 3-2M66 30l4 3 4-3', K.cream, 1.6),
+    mountains: r => R_(0, 0, 100, 100, K.sky) + C_(72, 26, 10, K.sun) + P_('M-5 80L30 30L62 80Z', K.night) + P_('M30 30L22 43L28 40L32 45L38 41Z', K.cream)
+      + P_('M35 80L68 38L105 80Z', K.plum) + P_('M68 38L61 47L67 45L71 49L75 46Z', K.cream) + R_(0, 78, 100, 22, K.sage)
+      + L_('M50 100c-10-6 12-10 2-14c-6-2 4-5 2-8', K.cream, 3),
+    lamp: r => R_(0, 0, 100, 100, K.sage) + R_(0, 78, 100, 22, K.night) + P_('M30 44L70 78H20Z', 'rgba(255,240,200,.35)')
+      + L_('M18 78V74M18 74L30 52L22 38', K.ink, 3) + P_('M14 40L32 30L36 44Z', K.coral) + R_(46, 66, 40, 6, K.coral, 1) + R_(50, 60, 34, 6, K.sun, 1)
+      + R_(48, 54, 36, 6, K.cream, 1) + R_(52, 72, 30, 6, K.sky, 1),
+    rain: r => R_(0, 0, 100, 100, K.night) + [[8, 30], [22, 18], [40, 26], [58, 14], [76, 24]].map(([x, h]) => R_(x, 100 - h, 14, h, K.deep)).join('')
+      + [[12, 76], [26, 86], [44, 78], [62, 88], [80, 80], [16, 90], [66, 94]].map(([x, y]) => R_(x, y, 2, 2, K.sun)).join('')
+      + (() => { let o = ''; for (let i = 0; i < 26; i++) { const x = r() * 100, y = r() * 90; o += L_(`M${x.toFixed(1)} ${y.toFixed(1)}l-2 6`, K.sky, 1.1); } return o; })()
+      + L_('M50 0V100M0 50H100', K.cream, 3) + L_('M2 2H98V98H2Z', K.cream, 4),
+    vinyl: r => R_(0, 0, 100, 100, K.coral) + C_(46, 54, 34, K.ink) + [30, 26, 22, 18].map(rr => `<circle cx="46" cy="54" r="${rr}" style="fill:none;stroke:#2c2c32" stroke-width="1"/>`).join('')
+      + C_(46, 54, 11, K.sun) + C_(46, 54, 2, K.ink) + L_('M86 14V44L64 58', K.cream, 3) + C_(86, 14, 4, K.cream) + R_(60, 55, 7, 5, K.cream, 1),
+    headphones: r => R_(0, 0, 100, 100, K.sky) + L_('M24 62V50a26 26 0 0 1 52 0V62', K.night, 7) + R_(16, 54, 16, 28, K.coral, 7) + R_(68, 54, 16, 28, K.coral, 7)
+      + R_(28, 58, 6, 20, K.cream, 3) + R_(66, 58, 6, 20, K.cream, 3) + C_(46, 22, 3, K.cream) + L_('M49 22V10l7 2', K.cream, 2) + C_(78, 30, 2.6, K.cream) + L_('M80.6 30V20', K.cream, 1.8),
+    moon: r => R_(0, 0, 100, 100, K.night) + stars(r, 12, 60) + C_(62, 34, 16, K.sun) + C_(70, 28, 14, K.night)
+      + P_('M0 78C20 64 40 66 56 76S86 70 100 64V100H0Z', K.plum) + P_('M0 88C24 80 48 84 70 92S92 86 100 84V100H0Z', K.sage),
+  };
+  const BY_MOOD = { night: ['citynight', 'moon'], tunnel: ['road'], kitchen: ['kitchen'], brass: ['palm', 'vinyl'], focus: ['lamp', 'rain'], dusk: ['sea', 'city'], run: ['mountains', 'headphones'], morning: ['coffee'] };
+  const scene = (name, seed) => SCENES[name](rng(name + '/' + seed));
+  const paths = (seed, p) => { const l = BY_MOOD[p] || ['city'], pick = l[Math.floor(rng(p + '|' + seed)() * l.length)]; return scene(pick, seed); };
   const art = (seed, p, cls = '') => `<svg viewBox="0 0 100 100" class="${cls}" aria-hidden="true">${paths(seed, p)}</svg>`;
   const moods = Object.keys(PAL);
   document.querySelectorAll('[data-cover]').forEach(el => { const [t, p] = el.dataset.cover.split('|'); el.innerHTML = art(t, p); });
@@ -450,7 +509,7 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
   const ring = (cx, cy, r, c, w) => `<circle cx="${f(cx)}" cy="${f(cy)}" r="${f(r)}" style="fill:none;stroke:${c}" stroke-width="${f(w)}"/>`;
   const arc = (cx, cy, r, c, w) => `<path d="M${f(cx - r)} ${f(cy)}A${f(r)} ${f(r)} 0 0 1 ${f(cx + r)} ${f(cy)}" style="fill:none;stroke:${c}" stroke-width="${f(w)}" stroke-linecap="round"/>`;
   // Tuning for the bold look: ink lines on/off, motif chosen by letter shape, a smaller palette, fewer/larger shapes.
-  const LOOK = Object.assign({ style: 'bold', ink: true, shape: false, pal: 'all', big: false }, window.__LOOK || {});
+  const LOOK = Object.assign({ style: 'scene', ink: true, shape: false, pal: 'all', big: false }, window.__LOOK || {});
   let INK = C.ink;
   const MOTIFS = [
     // sun over a horizon
@@ -466,7 +525,7 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
     // a vertical split with a disc sitting on the seam
     (x, y, w, h, [a, b, c], u) => rect(x + w * .5, y, w * .5, h, C[b]) + rect(x, y + h * .74, w, h * .08, INK) + disc(x + w * .5, y + h * .36, Math.min(w * .36, h * .24), C[c]),
   ];
-  // Looks for the giant words. 'calm' gives every letter two colours split along its own shape (round letters get
+  // Looks for the giant words: 'scene' (default) puts one small illustration in every letter; 'calm' gives every letter two colours split along its own shape (round letters get
   // an inner ring, letters with an ascender change colour at the x-height, z splits along its diagonal); 'bold' is the
   // earlier busier artwork above. Switch back by setting LETTER_STYLE = 'bold'.
   const LETTER_STYLE = LOOK.style;
@@ -506,7 +565,9 @@ footer { border-top: 1px solid var(--line); padding-block: 56px 40px; }
       INK = LOOK.ink ? C.ink : C[scheme[0]];
       const glyph = `<text x="${f(x)}" y="${baseline}" font-family='${FONT}' font-weight="900" font-size="${size}">${g.ch}</text>`;
       defs += `<clipPath id="g${uid}${i}">${glyph}</clipPath>`;
-      const art = LETTER_STYLE === 'calm'
+      const WORDSCENE = { 'Jetzt.': ['palm', 'coffee', 'citynight', 'road', 'mountains', 'vinyl'], 'Hör rein.': ['city', 'vinyl', 'kitchen', 'palm', 'sea', 'citynight', 'rain', 'moon'] }[word];
+      const pic = WORDSCENE && LETTER_STYLE === 'scene' ? `<svg x="${f(l)}" y="${f(t)}" width="${f(r - l)}" height="${f(b - t)}" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">${scene(WORDSCENE[i % WORDSCENE.length], word + i)}</svg>` : '';
+      const art = pic ? pic : LETTER_STYLE === 'calm'
         ? (([bs, ac]) => rect(l, t, r - l, b - t, C[bs]) + calmArt(g.ch, l, r, t, b, baseline, size, C[bs], C[ac]))(PAIRS[k % PAIRS.length])
         : rect(l, t, r - l, b - t, C[scheme[0]]) + motif(l, t, r - l, b - t, scheme, u);
       body += `<g clip-path="url(#g${uid}${i})">${art}</g>`;
